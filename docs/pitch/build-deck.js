@@ -384,7 +384,8 @@ const SEC = { sectionTitle: "Beetle pitch" };
   const steps = [
     ["Any game request", "\"king of the hill on a frozen arena, hold ten seconds\""],
     ["Mapped to the closest mode and biome", "the agent fills the parameters and says which it chose"],
-    ["Playable world", "two phones join by QR, validated by game code first"],
+    ["Starts where the players are", "the brief builds the spawn zone"],
+    ["Grows as they move", "every extension a small patch, validated before it lands"],
     ["Keep changing it while they play", "mode, biome, speed, bridges, hazard; no reset"],
   ];
   const n = steps.length;
@@ -431,12 +432,12 @@ const SEC = { sectionTitle: "Beetle pitch" };
         { text: t, options: { fontSize: 11, bold: true, color: C.text1, breakLine: true, paraSpaceAfter: 2 } },
         { text: sub, options: { fontSize: 9, color: C.text2 } },
       ],
-      { x: cxi - 1.05, y: lineY + 0.3, w: 2.1, h: 0.75, align: "center", valign: "top", margin: 0, isTextBox: true, objectName: "step text " + (i + 1) }
+      { x: cxi - 0.9, y: lineY + 0.3, w: 1.8, h: 0.75, align: "center", valign: "top", margin: 0, isTextBox: true, objectName: "step text " + (i + 1) }
     );
   });
 
   // Middle: the mode library as a table (packages/contracts/src/limits.ts GAME_MODES and MODE_LIMITS)
-  label(s, "MODE LIBRARY (ENGINE MECHANICS, NOT MODEL-WRITTEN RULES)", 0.5, 2.5, 6.5, { fontSize: 9, h: 0.2 });
+  label(s, "MODE LIBRARY (ENGINE MECHANICS, NOT MODEL-WRITTEN RULES)", 0.5, 2.47, 6.5, { fontSize: 9, h: 0.2 });
   const hdr = (t) => ({ text: t, options: { bold: true, color: THEME.colors.accent1, fontSize: 8.5, fill: { color: THEME.colors.lt2 }, valign: "middle" } });
   const cell = (t, bold) => ({ text: t, options: { color: bold ? THEME.colors.dk1 : THEME.colors.dk2, fontSize: 8, bold: !!bold, fill: { color: THEME.colors.lt2 }, valign: "middle" } });
   const rows = [
@@ -449,7 +450,7 @@ const SEC = { sectionTitle: "Beetle pitch" };
   ];
   s.addTable(rows, {
     x: 0.5,
-    y: 2.72,
+    y: 2.66,
     w: 9.0,
     colW: [1.3, 2.9, 2.6, 2.2],
     rowH: 0.25,
@@ -464,20 +465,22 @@ const SEC = { sectionTitle: "Beetle pitch" };
       { text: "Biomes ", options: { fontSize: 9, bold: true, color: C.accent1 } },
       { text: "garden, volcanic, frost, desert, night.   ", options: { fontSize: 9, color: C.text1 } },
       { text: "Hazard and pace ", options: { fontSize: 9, bold: true, color: C.accent1 } },
-      { text: "water or lava below, a rising hazard, movement 3 to 7 m/s, 11 decoration types.   ", options: { fontSize: 9, color: C.text1 } },
+      { text: "water or lava, a rising hazard, 3 to 7 m/s, 11 decoration types.   ", options: { fontSize: 9, color: C.text1 } },
       { text: "Changed live, no reset ", options: { fontSize: 9, bold: true, color: C.accent1 } },
-      { text: "set_mode, set_biome, set_movement beside add_bridge, set_hazard and the other structural ops; every patch validated and committed as a new version.", options: { fontSize: 9, color: C.text1 } },
+      { text: "set_mode, set_biome, set_movement and the structural ops, each validated and committed as a new version.   ", options: { fontSize: 9, color: C.text1 } },
+      { text: "Streaming ", options: { fontSize: 9, bold: true, color: C.accent1 } },
+      { text: "extends the world ahead of players near an edge, up to 24 islands and 48 bridges; the director can switch it off.", options: { fontSize: 9, color: C.text1 } },
     ],
-    { x: 0.5, y: 4.36, w: 9.0, h: 0.4, valign: "top", margin: 0, isTextBox: true, objectName: "library text" }
+    { x: 0.5, y: 4.33, w: 9.0, h: 0.44, valign: "top", margin: 0, isTextBox: true, objectName: "library text" }
   );
 
   s.addText(
     "Adapted from one-prompt game generators: the one-prompt front door and instant playable output. Added: live editing without a reset, deterministic validation and repair before publish, local-only inference, phones as controllers (docs/COMPETITIVE.md). A request outside the library lands on the nearest mode and the agent says so.",
-    { x: 0.5, y: 4.78, w: 9.0, h: 0.38, fontSize: 8, italic: true, color: C.text2, margin: 0, isTextBox: true, objectName: "category note" }
+    { x: 0.5, y: 4.84, w: 9.0, h: 0.34, fontSize: 7.5, italic: true, color: C.text2, margin: 0, isTextBox: true, objectName: "category note" }
   );
 
   s.addNotes(
-    "Walk the four steps: any request, mapped to the closest mode and biome and named, a playable world two phones join, then keep changing it while they play. Read two rows of the mode table, not all five. Say plainly: the library is bounded and growing; the model never writes rules, it picks from the engine. Status at 14:27 CDT: contract, validator, patch ops, server rule per mode, mapping prompt and biome palettes exist in code; BUILD_STATUS.md says what is tested; mode briefs measured 14:25 to 14:42 CDT, 18 of 18 sensible modes (slide 5)."
+    "Walk the five steps: any request, mapped to the closest mode and biome and named; the world starts where the players are (the brief builds the zone around the spawn); it grows as they move, every extension a small patch validated before it lands; then keep changing it while they play. Read two rows of the mode table, not all five. Say plainly: the library is bounded and growing; the model never writes rules, it picks from the engine. Streaming was measured once: an automatic extension (two islands) committed 9.5 s after the frontier trigger with the player preserved (docs/RESULTS.md 15:16 CDT, direct, quiet GPU). Say 'measured once'; the spawn-zone brief time is not measured. Mode briefs measured 14:25 to 14:42 CDT, 18 of 18 sensible modes (slide 5)."
   );
 }
 
@@ -574,7 +577,7 @@ const SEC = { sectionTitle: "Beetle pitch" };
   });
   s.addText(runs, { x: cx, y: 1.6, w: cw, h: 3.4, valign: "top", margin: 0, isTextBox: true, objectName: "caption list" });
 
-  s.addNotes("Play the recording here. Captions follow docs/STORYBOARD.md; the mode caption is set to whichever agent mode was green at recording time. Rehearsal timings: brief 14 s on a quiet GPU, edits 2 to 14 s, DISCONNECTED_GOAL refused and repaired in 3.0 s. Shots that cannot be produced honestly are cut, not faked.");
+  s.addNotes("Play the recording here. Captions follow docs/STORYBOARD.md; the mode caption is set to whichever agent mode was green at recording time. Rehearsal timings: brief 14 s on a quiet GPU, edits 2 to 14 s, DISCONNECTED_GOAL refused and repaired in 3.0 s. Shots that cannot be produced honestly are cut, not faked. Optional shot 'the world grows' (docs/STORYBOARD.md 6c): a player walks toward an edge, 'Beetle is building ahead' appears and the new island assembles; one live run committed an extension 9.5 s after the trigger (docs/RESULTS.md 15:16 CDT), not yet rehearsed on camera, so it is shown only from a real take, never compressed without a label.");
 }
 
 // ====================== Slide 4: agent architecture and validation ======================
@@ -584,10 +587,10 @@ const SEC = { sectionTitle: "Beetle pitch" };
   smallWordmark(s);
 
   const nodes = [
-    ["Director", "any game request or edit"],
+    ["Director or frontier", "a request or edit; or a player 4 m from a rim with no crossing beyond"],
     ["OpenClaw agent", "reads state, proposes, repairs in a bounded budget"],
     ["Map to mode + biome", "closest of 5 modes, 5 biomes; parameters from the brief; named in the summary"],
-    ["Beetle tools", "schema-checked JSON only, nothing executed"],
+    ["Beetle tools", "schema-checked JSON only, nothing executed; add_island for extensions"],
     ["Server validator and commit", "deterministic game code, server-issued proof"],
     ["Players", "same session, same progress, new version"],
   ];
@@ -679,38 +682,46 @@ const SEC = { sectionTitle: "Beetle pitch" };
     objectName: "loop caption",
   });
 
-  // Lower half: two cards
+  // Lower half: three cards (state, validation, streaming)
   const cy = 3.3,
-    ch = 1.75;
-  card(s, 0.5, cy, 4.35, ch, "state card");
-  label(s, "TWO KINDS OF STATE", 0.7, cy + 0.15, 4);
-  s.addText(
-    bullets(
+    ch = 1.8,
+    cgap = 0.15,
+    cwd = (9.0 - cgap * 2) / 3;
+  const lowerCards = [
+    [
+      "TWO KINDS OF STATE",
       [
-        "WorldSpec is structure, now with mode, biome, movement and hazard.rise. It changes only when a transaction commits, one version per commit.",
-        "SessionState is players, relics, score and the mode objective (timer, hold time, next checkpoint, hazard height). The simulation advances it; the agent never writes it.",
+        "WorldSpec is structure: islands, bridges, mode, biome, movement, hazard. One version per committed transaction.",
+        "SessionState is players, relics, score and the mode objective. The simulation advances it; the agent never writes it.",
         "Commit needs a server-issued proof.",
       ],
-      10.5
-    ),
-    { x: 0.7, y: cy + 0.42, w: 4.0, h: ch - 0.5, valign: "top", margin: 0, isTextBox: true, objectName: "state bullets" }
-  );
-  card(s, 5.15, cy, 4.35, ch, "validation card");
-  label(s, "VALIDATION IS GAME CODE", 5.35, cy + 0.15, 4);
-  s.addText(
-    bullets(
+    ],
+    [
+      "VALIDATION IS GAME CODE",
       [
         "Geometry, bridge sockets, walk field, reachability with the gate locked, occupied support at commit time.",
         "MODE_INVALID: relics required above the count, a race with under 2 checkpoints, survival without a rising hazard, a timer outside 20 to 600 s.",
-        "The mode rule is engine code picked by an enum. An LLM saying valid is never approval. Output is schema-checked JSON only.",
+        "An LLM saying valid is never approval.",
       ],
-      10.5
-    ),
-    { x: 5.35, y: cy + 0.42, w: 4.0, h: ch - 0.5, valign: "top", margin: 0, isTextBox: true, objectName: "validation bullets" }
-  );
+    ],
+    [
+      "GROWS AHEAD OF PLAYERS",
+      [
+        "Frontier trigger: a player within 4 m of a rim with no crossing beyond; at least 12 s between extensions.",
+        "Beetle opens the request itself (marked auto); the agent answers with add_island, 1 to 2 islands, each bridged from an anchor.",
+        "Same validator and commit. Stops at 24 islands, 48 bridges; director toggle.",
+      ],
+    ],
+  ];
+  lowerCards.forEach(([title, items], i) => {
+    const x = 0.5 + i * (cwd + cgap);
+    card(s, x, cy, cwd, ch, "lower card " + (i + 1));
+    label(s, title, x + 0.15, cy + 0.12, cwd - 0.3, { fontSize: 8.5 });
+    s.addText(bullets(items, 8.5), { x: x + 0.15, y: cy + 0.38, w: cwd - 0.3, h: ch - 0.45, valign: "top", margin: 0, isTextBox: true, objectName: "lower card bullets " + (i + 1) });
+  });
 
   s.addNotes(
-    "Left to right: director, OpenClaw agent, the mapping step (closest mode and biome, parameters from the brief, named in the summary), Beetle tools, server validator and commit, players. Structured output means only a listed mode, a listed biome and in-range parameters can come out of the model. Only the server decides validity; the model only proposes JSON."
+    "Left to right: director or the frontier trigger, OpenClaw agent, the mapping step (closest mode and biome, parameters from the brief, named in the summary), Beetle tools, server validator and commit, players. Streaming uses the same path: when a player walks within 4 m of an island rim with no crossing beyond, Beetle opens an extension request itself, the agent proposes add_island (1 to 2 islands, each bridged from an anchor), and the same validator decides; growth stops at 24 islands and 48 bridges, and the director can switch it off. Structured output means only a listed mode, a listed biome and in-range parameters can come out of the model. Only the server decides validity; the model only proposes JSON."
   );
 }
 
@@ -720,7 +731,12 @@ const SEC = { sectionTitle: "Beetle pitch" };
   s.addText("Measured local-first results", { placeholder: "title" });
   smallWordmark(s);
 
-  // Rebuilt 2026-10-03 14:50 CDT. Every value is copied from the file named in the card; see docs/pitch/FILL_IN.md.
+  // Rebuilt 2026-10-03 14:50 CDT, streaming line and latency card updated 15:15 CDT. Every value is copied from the
+  // file named in the card; see docs/pitch/FILL_IN.md.
+  const LATENCY_BIG = "0.56 ms RTT, 0.80 ms tick";
+  const LATENCY_SUB = "p50 idle, scripted controllers (p95 1.01 and 1.10 ms; under 2 x 30 inputs/s tick p95 50.2 ms; LATENCY.md 20:10Z). Not input to photon.";
+  // Streaming: one live run in docs/RESULTS.md (15:16 CDT); docs/ACCEPTANCE.md has no streaming section yet.
+  const STREAMING_LINE = "Streaming generation: implemented. One live run: extension committed 9.5 s after the frontier trigger, player preserved (RESULTS.md 15:16 CDT, direct, quiet GPU). Acceptance numbers to follow.";
   const cells = [
     ["MODEL", "qwen3.5:4b, Q4_K_M", "4.7B, 3.4 GB, Ollama 0.35.1 on loopback. qwen3.8:27b not benchmarked: pull failed once, second pull stopped. docs/MODEL_SELECTION.md"],
     ["BRIEF, WARM, QUIET GPU", "26.2 / 26.5 / 27.7 s", "min / p50 / max, 3 runs, first draft valid (bench-...1791049348895.json). 10 s target not met. 14 s once after normalization (RESULTS.md run 3); 33.4 s via OpenClaw."],
@@ -731,7 +747,7 @@ const SEC = { sectionTitle: "Beetle pitch" };
     ["INVALID EDITS CAUGHT", "6 of 12 refused", "runs 2 and 3 (RESULTS.md); repairs that then committed: 1; invalid worlds committed: 0. garden5: DISCONNECTED_GOAL refused 1.7 s, repaired and committed 3.0 s."],
     ["NORMALIZATION EFFECT", "2 of 30 to 13 of 30", "corpus validity without vs with the deterministic normalizer (MODEL_FAILURE_MODES.md). Live edits committed: 2 of 6 to 5 of 6."],
     ["OPENCLAW LIVE", "20.0 s edit, 33.4 s brief", "real tool calls, v2 at 13:43 CDT; brief to v1 at 14:08 CDT; gated test 38.9 s, 7 tool calls (RESULTS.md, BUILD_STATUS.md 17)."],
-    ["LATENCY, LOOPBACK", "0.48 ms RTT, 18.8 ms tick", "p50, scripted controllers (p95 0.81 and 33.1 ms; LATENCY.md). Not input to photon: no phone, Wi-Fi, browser or display."],
+    ["LATENCY, LOOPBACK", LATENCY_BIG, LATENCY_SUB],
     ["PHONES", "not yet with devices", "controller page under mobile emulation and 23 integration tests with real sockets pass (BUILD_STATUS.md 12); no physical phone joined today."],
     ["OFFLINE PROOF", "not run", "only a before record exists (offline-proof/1791049273707.json: egress not blocked, server not up). Procedure: docs/OFFLINE_PROOF.md. Nothing claimed."],
   ];
@@ -773,14 +789,26 @@ const SEC = { sectionTitle: "Beetle pitch" };
       objectName: "result sub " + lab,
     });
   });
+  s.addText(STREAMING_LINE, {
+    x: 0.5,
+    y: 4.6,
+    w: 9.0,
+    h: 0.3,
+    fontSize: 8,
+    bold: true,
+    color: C.accent1,
+    margin: 0,
+    isTextBox: true,
+    objectName: "streaming status",
+  });
   s.addText(
     "Direct-harness timings are labelled [direct] in every report; OpenClaw timings are from the real server after the Ollama daemon restart at 13:43 CDT. Each card names its GPU state because the daemon was shared for most of the day. Mode briefs were measured at 14:25 to 14:42 CDT in direct mode with no controllers connected (docs/RESULTS.md).",
     {
       x: 0.5,
-      y: 4.66,
+      y: 4.92,
       w: 9.0,
-      h: 0.46,
-      fontSize: 8,
+      h: 0.26,
+      fontSize: 7,
       italic: true,
       color: C.text2,
       margin: 0,
@@ -790,7 +818,7 @@ const SEC = { sectionTitle: "Beetle pitch" };
   );
 
   s.addNotes(
-    "Read the cards. Say out loud: the 10 s brief target is not met; a valid brief takes 24 to 28 s warm on a quiet GPU, 14 s was seen once after normalization, 33.4 s through OpenClaw. Edits commit in 2 to 14 s, and 8.0 s with two players moving and nothing reset. Game modes from one prompt: the mode was sensible on 18 of 18 briefs and the exact mode was missed twice; committed mode briefs took 13 to 44 s and the failures were geometry, never the mode rule; mode and biome edits on a running world took 3.0 s. Phones and the offline proof are covered by tests or procedure but not yet measured live. The 27b was never benchmarked."
+    "Read the cards. Say out loud: the 10 s brief target is not met; a valid brief takes 24 to 28 s warm on a quiet GPU, 14 s was seen once after normalization, 33.4 s through OpenClaw. Edits commit in 2 to 14 s, and 8.0 s with two players moving and nothing reset. Game modes from one prompt: the mode was sensible on 18 of 18 briefs and the exact mode was missed twice; committed mode briefs took 13 to 44 s and the failures were geometry, never the mode rule; mode and biome edits on a running world took 3.0 s. Phones and the offline proof are covered by tests or procedure but not yet measured live. Streaming generation is implemented and was measured once live: extension committed 9.5 s after the frontier trigger, player preserved (docs/RESULTS.md 15:16 CDT); say 'one run, acceptance numbers to follow'. No spawn-zone build time is quoted. The 27b was never benchmarked."
   );
 }
 
