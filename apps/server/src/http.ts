@@ -8,7 +8,7 @@ import {
   type AgentPhase, type BuildReport, type CommitResult, type ValidationCode, type WorldSpec,
 } from '@beetle/contracts';
 import { redactUrl } from '@beetle/observability';
-import { bearerToken, isLoopback, safeEqual } from './auth.ts';
+import { bearerToken, isLoopback, safeEqual, isSameMachine } from './auth.ts';
 import { shortId } from './clock.ts';
 import type { ServerContext } from './context.ts';
 import { directoryExists } from './persistence.ts';
@@ -184,6 +184,16 @@ export async function registerRoutes(app: FastifyInstance, ctx: ServerContext): 
       expiresAt: invite.expiresAt,
       slot: invite.slot,
     };
+  });
+
+  // Same-machine bootstrap: pages opened on this machine get the director token without a ?token= link.
+  // Other LAN devices are refused and still need the director link; phones join with invite codes.
+  app.get(ROUTES.directorBootstrap, async (req, reply) => {
+    if (!isSameMachine(req.socket.remoteAddress)) {
+      return reply.code(403).send({ code: 'FORBIDDEN', message: 'Open the director link on this device, or use this machine.' });
+    }
+    reply.header('cache-control', 'no-store');
+    return { token: ctx.secrets.directorToken };
   });
 
   app.post(ROUTES.directorSettings, async (req, reply) => {

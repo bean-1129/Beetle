@@ -183,6 +183,8 @@ export const ROUTES = {
   directorReports: '/api/director/reports',
   directorUndo: '/api/director/undo',
   directorSettings: '/api/director/settings',
+  /** Returns the director token only to requests that come from this machine (loopback or one of its own addresses). */
+  directorBootstrap: '/api/director/bootstrap',
   join: '/api/join',
   agentWorld: '/api/agent/world',
   agentRequestsClaim: '/api/agent/requests/claim',

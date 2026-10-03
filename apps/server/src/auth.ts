@@ -37,3 +37,18 @@ export function isLoopbackUrl(url: string): boolean {
     return false;
   }
 }
+
+import { networkInterfaces } from 'node:os';
+
+/** True when the address is loopback or one of this machine's own interface addresses (a page opened on the GB10 itself). */
+export function isSameMachine(address: string | undefined | null): boolean {
+  if (!address) return false;
+  if (isLoopback(address)) return true;
+  const plain = address.startsWith('::ffff:') ? address.slice(7) : address;
+  for (const list of Object.values(networkInterfaces())) {
+    for (const ni of list ?? []) {
+      if (ni.address === plain || ni.address === address) return true;
+    }
+  }
+  return false;
+}
