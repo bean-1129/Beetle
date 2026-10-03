@@ -34,6 +34,8 @@ export type WsHub = {
   broadcastWorld(message: WorldMessage): void;
   broadcastActivity(entries: AgentActivity[]): void;
   broadcastControllers(): void;
+  /** Closes every socket bound to the player (4002) after its controller token was replaced. */
+  revokePlayerSockets(playerId: string): number;
   counts(): { controllers: number; displays: number; directors: number; pending: number; total: number };
   readonly connections: Set<Conn>;
   closeAll(): void;
@@ -46,6 +48,8 @@ export function createWsHub(ctx: HubContext): WsHub {
   const connections = new Set<Conn>();
   let nextId = 1;
   let lastControllersAt = 0;
+  /** The last committed world version waiting for a display ack; the simulation never waits on it. */
+  let pendingPresent: { version: number; at: number } | null = null;
 
   function send(conn: Conn, message: ServerMessage | string): void {
     if (conn.ws.readyState !== WebSocket.OPEN) return;
@@ -134,7 +138,7 @@ export function createWsHub(ctx: HubContext): WsHub {
     send(conn, controllersMessage());
   }
 
-  function bindController(conn: Conn, token: string): void {
+  function bindController(conn: Conn, token: string, lastSeq?: number): void {
     const player = ctx.session.playerForToken(token);
     if (!player) {
       sendError(conn, 'AUTH', 'unknown controller token');
@@ -142,6 +146,15 @@ export function createWsHub(ctx: HubContext): WsHub {
       return;
     }
     const now = ctx.clock.now();
+    // A new socket is a new input stream: its seq counter restarts (hello.lastSeq says where), so inputs from a
+    // reloaded phone are not silently ignored until they exceed the previous socket's last seq.
+    player.lastInputSeq = Math.max(0, Math.floor(lastSeq ?? 0));
+    {
+      const rt = ctx.session.runtimeOf(player, now);
+      rt.axes = { x: 0, z: 0 };
+      rt.interact = false;
+      rt.interactPrev = false;
+    }
     for (const other of connections) {
       if (other !== conn && other.playerId === player.id) {
         other.playerId = null;
@@ -169,7 +182,7 @@ export function createWsHub(ctx: HubContext): WsHub {
       return;
     }
     if (msg.role === 'controller') {
-      bindController(conn, msg.token);
+      bindController(conn, msg.token, msg.lastSeq);
       return;
     }
     if (msg.role === 'director') {
@@ -256,6 +269,10 @@ export function createWsHub(ctx: HubContext): WsHub {
       }
       case 'ack':
         conn.ackedVersion = msg.worldVersion;
+        if (conn.role === 'display' && pendingPresent && msg.worldVersion >= pendingPresent.version) {
+          ctx.events.emit({ name: 'commit.presented', worldVersion: pendingPresent.version, outcome: 'ok', durationMs: Math.max(0, ctx.clock.now() - pendingPresent.at) });
+          pendingPresent = null;
+        }
         return;
       case 'resync': {
         const world = ctx.sim.worldMessage('resync');
@@ -355,8 +372,15 @@ export function createWsHub(ctx: HubContext): WsHub {
         }
       }
       if (message.serverMs - lastControllersAt >= CONTROLLER_STATUS_EVERY_MS) broadcastControllers();
+      if (pendingPresent && message.serverMs - pendingPresent.at >= SIMULATION.displayAckTimeoutMs) {
+        // A display that never acks only costs one event; the loop and later commits are unaffected.
+        const displays = [...connections].filter((c) => c.role === 'display').length;
+        ctx.events.emit({ name: 'commit.presented', worldVersion: pendingPresent.version, outcome: 'fail', durationMs: message.serverMs - pendingPresent.at, data: { reason: 'display_ack_timeout', displays } });
+        pendingPresent = null;
+      }
     },
     broadcastWorld(message: WorldMessage) {
+      if (message.reason === 'commit') pendingPresent = { version: message.version, at: ctx.clock.now() };
       const json = JSON.stringify(message);
       for (const conn of connections) {
         if (conn.role === 'display' || conn.role === 'director') send(conn, json);
@@ -371,6 +395,17 @@ export function createWsHub(ctx: HubContext): WsHub {
       }
     },
     broadcastControllers,
+    revokePlayerSockets(playerId: string) {
+      let n = 0;
+      for (const conn of connections) {
+        if (conn.playerId !== playerId) continue;
+        conn.playerId = null;
+        conn.role = null;
+        n += 1;
+        try { conn.ws.close(4002, 'replaced by a newer controller'); } catch { /* ignore */ }
+      }
+      return n;
+    },
     counts() {
       let controllers = 0, displays = 0, directors = 0, pending = 0;
       for (const conn of connections) {

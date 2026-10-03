@@ -39,6 +39,8 @@ export type Persistence = {
   writeSession(session: SessionState): Promise<void>;
   writeReport(report: BuildReport): Promise<void>;
   loadCurrentWorld(): Promise<WorldSnapshotFile | null>;
+  /** data/snapshots/session.json when present and well-formed, else null (corruption is reported through onError). */
+  loadSession(): Promise<SessionState | null>;
   /** Waits for every queued write to settle. */
   flush(): Promise<void>;
 };
@@ -82,13 +84,53 @@ export function createPersistence(dataDir: string, onError: (where: string, err:
       return enqueue(path.join(reportsDir, `${safeId}.json`), report);
     },
     async loadCurrentWorld() {
-      const raw = await readJsonFile(path.join(snapshotsDir, 'world-current.json'));
-      if (!raw || typeof raw !== 'object') return null;
+      const file = path.join(snapshotsDir, 'world-current.json');
+      let text: string;
+      try {
+        text = await readFile(file, 'utf8');
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException)?.code !== 'ENOENT') onError(file, err);
+        return null;
+      }
+      let raw: unknown;
+      try {
+        raw = JSON.parse(text) as unknown;
+      } catch (err) {
+        onError(file, new Error(`world-current.json is not valid JSON (${err instanceof Error ? err.message : String(err)}); starting from the default world`));
+        return null;
+      }
+      if (!raw || typeof raw !== 'object') {
+        onError(file, new Error('world-current.json is not an object; starting from the default world'));
+        return null;
+      }
       const obj = raw as { version?: unknown; savedAt?: unknown; spec?: unknown };
       const parsed = WorldSpecSchema.safeParse(obj.spec);
-      if (!parsed.success) return null;
+      if (!parsed.success) {
+        onError(file, new Error('world-current.json spec does not match WorldSpecSchema: ' + parsed.error.issues.slice(0, 3).map((i) => i.path.join('.') + ' ' + i.message).join('; ')));
+        return null;
+      }
       const version = typeof obj.version === 'number' && Number.isInteger(obj.version) && obj.version >= 0 ? obj.version : parsed.data.worldVersion;
       return { version, savedAt: typeof obj.savedAt === 'number' ? obj.savedAt : 0, spec: { ...parsed.data, worldVersion: version } };
+    },
+    async loadSession() {
+      const file = path.join(snapshotsDir, 'session.json');
+      let text: string;
+      try {
+        text = await readFile(file, 'utf8');
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException)?.code !== 'ENOENT') onError(file, err);
+        return null;
+      }
+      try {
+        const raw = JSON.parse(text) as unknown;
+        if (!raw || typeof raw !== 'object') throw new Error('session.json is not an object');
+        const s = raw as Partial<SessionState>;
+        if (typeof s.worldId !== 'string' || !Array.isArray(s.collectedRelicIds) || !Array.isArray(s.players)) throw new Error('session.json is missing required fields');
+        return s as SessionState;
+      } catch (err) {
+        onError(file, err);
+        return null;
+      }
     },
     async flush() {
       await Promise.all(pending);

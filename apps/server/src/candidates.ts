@@ -263,6 +263,18 @@ export class CandidateStore {
     if (result.ok) this.committed.set(this.replayKey(candidate), result);
   }
 
+  /** Drops compiled geometry held by candidates that can no longer commit (base version behind the live world). */
+  dropStaleCompiled(currentVersion: number): number {
+    let dropped = 0;
+    for (const c of this.candidates.values()) {
+      if (c.compiled && c.baseWorldVersion < currentVersion) {
+        c.compiled = null;
+        dropped += 1;
+      }
+    }
+    return dropped;
+  }
+
   hasCommitted(candidate: Candidate): boolean {
     return this.committed.has(this.replayKey(candidate));
   }

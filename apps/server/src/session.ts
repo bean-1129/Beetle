@@ -205,6 +205,39 @@ export class SessionStore {
     }
   }
 
+  /**
+   * Restores gameplay progress from a persisted session snapshot (restart): collected relics, tombstones, score, gate,
+   * win, tick and per-player stats. Players come back disconnected (controller tokens are not persisted); unknown relic
+   * ids are dropped. Returns false when the snapshot belongs to another world.
+   */
+  restore(saved: SessionState, worldId: string, knownRelicIds: string[]): boolean {
+    if (saved.worldId !== worldId) return false;
+    const known = new Set(knownRelicIds);
+    const collected = [...new Set(saved.collectedRelicIds.filter((id) => typeof id === 'string' && known.has(id)))];
+    this.state.collectedRelicIds = collected;
+    this.state.relicTombstones = {};
+    for (const id of collected) {
+      const t = saved.relicTombstones?.[id];
+      if (t && typeof t.byPlayerId === 'string') this.state.relicTombstones[id] = { byPlayerId: t.byPlayerId, atTick: Number(t.atTick) || 0, worldVersion: Number(t.worldVersion) || 0 };
+    }
+    this.state.score = Number.isFinite(saved.score) ? Math.max(0, Math.floor(saved.score)) : 0;
+    this.state.gateUnlocked = saved.gateUnlocked === true;
+    this.state.won = saved.won === true;
+    this.state.tick = Number.isInteger(saved.tick) && saved.tick > 0 ? saved.tick : 0;
+    this.state.elapsedMs = Number.isFinite(saved.elapsedMs) && saved.elapsedMs > 0 ? saved.elapsedMs : 0;
+    for (const p of saved.players) {
+      if (!p || (p.slot !== 0 && p.slot !== 1)) continue;
+      const player = this.ensurePlayer(p.slot, 0);
+      player.respawns = Number.isInteger(p.respawns) ? p.respawns : 0;
+      player.lavaFalls = Number.isInteger(p.lavaFalls) ? p.lavaFalls : 0;
+      player.connected = false;
+      player.status = 'disconnected';
+      player.lastInputSeq = 0;
+      player.lastInputAtMs = 0;
+    }
+    return true;
+  }
+
   snapshot(): SessionState {
     return JSON.parse(JSON.stringify(this.state)) as SessionState;
   }

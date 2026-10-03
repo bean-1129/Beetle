@@ -33,6 +33,8 @@ export class RequestStore {
   private readonly reports: BuildReport[] = [];
   private activityCounter = 0;
   lastClaimAt = 0;
+  /** Last time the agent reported progress (status/finish) on any request. */
+  lastStatusAt = 0;
 
   constructor(private readonly now: () => number) {}
 
@@ -117,13 +119,35 @@ export class RequestStore {
     }
   }
 
+  /** Records that the agent talked to us (status or finish), independent of the long-poll cadence. */
+  touchAgent(): void {
+    this.lastStatusAt = this.now();
+  }
+
+  /** A request the agent claimed and has not finished: the worker is busy, not gone. */
+  hasActiveJob(): boolean {
+    for (const rec of this.records.values()) {
+      const s = rec.request.status;
+      if (s === 'planning' || s === 'validating' || s === 'repairing' || s === 'awaiting_safe_commit') return true;
+    }
+    return false;
+  }
+
+  /**
+   * True while the agent long-polled or reported status within AGENT_CONNECTED_WINDOW_MS, or while it holds an
+   * unfinished job (a long model call does not poll claim, so the claim time alone would read as disconnected).
+   */
   agentConnected(): boolean {
-    return this.lastClaimAt > 0 && this.now() - this.lastClaimAt <= AGENT_CONNECTED_WINDOW_MS;
+    const now = this.now();
+    if (this.lastClaimAt > 0 && now - this.lastClaimAt <= AGENT_CONNECTED_WINDOW_MS) return true;
+    if (this.lastStatusAt > 0 && now - this.lastStatusAt <= AGENT_CONNECTED_WINDOW_MS) return true;
+    return this.hasActiveJob();
   }
 
   setStatus(id: string, phase: AgentPhase): DirectorRequest | undefined {
     const req = this.get(id);
     if (!req) return undefined;
+    this.touchAgent();
     // Terminal statuses are sticky; a late status update never reopens a finished request.
     if (req.status === 'committed' || req.status === 'failed' || req.status === 'cancelled') return req;
     req.status = phase;
@@ -133,6 +157,7 @@ export class RequestStore {
   finish(id: string, outcome: 'committed' | 'failed' | 'cancelled', extra: { worldVersion?: number; reportId?: string; error?: { code: string; message: string } }): DirectorRequest | undefined {
     const req = this.get(id);
     if (!req) return undefined;
+    this.touchAgent();
     req.status = outcome;
     req.finishedAt = this.now();
     if (extra.worldVersion !== undefined) req.resultWorldVersion = extra.worldVersion;

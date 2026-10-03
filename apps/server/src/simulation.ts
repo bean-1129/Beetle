@@ -180,7 +180,7 @@ export class Simulation {
           const kind = world.hazardKind();
           if (kind === 'lava') {
             player.lavaFalls += 1;
-            state.score -= world.hazardPenalty();
+            state.score = Math.max(0, state.score - world.hazardPenalty()); // score floor is 0; penalties never go negative
           }
           this.o.events.emit({ name: 'player.hazard', sessionId: state.sessionId, worldVersion: state.worldVersion, data: { playerId: player.id, hazard: kind } });
         } else if (ev === 'fell') {
@@ -359,6 +359,8 @@ export class Simulation {
     }
     world.swap(spec, newVersion, newCompiled);
     if (pending.reason === 'undo') world.consumeHistory();
+    cand.compiled = null; // the live world owns its own compile; stale candidates must not pin old geometry
+    candidates.dropStaleCompiled(newVersion);
     state.worldVersion = newVersion;
     state.worldId = spec.worldId;
     this.ensureCache(newVersion, spec, newCompiled);

@@ -98,7 +98,9 @@ export async function createBeetleServer(opts: BeetleServerOptions = {}): Promis
 
   const secrets = await loadSecrets({ dataDir: config.dataDir, directorToken: config.directorToken, agentToken: config.agentToken });
   const persistence = createPersistence(config.dataDir, (where, err) => {
-    events.emit({ name: 'persistence.error', outcome: 'fail', data: { file: where, message: err instanceof Error ? err.message : String(err) } });
+    const message = err instanceof Error ? err.message : String(err);
+    events.emit({ name: 'persistence.error', outcome: 'fail', data: { file: where, message } });
+    notes.push(`persistence: ${where}: ${message}`);
   });
   const events = createEventLog({ filePath: persistence.eventsFile, source: 'server' });
   const session = new SessionStore();
@@ -115,6 +117,11 @@ export async function createBeetleServer(opts: BeetleServerOptions = {}): Promis
     notes.push(`world: provided spec "${parsed.data.title}" as version ${version}`);
   } else if (opts.loadSnapshot !== false && (await persistence.loadCurrentWorld().then((s) => (s ? (world.install(s.spec, s.version), s) : null)))) {
     notes.push(`world: restored data/snapshots/world-current.json as version ${world.version}`);
+    const saved = await persistence.loadSession();
+    if (saved && world.current && session.restore(saved, world.current.spec.worldId, world.current.spec.relics.map((r) => r.id))) {
+      notes.push(`session: restored ${session.state.collectedRelicIds.length} collected relic(s), score ${session.state.score} from data/snapshots/session.json`);
+      events.emit({ name: 'session.restored', worldVersion: world.version, data: { collectedRelicIds: session.state.collectedRelicIds, score: session.state.score, players: session.state.players.length } });
+    }
   } else if (config.startWorld === 'fixture') {
     try {
       const fixture = fixtureWorld('garden5');

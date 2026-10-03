@@ -157,6 +157,12 @@ export async function registerRoutes(app: FastifyInstance, ctx: ServerContext): 
     if (!result.ok) {
       return reply.code(400).send({ code: 'INVALID_INVITE', message: result.reason === 'expired' ? 'invite expired' : 'unknown invite' });
     }
+    // The slot's previous token is revoked by join(); sockets still bound with it lose control right away.
+    const revoked = ctx.hub.revokePlayerSockets(result.playerId);
+    if (revoked > 0) {
+      const player = ctx.session.player(result.playerId);
+      if (player) ctx.session.markDisconnected(player, ctx.clock.now());
+    }
     ctx.placeAtSpawn(result.playerId);
     ctx.events.emit({ name: 'player.joined', sessionId: ctx.session.state.sessionId, worldVersion: ctx.world.version, data: { playerId: result.playerId, slot: result.slot } });
     ctx.hub.broadcastControllers();
@@ -247,6 +253,7 @@ export async function registerRoutes(app: FastifyInstance, ctx: ServerContext): 
     const request = ctx.requests.get(req.params.id);
     if (!request) return reply.code(404).send({ code: 'NOT_FOUND', message: 'unknown request' });
     const phase: AgentPhase = body.data.phase;
+    ctx.requests.touchAgent();
     if (phase !== 'committed' && phase !== 'failed' && phase !== 'cancelled' && phase !== 'queued') ctx.requests.setStatus(request.id, phase);
     const entry = ctx.requests.addActivity(request.id, body.data, ctx.world.version);
     ctx.events.emit({
