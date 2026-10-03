@@ -58,6 +58,9 @@ type RunState = {
   committedMs?: number;
   committedVersion?: number;
   playability?: { ok: boolean; checks: number; failed: number };
+  reportId?: string;
+  reportOutcome?: 'committed' | 'failed' | 'cancelled';
+  summary?: string;
 };
 const state: RunState = { client: null, token: null, baseWorldVersion: 0, validationAttempts: 0, failedCodes: new Set(), startedAt: Date.now() };
 
@@ -128,6 +131,47 @@ function issueText(issues: IssueList): string {
   return issues.slice(0, 8).map((i) => `${i.code}${i.objectIds.length ? ' [' + i.objectIds.join(', ') + ']' : ''}: ${i.message}${i.evidence ? ' ' + JSON.stringify(i.evidence) : ''}`).join('\n');
 }
 
+/** Validate a staged candidate and, when accepted, run the playability checks. One model turn instead of three. */
+async function validateAndCheck(config: PluginConfig, candidateId: string) {
+  await status(config, { phase: 'validating', message: 'validating the candidate', tool: 'validate_candidate' });
+  const v = await client(config).validate_candidate(candidateId);
+  state.validationAttempts++;
+  if (!v.ok || !v.proofId) {
+    for (const i of v.issues) state.failedCodes.add(i.code);
+    await status(config, { phase: 'repairing', message: `validator rejected the candidate: ${v.issues.map((i) => i.code).join(', ')}`.slice(0, 400), codes: v.issues.map((i) => i.code).slice(0, 16), objectIds: v.issues.flatMap((i) => i.objectIds).slice(0, 32) });
+    return { accepted: false as const, candidateId, issues: v.issues, nextStep: 'Repair: call the same propose tool again with these issues fixed. Nothing was changed.\n' + issueText(v.issues) };
+  }
+  state.validatedMs = Date.now() - state.startedAt;
+  await status(config, { phase: 'validating', message: 'running connectivity and supported-movement checks', tool: 'run_playability_checks' });
+  const p = await client(config).run_playability_checks(candidateId);
+  state.playability = { ok: p.ok, checks: p.checks, failed: p.failed.length };
+  return { accepted: true as const, candidateId, proofId: v.proofId, baseWorldVersion: v.baseWorldVersion, playability: { passed: p.ok, checks: p.checks, failed: p.failed, unreachableRoutes: p.routes.unreachable }, nextStep: `Call commit_candidate with candidateId ${candidateId} and proofId ${v.proofId}.` };
+}
+
+/** Publish the build report once per run; later calls return the same reportId. */
+async function publishReport(config: PluginConfig, requestId: string, outcome: 'committed' | 'failed' | 'cancelled', summary: string, worldVersion?: number) {
+  if (state.reportId) return { published: true, reportId: state.reportId, outcome: state.reportOutcome ?? outcome, alreadyPublished: true };
+  const c = client(config);
+  const effectiveOutcome = outcome === 'committed' && state.committedVersion === undefined ? 'failed' : outcome;
+  const r = await c.publish_build_report({
+    requestId,
+    mode: MODE,
+    model: process.env.BEETLE_MODEL || config.model || 'unknown',
+    outcome: effectiveOutcome,
+    worldVersion: state.committedVersion ?? worldVersion ?? state.baseWorldVersion,
+    baseWorldVersion: state.baseWorldVersion,
+    summary: `[${MODE}] ${summary}`.slice(0, 600),
+    validation: { attempts: state.validationAttempts, failedCodes: [...state.failedCodes].slice(0, 32) },
+    playability: state.playability,
+    timings: { requestedAt: Number(process.env.BEETLE_REQUEST_CREATED_AT) || state.startedAt, firstModelResponseMs: state.firstToolAt ? state.firstToolAt - state.startedAt : undefined, validatedMs: state.validatedMs, committedMs: state.committedMs, totalMs: Date.now() - state.startedAt },
+    toolCalls: c.records.slice(0, 64),
+  });
+  state.reportId = r.reportId;
+  state.reportOutcome = effectiveOutcome;
+  runLog({ kind: 'report', ok: true, reportId: r.reportId, outcome: effectiveOutcome });
+  return { published: true, reportId: r.reportId, outcome: effectiveOutcome, alreadyPublished: false };
+}
+
 export default defineToolPlugin({
   id: PLUGIN_ID,
   name: 'Beetle tools',
@@ -170,7 +214,7 @@ export default defineToolPlugin({
     tool({
       name: 'propose_world',
       label: 'Propose world',
-      description: 'Stage a complete new world draft as a candidate. Nothing changes until validate_candidate and commit_candidate succeed. Returns candidateId or the issues that must be fixed.',
+      description: 'Stage a complete new world draft as a candidate and validate it (schema, geometry, reachability, playability). Nothing changes until commit_candidate succeeds. Returns candidateId plus proofId when accepted, else the issues to fix.',
       parameters: Type.Object({ requestId: Type.String({ description: 'the request id from the task' }), spec: worldDraftSchema }),
       async execute({ requestId, spec }, config) {
         budget('propose_world');
@@ -183,14 +227,15 @@ export default defineToolPlugin({
           return { staged: false, issues: r.issues, nextStep: 'Fix the issues and call propose_world again.\n' + issueText(r.issues) };
         }
         state.baseWorldVersion = r.baseWorldVersion;
-        return { staged: true, candidateId: r.candidateId, baseWorldVersion: r.baseWorldVersion, nextStep: `Call validate_candidate with candidateId ${r.candidateId}.` };
+        state.summary = `new world "${spec.title}" with ${spec.islands.length} islands and ${spec.bridges.length} bridges`;
+        return { staged: true, ...(await validateAndCheck(config, r.candidateId)) };
       },
     }),
 
     tool({
       name: 'propose_patch',
       label: 'Propose patch',
-      description: `Stage a bounded edit to the current world as a candidate. ops: ${PATCH_OP_NAMES.join(', ')}. Nothing changes until validate_candidate and commit_candidate succeed. Returns candidateId or the issues to fix.`,
+      description: `Stage a bounded edit to the current world as a candidate and validate it (schema, geometry, reachability, playability). ops: ${PATCH_OP_NAMES.join(', ')}. Nothing changes until commit_candidate succeeds. Returns candidateId plus proofId when accepted, else the issues to fix.`,
       parameters: Type.Object({
         requestId: Type.Optional(Type.String({ description: 'the request id from the task (optional, the worker knows it)' })),
         summary: Type.String({ description: 'one short sentence describing the change', maxLength: L.summary.maxLength }),
@@ -209,7 +254,8 @@ export default defineToolPlugin({
           return { staged: false, issues: r.issues, nextStep: 'Fix the issues and call propose_patch again.\n' + issueText(r.issues) };
         }
         state.baseWorldVersion = r.baseWorldVersion;
-        return { staged: true, candidateId: r.candidateId, patchId: r.patchId, baseWorldVersion: r.baseWorldVersion, changedIds: r.changedIds, nextStep: `Call validate_candidate with candidateId ${r.candidateId}.` };
+        state.summary = summary;
+        return { staged: true, patchId: r.patchId, changedIds: r.changedIds, ...(await validateAndCheck(config, r.candidateId)) };
       },
     }),
 
@@ -250,7 +296,7 @@ export default defineToolPlugin({
     tool({
       name: 'commit_candidate',
       label: 'Commit candidate',
-      description: 'Commit a validated candidate at the next safe simulation tick using the proofId from validate_candidate. Players keep their positions. Returns the new world version or a failure code.',
+      description: 'Commit a validated candidate at the next safe simulation tick using the proofId returned with the accepted candidate. Players keep their positions. On success the build report is published too. Returns the new world version or a failure code.',
       parameters: Type.Object({ candidateId: Type.String(), proofId: Type.String() }),
       async execute({ candidateId, proofId }, config) {
         budget('commit_candidate');
@@ -261,7 +307,9 @@ export default defineToolPlugin({
           state.committedVersion = r.worldVersion;
           runLog({ kind: 'commit', ok: true, worldVersion: r.worldVersion, deferredMs: r.deferredMs, idempotentReplay: r.idempotentReplay });
           await status(config, { phase: 'committed', message: `committed v${r.worldVersion}${r.deferredMs > 0 ? ` after waiting ${r.deferredMs} ms for a safe tick` : ''}`, tool: 'commit_candidate' });
-          return { committed: true, worldVersion: r.worldVersion, deferredMs: r.deferredMs, idempotentReplay: r.idempotentReplay, nextStep: `Call publish_build_report with outcome committed and worldVersion ${r.worldVersion}.` };
+          let report: { reportId: string } | { error: string };
+          try { report = await publishReport(config, effectiveRequestId(undefined), 'committed', state.summary ?? 'committed', r.worldVersion); } catch (err) { report = { error: (err as Error).message.slice(0, 200) }; }
+          return { committed: true, worldVersion: r.worldVersion, deferredMs: r.deferredMs, idempotentReplay: r.idempotentReplay, report, nextStep: 'Done. Reply with one sentence for the director.' };
         }
         state.failedCodes.add(r.code);
         runLog({ kind: 'commit', ok: false, code: r.code, retryable: r.retryable, objectIds: r.objectIds });
@@ -281,23 +329,8 @@ export default defineToolPlugin({
         worldVersion: Type.Optional(Type.Number({ description: 'the committed world version' })),
       }),
       async execute({ requestId, outcome, summary, worldVersion }, config) {
-        const c = client(config);
-        const effectiveOutcome = outcome === 'committed' && state.committedVersion === undefined ? 'failed' : outcome;
-        const r = await c.publish_build_report({
-          requestId: effectiveRequestId(requestId),
-          mode: MODE,
-          model: process.env.BEETLE_MODEL || config.model || 'unknown',
-          outcome: effectiveOutcome,
-          worldVersion: state.committedVersion ?? worldVersion ?? state.baseWorldVersion,
-          baseWorldVersion: state.baseWorldVersion,
-          summary: `[${MODE}] ${summary}`.slice(0, 600),
-          validation: { attempts: state.validationAttempts, failedCodes: [...state.failedCodes].slice(0, 32) },
-          playability: state.playability,
-          timings: { requestedAt: Number(process.env.BEETLE_REQUEST_CREATED_AT) || state.startedAt, firstModelResponseMs: state.firstToolAt ? state.firstToolAt - state.startedAt : undefined, validatedMs: state.validatedMs, committedMs: state.committedMs, totalMs: Date.now() - state.startedAt },
-          toolCalls: c.records.slice(0, 64),
-        });
-        runLog({ kind: 'report', ok: true, reportId: r.reportId, outcome: effectiveOutcome });
-        return { published: true, reportId: r.reportId, outcome: effectiveOutcome, nextStep: 'Reply with one sentence for the director.' };
+        const r = await publishReport(config, effectiveRequestId(requestId), outcome, summary, worldVersion);
+        return { ...r, nextStep: 'Reply with one sentence for the director.' };
       },
     }),
   ],

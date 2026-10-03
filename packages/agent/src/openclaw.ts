@@ -15,6 +15,14 @@ import type { BeetleClient, ToolCallRecord } from './tools.ts';
 
 export const OPENCLAW_PLUGIN_ID = 'beetle-tools';
 export const OPENCLAW_GATEWAY_PORT = 18799;
+/** The embedded run needs several sequential model calls that queue behind other Ollama clients; give it OpenClaw's own default. */
+export const OPENCLAW_EXEC_TIMEOUT_MS_DEFAULT = 600_000;
+
+export function openclawExecTimeoutMs(config: AgentConfig): number {
+  const fromEnv = Number(process.env.BEETLE_OPENCLAW_TIMEOUT_MS);
+  const base = Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : OPENCLAW_EXEC_TIMEOUT_MS_DEFAULT;
+  return Math.max(config.requestDeadlineMs, base);
+}
 
 /**
  * Core OpenClaw tools denied for the Beetle agent (on top of tools.profile "minimal"). This exact list is the one
@@ -101,6 +109,7 @@ export function buildOpenClawConfig(config: AgentConfig, gatewayToken: string): 
       defaults: {
         model: { primary: `ollama/${config.model}`, fallbacks: [] },
         thinkingDefault: 'off',
+        timeoutSeconds: Math.ceil(openclawExecTimeoutMs(config) / 1000),
         workspace: p.workspace,
         skipBootstrap: true,
         sandbox: { mode: 'off' },
@@ -274,7 +283,7 @@ export function createOpenClawRunner(deps: OpenClawRunnerDeps) {
     }
     await safeStatus(request.id, { phase: 'planning', message: `[openclaw] handing the ${request.kind} to OpenClaw (${config.model})` });
 
-    const timeoutSec = Math.max(30, Math.ceil(config.requestDeadlineMs / 1000));
+    const timeoutSec = Math.max(30, Math.ceil(openclawExecTimeoutMs(config) / 1000));
     const args = [
       'agent', 'exec',
       '--config', p.configPath,
@@ -300,7 +309,7 @@ export function createOpenClawRunner(deps: OpenClawRunnerDeps) {
     });
     log(`[openclaw] ${request.id}: openclaw ${args.join(' ')}`);
     const t0 = Date.now();
-    const exec = await execOpenClaw(config.openclawBin, args, env, config.requestDeadlineMs + 20_000);
+    const exec = await execOpenClaw(config.openclawBin, args, env, timeoutSec * 1000 + 20_000);
     const execMs = Date.now() - t0;
     let envelope: ExecEnvelope = {};
     try { envelope = JSON.parse(exec.stdout.slice(exec.stdout.indexOf('{'))) as ExecEnvelope; } catch { envelope = { ok: false, status: 'error', error: { message: sanitizeText(`no JSON envelope (exit ${exec.code}): ${(exec.stderr || exec.stdout).slice(-300)}`), kind: 'parse' } }; }

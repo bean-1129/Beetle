@@ -145,23 +145,20 @@ export function openclawInstructionPrompt(args: { kind: 'brief' | 'edit'; reques
   if (args.kind === 'edit') {
     return [
       ...common,
-      'Procedure for an edit request:',
+      'Procedure for an edit request (three tool calls):',
       '1. Call read_world_state to get the island ids, names and compass directions.',
-      `2. Call propose_patch with { requestId, summary, ops } using only these ops: ${PATCH_OP_NAMES.join(', ')}. Change only what the request asks for.`,
-      '3. Call validate_candidate with the candidateId. If ok is false, read the issues (code, objectIds, evidence), call propose_patch again with a corrected patch, then validate again. At most 2 repairs.',
-      '4. Call run_playability_checks with the candidateId.',
-      '5. Call commit_candidate with the candidateId and the proofId from the successful validation. If it fails with OCCUPIED_SUPPORT and retryable is true, call commit_candidate once more with the same proofId.',
-      `6. Call publish_build_report with requestId, outcome, summary and the worldVersion from the commit, then reply with one sentence.`,
+      `2. Call propose_patch with { summary, ops } using only these ops: ${PATCH_OP_NAMES.join(', ')}. Change only what the request asks for. The tool stages and validates the change. If accepted is false, read the issues (code, objectIds, evidence) and call propose_patch again with a corrected patch. At most 2 repairs.`,
+      '3. When accepted is true, call commit_candidate with the candidateId and proofId it returned. If committed is false and retryable is true, call commit_candidate once more with the same values. The commit publishes the build report.',
+      '4. Reply with one sentence for the director.',
       `Director's edit request: ${args.prompt}`,
     ].join('\n');
   }
   return [
     ...common,
-    'Procedure for a new world brief:',
-    `1. Call propose_world with { requestId, spec } where spec is a WorldDraft: title, islands (${L.islands.min} to ${L.islands.max}, id, name, center, radius), bridges (id, from, to, width), spawns (exactly ${L.spawns}, both on the central island), relics (exactly ${L.relics}), gate (on its own island with one bridge), hazard (${HAZARD_KINDS.join(' or ')}), decorations.`,
-    '2. Call validate_candidate with the candidateId. If ok is false, fix the issues and call propose_world again, then validate again. At most 2 repairs.',
-    '3. Call run_playability_checks, then commit_candidate with the candidateId and proofId.',
-    '4. Call publish_build_report with requestId, outcome, summary and worldVersion, then reply with one sentence.',
+    'Procedure for a new world brief (two tool calls):',
+    `1. Call propose_world with { spec } where spec is a WorldDraft: title, islands (${L.islands.min} to ${L.islands.max}, id, name, center, radius), bridges (id, from, to, width), spawns (exactly ${L.spawns}, both on the central island), relics (exactly ${L.relics}), gate (on its own island with one bridge), hazard (${HAZARD_KINDS.join(' or ')}), decorations. The tool stages and validates the world. If accepted is false, fix the issues and call propose_world again. At most 2 repairs.`,
+    '2. When accepted is true, call commit_candidate with the candidateId and proofId it returned. The commit publishes the build report.',
+    '3. Reply with one sentence for the director.',
     `Director's brief: ${args.prompt}`,
   ].join('\n');
 }
