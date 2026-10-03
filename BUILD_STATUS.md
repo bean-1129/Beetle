@@ -62,7 +62,7 @@ Legend: implemented = code exists; tested = an automated or recorded manual test
 ## Demo state at 14:10 CDT
 
 - Live stack on port 7781: fixture world at v4 (lava, west-to-temple bridge added by the agent), two scripted controllers connected, worker in OpenClaw mode (the submission path), Ollama daemon restarted at 13:43 with a single slot and 1 h keep-alive.
-- Both agent modes verified live: OpenClaw (v2 in 20 s manual, 38.9 s in the gated test) and direct (3 to 14 s). The runbook's recorded sequence uses OpenClaw mode; direct mode is the labelled fallback.
+- Both agent modes verified live: OpenClaw (edit v2 in 20 s manual and 38.9 s in the gated test; fresh brief to v1 in 33 s) and direct (edits 3 to 14 s, brief 14 s). The runbook's recorded sequence uses OpenClaw mode; direct mode is the labelled fallback.
 - Visual pass complete and verified in the browser: serene and volcanic themes, cinematic camera, humanoid players walking, commit transitions, premium HUD. Frame rate was only observed in the software-rendered browser pane (3 to 11 fps high quality, 30 to 36 low); the demo GPU at 1920x1200 is expected to be far faster but was not measured; Q toggles quality, C toggles the debug camera.
 
 ## Blocked

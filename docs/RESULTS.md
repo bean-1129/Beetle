@@ -309,3 +309,7 @@ Prompt: "Turn the environment volcanic: the water becomes lava. Also add one new
 | 3.2 s | committed v2 |
 
 Before: v1, 2 controllers connected, relics [], score 0. After: v2, hazard lava, bridges + `bridge-east-temple` (east to temple, a genuinely different route under the new BRIDGE_DUPLICATE rule), 2 controllers still connected, both players on `centre`, relics [] and score 0 unchanged. Visually the renderer blended from the serene theme (teal sky, water shimmer, green islands) to volcanic (ash sky, lava with glowing crust rings, scorched islands, embers) in about 2 s without a reset. The unattended version of this test (scripts/acceptance-volcanic.ts) passed 15 of 15 checks at 13:48 with a relic collected beforehand (docs/ACCEPTANCE.md).
+
+## OpenClaw mode: fresh brief (14:08 CDT, port 7783, no world, quiet GPU)
+
+Prompt: the five-island temple brief. OpenClaw agent exec with the Beetle plugin: `propose_world` staged the candidate at 30.9 s, validation and connectivity checks passed, committed v1 at 33.4 s ("Five Garden Islands", 5 islands, 4 bridges), report published at 35.1 s. Both halves of the demo (brief and live edits) are therefore verified on the submission path.
