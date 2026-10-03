@@ -446,8 +446,11 @@ hunts and arenas and islands only when water or lava is the fun. Islands keep th
 or clearings in ground worlds. The honest-mapping rule names the missing mechanics (shooting, enemies, combat,
 first-person view, vehicles, building) and asks for the closest playable game with the mapping said plainly in the
 title. The draft system prompt was trimmed from 949 to 757 tokens (Ollama `prompt_eval_count`, system message only,
-streaming on; 794 with the brief) to make room. Deterministic backstops in the agent's brief hints: terrain from brief
-words (island words win over ground words), a ground default when nothing is implied and the hazard is not the fun, and
+streaming on; 794 with the brief) to make room; the runs below used that version. Afterwards two phrases that
+tests/unit/brief-hints.test.ts pins ("without passing through the gate island", "no line breaks") were restored and
+"Names one or two words" dropped: the shipped prompt measures 756 tokens (793 with the brief). Deterministic backstops in applyBriefHints: terrain from brief
+words (island words win over ground words; an absent terrain already means islands, so only ground is written), a
+ground default when nothing is implied and the hazard is not the fun (lava or survival keep islands), and
 a title suffix such as "(relic hunt, no shooting)" when the brief asks for an unsupported mechanic and the title does
 not already say "no ...". The world normalizer fills a missing terrain from title words, then island names, and resolves
 terrain words in `set_terrain` patches. In ground worlds the expansion prompt calls new areas "clearings" and the

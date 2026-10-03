@@ -6,7 +6,7 @@ import { startFakeBeetleServer, type FakeBeetleServer } from '../../packages/age
 import { startFakeOllama, chatReply, type FakeOllama } from '../../packages/agent/test-support/fake-ollama.ts';
 import { fixtureSpec } from '../../packages/agent/test-support/fixture-world.ts';
 import { fixExpansionDraft, briefWantsStreaming, expansionSystemPrompt } from '../../packages/agent/src/expansion-prompts.ts';
-import { applyBriefHints, briefHints, briefUserPrompt, patchDraftSystemPrompt, worldDraftSystemPrompt, openclawInstructionPrompt } from '../../packages/agent/src/prompts.ts';
+import { applyBriefHints, terrainFromWords, briefUserPrompt, patchDraftSystemPrompt, worldDraftSystemPrompt, openclawInstructionPrompt } from '../../packages/agent/src/prompts.ts';
 import { createOllamaClient, createBeetleClient, runJob, isLoopbackUrl, loadConfig, auditOpenClawConfig, buildOpenClawConfig, sanitizeText, type JobEnv, type AgentConfig } from '../../packages/agent/src/index.ts';
 
 const MODEL = 'qwen3.5:4b';
@@ -369,11 +369,11 @@ describe('game modes: draft fields pass through', () => {
     expect(result.outcome).toBe('committed');
     expect(result.modelCalls).toBe(1);
     // The agent does not touch the draft: the server receives exactly what the model produced, new fields included
-    // (plus streaming: true, the default for briefs that do not ask for the whole world up front, and terrain islands
-    // because the brief says "across the islands").
+    // (plus streaming: true, the default for briefs that do not ask for the whole world up front; "across the islands"
+    // implies islands, which is already the default when terrain is absent, so terrain is not added).
     const proposed = beetle.calls('propose_world');
     expect(proposed).toHaveLength(1);
-    expect((proposed[0].body as { spec: unknown }).spec).toEqual({ ...draft, streaming: true, terrain: 'islands' });
+    expect((proposed[0].body as { spec: unknown }).spec).toEqual({ ...draft, streaming: true });
     expect((proposed[0].body as { requestId: string }).requestId).toBe(request.id);
     // The system prompt carries the mode and biome vocabulary and the mapping rule; the draft schema sent as `format` allows the fields.
     const sys = (ollama.requests[0].body.messages as { role: string; content: string }[])[0].content;
@@ -476,17 +476,22 @@ describe('streaming: expansion draft fixes and brief default', () => {
 
 describe('terrain choice and honest mapping', () => {
   it('brief words choose the terrain; island words win; nothing implied leaves it to the default', () => {
-    expect(briefHints('A relic hunt in a misty forest valley').terrain).toBe('ground');
-    expect(briefHints('A king of the hill battle in a desert canyon').terrain).toBe('ground');
-    expect(briefHints('Tag on the ground in a park').terrain).toBe('ground');
-    expect(briefHints('A race over floating sky islands').terrain).toBe('islands');
-    expect(briefHints('King of the hill on a frozen arena of four islands').terrain).toBe('islands');
-    expect(briefHints('Survive on a lava sea').terrain).toBe('islands');
-    expect(briefHints('A first person shooting game where we shoot walking trees, multiplayer').terrain).toBeUndefined();
+    expect(terrainFromWords('A relic hunt in a misty forest valley')).toBe('ground');
+    expect(terrainFromWords('A king of the hill battle in a desert canyon')).toBe('ground');
+    expect(terrainFromWords('Tag on the ground in a park')).toBe('ground');
+    expect(terrainFromWords('A race over floating sky islands')).toBe('islands');
+    expect(terrainFromWords('King of the hill on a frozen arena of four islands')).toBe('islands');
+    expect(terrainFromWords('Survive on a lava sea')).toBe('islands');
+    expect(terrainFromWords('A first person shooting game where we shoot walking trees, multiplayer')).toBeUndefined();
     expect(briefUserPrompt('A relic hunt in a misty forest valley')).toContain('terrain is ground.');
   });
 
   it('applyBriefHints sets an implied terrain and defaults to ground unless lava or survival makes the hazard the fun', () => {
+    const sky: Record<string, unknown> = { title: 'Sky Run', hazard: 'water', terrain: 'ground', mode: { kind: 'relic_hunt' } };
+    expect(applyBriefHints(sky, 'A race over floating sky islands')).toContain('terrain ground -> islands');
+    const isles: Record<string, unknown> = { title: 'Isles', hazard: 'water', mode: { kind: 'relic_hunt' } };
+    applyBriefHints(isles, 'A relic hunt over five islands');
+    expect(isles.terrain).toBeUndefined(); // absent terrain already means islands
     const forest: Record<string, unknown> = { title: 'Mist Hunt', hazard: 'water', terrain: 'islands', mode: { kind: 'relic_hunt' } };
     expect(applyBriefHints(forest, 'A relic hunt in a misty forest valley')).toContain('terrain islands -> ground');
     expect(forest.terrain).toBe('ground');

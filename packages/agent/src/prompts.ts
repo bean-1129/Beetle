@@ -49,7 +49,7 @@ export const HONEST_MAPPING_RULE = 'No shooting, enemies, combat, first-person v
 const DRAFT_MODE_LINE = `Modes: relic_hunt (collect relics, then the gate), time_trial (relic hunt within timeLimitSec), king_of_the_hill (hold the gate island for holdSeconds; tag, capture), checkpoint_race (relics in order, then the gate; races), survival (the hazard rises; outlast timeLimitSec). biome: ${BIOMES.join(', ')} (snow is frost, sand is desert). movementSpeed ${M.movementSpeed.min} to ${M.movementSpeed.max} m/s.`;
 
 /** Keep the draft short: generation time is the build floor, so every token the model writes costs latency. */
-export const DRAFT_SHAPE_RULE = 'Island ids i0, i1, i2 (i0 holds the spawns); bridge ids b1, b2; relic ids r1, r2, r3 (in the relics array, never in islands); decoration ids d1, d2. Names one or two words. Whole numbers. Bridge width 3. 0 to 4 decorations.';
+export const DRAFT_SHAPE_RULE = 'Island ids i0, i1, i2 (i0 holds the spawns); bridge ids b1, b2; relic ids r1, r2, r3 (in the relics array, never in islands); decoration ids d1, d2. Whole numbers. Bridge width 3. 0 to 4 decorations.';
 
 export function worldDraftSystemPrompt(opts: { streaming?: boolean } = {}): string {
   return [
@@ -57,13 +57,13 @@ export function worldDraftSystemPrompt(opts: { streaming?: boolean } = {}): stri
     TERRAIN_RULE,
     `x is east, z is north, metres, origin at the world centre. Islands are circles (radius ${L.island.minRadius} to ${L.island.maxRadius}, centres within plus or minus ${L.bounds.halfExtent - L.island.maxRadius - 2}) at least 1 m apart. A bridge joins two island ids, ${L.bridge.minLength} to ${L.bridge.maxLength} m rim to rim, one per pair, never crossing a third island. localPosition is an offset from its island centre, not a world position, within radius minus 1.5.`,
     `Exactly ${L.spawns} spawns, ${L.relics} relics and 1 gate. ${L.islands.min} to ${L.islands.max} islands. Decoration types ${DECORATION_TYPES.join(', ')}. Hazard: ${HAZARD_KINDS.join(' or ')}.`,
-    'Both spawns on i0, a few metres apart. The gate on its own dead-end island (never i0) with exactly one bridge back toward i0 and no relic. Every relic island reachable from i0 without crossing the gate island. A ring layout: islands on a circle, bridges only between neighbours.',
+    'Both spawns on i0, a few metres apart. The gate on its own dead-end island (never i0) with exactly one bridge back toward i0 and no relic. Every relic island reachable from i0 without passing through the gate island. A ring layout: islands on a circle, bridges only between neighbours.',
     DRAFT_MODE_LINE,
     MODE_RULE,
     HONEST_MAPPING_RULE,
     DRAFT_SHAPE_RULE,
     ...(opts.streaming ? [STREAMING_BRIEF_RULE] : []),
-    'Output only compact one-line JSON matching the schema.',
+    'Output only compact one-line JSON matching the schema, no line breaks.',
   ].join('\n');
 }
 
@@ -143,7 +143,8 @@ export function briefUserPrompt(prompt: string): string {
   if (h.ring) extra.push('Place the non-gate islands on a circle and bridge each to its neighbours, closing the ring.');
   if (h.modeKind) extra.push(`mode.kind is ${h.modeKind}.`);
   if (h.biome) extra.push(`biome is ${h.biome}.`);
-  if (h.terrain) extra.push(`terrain is ${h.terrain}.`);
+  const terrain = terrainFromWords(prompt);
+  if (terrain) extra.push(`terrain is ${terrain}.`);
   return `Brief from the director: ${prompt}${extra.length ? `\nConstraints: ${extra.join(' ')}` : ''}`;
 }
 
@@ -256,7 +257,6 @@ export type BriefHints = {
   relicsRequired?: number;
   islandCount?: number;
   ring?: boolean;
-  terrain?: 'islands' | 'ground';
   lava: boolean;
 };
 
@@ -282,8 +282,6 @@ export function briefHints(brief: string): BriefHints {
   const text = brief.toLowerCase();
   const words = new Set(briefWords(brief));
   const out: BriefHints = { lava: LAVA_WORDS.some((w) => words.has(w)) };
-  const terrain = terrainFromWords(brief);
-  if (terrain) out.terrain = terrain;
   for (const entry of BRIEF_BIOMES) if (entry.words.some((w) => words.has(w))) { out.biome = entry.biome; break; }
   const has = (re: RegExp) => re.test(text);
   if (has(/king of the hill|\bkoth\b|\btag\b|capture the|hold the (hill|zone|centre|center)/)) out.modeKind = 'king_of_the_hill';
@@ -317,7 +315,10 @@ const clampTo = (v: number, min: number, max: number) => Math.min(max, Math.max(
 export function applyBriefHints(draft: Record<string, unknown>, brief: string): string[] {
   const h = briefHints(brief);
   const changed: string[] = [];
-  if (h.terrain && draft.terrain !== h.terrain) { changed.push(`terrain ${String(draft.terrain)} -> ${h.terrain}`); draft.terrain = h.terrain; }
+  // Terrain words in the brief win; islands is the contract default, so an absent terrain already means islands.
+  const wordTerrain = terrainFromWords(brief);
+  if (wordTerrain === 'ground' && draft.terrain !== 'ground') { changed.push(`terrain ${String(draft.terrain)} -> ground`); draft.terrain = 'ground'; }
+  if (wordTerrain === 'islands' && draft.terrain === 'ground') { changed.push('terrain ground -> islands'); draft.terrain = 'islands'; }
   if (h.biome && draft.biome !== h.biome) { changed.push(`biome ${String(draft.biome)} -> ${h.biome}`); draft.biome = h.biome; }
   if (!h.lava && draft.hazard === 'lava') { changed.push('hazard lava -> water'); draft.hazard = 'water'; }
   if (h.lava && draft.hazard !== 'lava' && /\blava\b|\bmagma\b|\bmolten\b/.test(brief.toLowerCase())) { changed.push(`hazard ${String(draft.hazard)} -> lava`); draft.hazard = 'lava'; }
@@ -343,7 +344,7 @@ export function applyBriefHints(draft: Record<string, unknown>, brief: string): 
   if (mapped !== undefined) { changed.push(`title "${String(draft.title)}" -> "${mapped}"`); draft.title = mapped; }
   // Nothing in the brief implies a terrain and the model left it out: ground unless water or lava is part of the fun
   // (lava, survival), so directors do not always see islands. Title words are resolved later by the world normalizer.
-  if (!h.terrain && draft.terrain !== 'islands' && draft.terrain !== 'ground' && terrainFromWords(String(draft.title ?? '')) === undefined) {
+  if (!wordTerrain && draft.terrain !== 'islands' && draft.terrain !== 'ground' && terrainFromWords(String(draft.title ?? '')) === undefined) {
     const kind = (draft.mode as { kind?: unknown } | undefined)?.kind;
     const terrain = draft.hazard === 'lava' || kind === 'survival' ? 'islands' : 'ground';
     changed.push(`terrain default ${terrain}`);
