@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AgentActivity, BuildReport, CommitResult, HelloMessage, RequestKind } from '@beetle/contracts';
-import { WORLD_LIMITS } from '@beetle/contracts';
+import type { AgentActivity, BuildReport, CommitResult, GameMode, HelloMessage, RequestKind } from '@beetle/contracts';
+import { MODE_LIMITS, WORLD_LIMITS } from '@beetle/contracts';
 import { createDirectorRequest, describeError, getActivity, getHealth, getReports, undo, type HealthInfo } from '../shared/api.ts';
 import { takeDirectorToken } from '../shared/token.ts';
 import { useBeetleSocket } from '../shared/use-socket.ts';
@@ -10,6 +10,44 @@ import { Wordmark } from '../shared/Wordmark.tsx';
 import { ActivityTrail } from './ActivityTrail.tsx';
 import { useKeyboardPlayer } from './useKeyboardPlayer.ts';
 import { isFixtureTitle, msLabel, stripFixture } from '../shared/format.ts';
+
+const MODE_NAMES: Record<GameMode, string> = {
+  relic_hunt: 'Relic hunt',
+  time_trial: 'Time trial',
+  king_of_the_hill: 'King of the hill',
+  checkpoint_race: 'Checkpoint race',
+  survival: 'Survival',
+};
+const MODE_HINTS: { mode: GameMode; what: string; example: string }[] = [
+  { mode: 'relic_hunt', what: 'collect the relics, then enter the temple gate', example: 'a garden of five islands with three hidden relics and a shrine' },
+  { mode: 'time_trial', what: 'the relic hunt against a countdown', example: 'a race across three islands with a 90 second limit' },
+  { mode: 'king_of_the_hill', what: 'stand on the hill and hold it for the target time', example: 'king of the hill on a frozen arena, hold 10 seconds' },
+  { mode: 'checkpoint_race', what: 'pass the relics in order, then reach the gate', example: 'a checkpoint race through desert ruins, relics in order' },
+  { mode: 'survival', what: 'the hazard rises; stay above it until the clock runs out', example: 'survive the rising lava for two minutes' },
+];
+const BIOME_HINTS: { biome: string; what: string; example: string }[] = [
+  { biome: 'garden', what: 'green islands, trees and lanterns', example: 'a quiet garden with a lantern path' },
+  { biome: 'volcanic', what: 'black rock, lava moat, glowing cracks', example: 'a volcanic crater ringed by pillars' },
+  { biome: 'frost', what: 'snow, ice and pale crystal', example: 'a frozen arena with crystal spires' },
+  { biome: 'desert', what: 'sand, dunes and sun bleached ruins', example: 'desert ruins around a dry well' },
+  { biome: 'night', what: 'dark sky, moonlight and glowing mushrooms', example: 'a night garden lit by mushrooms' },
+];
+function modeName(kind: string | undefined): string {
+  return (MODE_NAMES as Record<string, string>)[kind ?? ''] ?? MODE_NAMES.relic_hunt;
+}
+/** Prompt prefilled from ?prompt= (the landing page forwards it). Read once, then stripped from the URL. */
+function takePromptFromUrl(): string {
+  try {
+    const url = new URL(location.href);
+    const p = url.searchParams.get('prompt');
+    if (p === null) return '';
+    url.searchParams.delete('prompt');
+    history.replaceState(history.state, '', url.pathname + (url.search ? url.search : '') + url.hash);
+    return p.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').slice(0, 1000);
+  } catch { return ''; }
+}
+// Read once at module load: StrictMode runs mount initializers twice and the URL is already stripped the second time.
+const PREFILL_PROMPT = takePromptFromUrl();
 
 export function DirectorApp() {
   const token = useMemo(() => takeDirectorToken(), []);
@@ -79,7 +117,7 @@ export function DirectorApp() {
   const hasWorld = !!world;
   const [kind, setKind] = useState<RequestKind>('brief');
   useEffect(() => { if (!hasWorld) setKind('brief'); }, [hasWorld]);
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(PREFILL_PROMPT);
   const [authorize, setAuthorize] = useState(false);
   const [submitState, setSubmitState] = useState<{ busy: boolean; note: string | null; error: string | null }>({ busy: false, note: null, error: null });
   const playersConnected = (tick?.players.some((p) => p.connected) ?? false) || controllers.some((c) => c.connected);
@@ -120,6 +158,8 @@ export function DirectorApp() {
   const kb = useKeyboardPlayer(token);
 
   const title = world?.spec.title ?? '';
+  const modeLabel = world ? modeName(world.spec.mode?.kind) : null;
+  const biomeLabel = world ? (world.spec.biome ?? 'garden') : null;
   const lastReport = reports.length ? reports[reports.length - 1] : null;
   const connLabel = state === 'connected' ? (token ? 'director connected' : 'display only') : state;
 
@@ -131,6 +171,7 @@ export function DirectorApp() {
         <div className="scene-title">
           <span className="badge">{world ? `v${world.version}` : 'no world'}</span>
           <span className="title-text">{world ? stripFixture(title) : 'Waiting for a world'}</span>
+          {modeLabel && <span className="mode-chip">{modeLabel}, {biomeLabel}</span>}
           {isFixtureTitle(title) && <span className="tag">fixture</span>}
         </div>
       </div>
@@ -166,7 +207,7 @@ export function DirectorApp() {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               maxLength={1000}
-              placeholder={hasWorld ? 'Describe an edit, for example: add a bridge from the north island to the east island and switch the hazard to lava' : 'Describe a world, for example: five garden islands around a shrine with a lava moat'}
+              placeholder={hasWorld ? 'Describe an edit' : 'Describe a game'}
               disabled={!token || submitState.busy}
               rows={4}
             />
@@ -191,23 +232,49 @@ export function DirectorApp() {
                 {submitState.busy ? 'Sending' : kind === 'brief' ? 'Build world' : 'Apply edit'}
               </button>
               <span className="muted small">v{world?.version ?? 0}{world ? `, ${stripFixture(title)}` : ', no world'}</span>
+              {modeLabel && <span className="mode-chip small" title="Current mode and biome">{modeLabel}, {biomeLabel}</span>}
             </div>
             {submitState.note && <div className="note">{submitState.note}</div>}
             {submitState.error && <div className="error" role="alert">{submitState.error}</div>}
           </form>
           <details className="hints">
             <summary>What the agent can do</summary>
+            <p className="hints-lead">Modes. Ask for any game in plain words; the agent picks the closest mode and says which.</p>
+            <ul className="hint-list">
+              {MODE_HINTS.map((h) => (
+                <li key={h.mode}>
+                  <strong>{MODE_NAMES[h.mode]}</strong>: {h.what}.
+                  <button type="button" className="hint-example" onClick={() => setPrompt(h.example)} disabled={!token} title="Use this prompt">
+                    &ldquo;{h.example}&rdquo;
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="hints-lead">Biomes</p>
+            <ul className="hint-list">
+              {BIOME_HINTS.map((h) => (
+                <li key={h.biome}>
+                  <strong>{h.biome.charAt(0).toUpperCase() + h.biome.slice(1)}</strong>: {h.what}.
+                  <button type="button" className="hint-example" onClick={() => setPrompt(h.example)} disabled={!token} title="Use this prompt">
+                    &ldquo;{h.example}&rdquo;
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="hints-lead">Edits while players are on the islands</p>
             <ul>
               <li>Add or remove bridges between islands</li>
-              <li>Switch the hazard between water and lava</li>
-              <li>Add, move or remove decorations: trees, rocks, lanterns, pillars, bushes, shrines</li>
-              <li>Move relics to another island</li>
-              <li>Retitle the world</li>
+              <li>Switch the hazard between water and lava, or make it rise</li>
+              <li>Add, move or remove decorations: trees, rocks, lanterns, pillars, bushes, shrines, towers, ruins, crystals, mushrooms, statues</li>
+              <li>Move relics to another island, change the time limit, the hold time or the walking speed</li>
+              <li>Retitle the world, switch the biome or the mode</li>
               <li>Build a fresh world from a brief (needs authorization while players are connected)</li>
             </ul>
             <p className="muted small">
               Limits: {WORLD_LIMITS.islands.min} to {WORLD_LIMITS.islands.max} islands, up to {WORLD_LIMITS.bridges.max} bridges, {WORLD_LIMITS.relics} relics, one gate,
-              up to {WORLD_LIMITS.decorations.max} decorations, up to {WORLD_LIMITS.patchOps.max} operations per edit. Every change is validated and committed only when players stay supported.
+              up to {WORLD_LIMITS.decorations.max} decorations, up to {WORLD_LIMITS.patchOps.max} operations per edit. Time limits {MODE_LIMITS.timeLimitSec.min} to {MODE_LIMITS.timeLimitSec.max} s,
+              hold times {MODE_LIMITS.holdSeconds.min} to {MODE_LIMITS.holdSeconds.max} s, walking speed {MODE_LIMITS.movementSpeed.min} to {MODE_LIMITS.movementSpeed.max} m/s.
+              Every change is validated and committed only when players stay supported.
             </p>
           </details>
         </section>
@@ -272,7 +339,6 @@ export function DirectorApp() {
                 <dt>Mode</dt><dd className="mono">{lastReport.mode}</dd>
                 <dt>Model</dt><dd className="mono">{lastReport.model}</dd>
               </dl>
-              <p className="muted small">Wall clock times measured by the agent on this machine for the last request, mode {lastReport.mode}. Not a benchmark.</p>
             </>
           ) : (
             <p className="muted">No build report yet.</p>

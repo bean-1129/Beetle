@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import type { ActivityMessage, AgentActivity, AgentPhase, HelloMessage, PlayerStatus, TickMessage, WorldMessage } from '@beetle/contracts';
-import { WORLD_LIMITS } from '@beetle/contracts';
+import type { ActivityMessage, AgentActivity, AgentPhase, GameMode, HelloMessage, MarkerMessage, ObjectiveState, PlayerStatus, TickMessage, WorldMessage, WorldSpec } from '@beetle/contracts';
+import { MODE_LIMITS, WORLD_LIMITS } from '@beetle/contracts';
 import { BeetleSocket } from '../shared/ws-client.ts';
 import { createRenderer } from '../renderer/index.ts';
 import { takeDirectorToken } from '../shared/token.ts';
@@ -22,10 +22,39 @@ const GLYPH_SVG = `<svg class="hud-glyph" width="36" height="36" viewBox="0 0 64
 
 const GEM_SVG = `<svg class="gem" viewBox="0 0 20 20" aria-hidden="true"><path class="gem-body" d="M10 1.5 L18 8 L10 18.5 L2 8 Z"/><path class="gem-facet" d="M10 1.5 L13.4 8 L10 18.5 L6.6 8 Z"/><path class="gem-line" d="M2 8 H18"/></svg>`;
 
+// Hold ring: a track circle plus an arc that fills clockwise from the top (r = 20, circumference ~ 125.66).
+const RING_R = 20;
+const RING_C = 2 * Math.PI * RING_R;
+const RING_SVG = `<svg class="ring" viewBox="0 0 48 48" aria-hidden="true"><circle class="ring-track" cx="24" cy="24" r="${RING_R}"/><circle class="ring-arc" cx="24" cy="24" r="${RING_R}" stroke-dasharray="${RING_C.toFixed(2)}" stroke-dashoffset="${RING_C.toFixed(2)}"/></svg>`;
+
 const RELIC_TOTAL = WORLD_LIMITS.relics;
-const OBJECTIVE_LOCKED = `Collect ${RELIC_TOTAL} relics to open the temple gate`;
 const OBJECTIVE_OPEN = 'Gate open: reach the temple';
-const OBJECTIVE_WON = 'Temple reached';
+
+const MODE_NAMES: Record<GameMode, string> = {
+  relic_hunt: 'Relic hunt',
+  time_trial: 'Time trial',
+  king_of_the_hill: 'King of the hill',
+  checkpoint_race: 'Checkpoint race',
+  survival: 'Survival',
+};
+const WON_TITLES: Record<GameMode, string> = {
+  relic_hunt: 'Temple reached',
+  time_trial: 'Temple reached',
+  king_of_the_hill: 'Hill held',
+  checkpoint_race: 'Race complete',
+  survival: 'Temple reached',
+};
+function modeName(kind: string | undefined): string {
+  return (MODE_NAMES as Record<string, string>)[kind ?? ''] ?? MODE_NAMES.relic_hunt;
+}
+function collectLine(n: number): string {
+  return n === 1 ? 'Collect 1 relic to open the temple gate' : `Collect ${n} relics to open the temple gate`;
+}
+function mmss(sec: number): string {
+  const s = Math.max(0, Math.ceil(sec));
+  const m = Math.floor(s / 60);
+  return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
 
 // ---------- HUD (plain DOM) ----------
 hud.innerHTML = `
@@ -36,12 +65,22 @@ hud.innerHTML = `
       <div class="hud-title-row">
         <span class="hud-world-title" id="title">Waiting for a world</span>
         <span class="hud-version" id="version" hidden>v0</span>
+        <span class="hud-mode-chip" id="mode-chip" hidden></span>
         <span class="hud-fixture" id="fixture" hidden>fixture world</span>
       </div>
     </div>
   </div>
-  <div class="hud-objective glass" id="objective-panel" data-state="locked">
-    <div class="hud-objective-text" id="objective">${OBJECTIVE_LOCKED}</div>
+  <div class="hud-objective glass" id="objective-panel" data-state="locked" data-mode="relic_hunt">
+    <div class="hud-timer" id="timer" data-level="calm" hidden aria-live="off">
+      <span class="hud-timer-value" id="timer-value">00:00</span>
+      <span class="hud-timer-label" id="timer-label"></span>
+    </div>
+    <div class="hud-objective-text" id="objective">${collectLine(RELIC_TOTAL)}</div>
+    <div class="hud-hazard" id="hazard" hidden>
+      <span class="hud-hazard-label" id="hazard-label">The lava is rising</span>
+      <span class="hud-hazard-meter" aria-hidden="true"><span class="hud-hazard-fill" id="hazard-fill"></span></span>
+    </div>
+    <div class="hud-holds" id="holds" hidden></div>
     <div class="hud-objective-row">
       <div class="hud-gems" id="gems" role="img" aria-label="0 of ${RELIC_TOTAL} relics collected">${GEM_SVG.repeat(RELIC_TOTAL)}</div>
       <div class="hud-score"><span class="hud-score-label">score</span><span class="hud-score-value" id="score">0</span></div>
@@ -57,21 +96,36 @@ hud.innerHTML = `
   </div>
   <div class="hud-players" id="players">
     <button type="button" class="hud-player hud-sound glass" id="sound" aria-pressed="false" title="Toggle sound" hidden>
-      <span class="sound-icon" aria-hidden="true"></span><span class="name">Sound</span>
+      <span class="name">Sound off</span>
     </button>
   </div>
   <pre class="hud-debug mono" id="debug" hidden></pre>
   <div class="hud-empty glass" id="empty">
     <h2>No world yet</h2>
-    <p>Open the director page and describe a world. This screen updates the moment it is committed.</p>
+    <p>Describe one in the director.</p>
+  </div>
+  <div class="hud-toast glass" id="toast" hidden role="status" aria-live="polite"></div>
+  <div class="hud-outcome glass" id="outcome" data-result="won" hidden role="status" aria-live="polite">
+    <div class="hud-outcome-kicker" id="outcome-kicker">Victory</div>
+    <h2 class="hud-outcome-title" id="outcome-title">Temple reached</h2>
+    <p class="hud-outcome-sub" id="outcome-sub"></p>
+    <div class="hud-outcome-score"><span class="hud-score-label">final score</span><span class="hud-outcome-score-value" id="outcome-score">0</span></div>
   </div>
 `;
 const $ = (id: string) => document.getElementById(id) as HTMLElement;
 const titleEl = $('title');
 const versionEl = $('version');
+const modeChipEl = $('mode-chip');
 const fixtureEl = $('fixture');
 const objectivePanel = $('objective-panel');
 const objectiveEl = $('objective');
+const timerEl = $('timer');
+const timerValueEl = $('timer-value');
+const timerLabelEl = $('timer-label');
+const hazardEl = $('hazard');
+const hazardLabelEl = $('hazard-label');
+const hazardFillEl = $('hazard-fill');
+const holdsEl = $('holds');
 const gemsEl = $('gems');
 const gemEls = Array.from(gemsEl.querySelectorAll<SVGElement>('.gem'));
 const scoreEl = $('score');
@@ -81,6 +135,12 @@ const agentPhase = $('agent-phase');
 const agentMsg = $('agent-msg');
 const debugEl = $('debug');
 const emptyEl = $('empty');
+const outcomeEl = $('outcome');
+const outcomeKickerEl = $('outcome-kicker');
+const outcomeTitleEl = $('outcome-title');
+const outcomeSubEl = $('outcome-sub');
+const outcomeScoreEl = $('outcome-score');
+const toastEl = $('toast');
 
 const renderer = createRenderer(canvas);
 const socket: BeetleSocket = new BeetleSocket({ hello: (): HelloMessage => ({ type: 'hello', role: 'display', worldVersion: Math.max(0, socket.worldVersion) }) });
@@ -88,8 +148,9 @@ const socket: BeetleSocket = new BeetleSocket({ hello: (): HelloMessage => ({ ty
 // ---------- sound (optional module, feature guarded) ----------
 // shared/audio.ts is owned elsewhere and may not exist yet. import.meta.glob resolves to an empty map
 // when the file is absent, so the page builds and runs either way; the Sound chip appears once it loads.
-type AudioTheme = 'serene' | 'volcanic';
-type AudioEvent = 'relic' | 'gate_unlock' | 'win' | 'commit' | 'fall' | 'respawn' | 'request_queued' | 'request_failed';
+type AudioTheme = 'serene' | 'volcanic' | 'frost' | 'desert' | 'night';
+type AudioEvent = 'relic' | 'gate_unlock' | 'win' | 'commit' | 'fall' | 'respawn' | 'request_queued' | 'request_failed'
+  | 'checkpoint' | 'tick_warning' | 'hill_tick' | 'lost' | 'biome_change';
 type AudioApi = {
   start: () => void | Promise<void>;
   setEnabled: (on: boolean) => void;
@@ -107,10 +168,24 @@ function audioEvent(event: AudioEvent) {
   if (!audio || !soundOn) return;
   try { audio.onEvent(event); } catch (err) { console.warn('[beetle audio] event failed', err); }
 }
+/** Biome first (frost, desert, night have their own beds), then lava or volcanic rock, else serene. */
+function biomeTheme(biome: string, hazardKind: 'lava' | 'water'): AudioTheme {
+  if (biome === 'frost' || biome === 'desert' || biome === 'night') return biome;
+  if (biome === 'volcanic' || hazardKind === 'lava') return 'volcanic';
+  return 'serene';
+}
+function legacyTheme(theme: AudioTheme): 'serene' | 'volcanic' {
+  return theme === 'volcanic' ? 'volcanic' : 'serene';
+}
 function applyAudioTheme(theme: AudioTheme) {
   audioTheme = theme;
   if (!audio) return;
-  try { audio.setTheme(theme, 2); } catch (err) { console.warn('[beetle audio] theme failed', err); }
+  try {
+    audio.setTheme(theme, 2);
+  } catch (err) {
+    // An older audio module only knows serene and volcanic.
+    try { audio.setTheme(legacyTheme(theme), 2); } catch (err2) { console.warn('[beetle audio] theme failed', err, err2); }
+  }
 }
 soundBtn.addEventListener('click', () => {
   if (!audio) return;
@@ -121,6 +196,7 @@ soundBtn.addEventListener('click', () => {
     try { audio.setEnabled(next); } catch (err) { console.warn('[beetle audio] enable failed', err); }
     soundBtn.classList.toggle('on', next);
     soundBtn.setAttribute('aria-pressed', String(next));
+    (soundBtn.querySelector('.name') as HTMLElement).textContent = next ? 'Sound on' : 'Sound off';
   };
   if (next && !soundStarted) {
     soundStarted = true;
@@ -141,17 +217,62 @@ if (audioLoader) {
   }).catch((err) => { console.warn('[beetle audio] module unavailable', err); });
 }
 
-// ---------- world: title, version chip, hazard tint ----------
+// ---------- world: title, version chip, mode chip, hazard tint ----------
+// What the HUD needs from the spec; everything is optional on the wire so defaults apply (relic_hunt, all relics).
+type WorldInfo = {
+  mode: GameMode;
+  biome: string;
+  relicsRequired: number;
+  holdSeconds: number;
+  timeLimitSec: number | null;
+  relicOrder: { id: string; name: string }[];
+  hazardKind: 'lava' | 'water';
+  hazardBase: number;
+  hazardMax: number;
+};
+let worldInfo: WorldInfo | null = null;
+function readWorldInfo(spec: WorldSpec): WorldInfo {
+  const relics = Array.isArray(spec.relics) ? spec.relics : [];
+  const m = spec.mode ?? { kind: 'relic_hunt' as const };
+  const kind: GameMode = (m.kind && m.kind in MODE_NAMES ? m.kind : 'relic_hunt');
+  const relicsRequired = Math.min(m.relicsRequired ?? relics.length, relics.length) || 1;
+  const timed = kind === 'time_trial' || kind === 'survival';
+  const base = typeof spec.hazard?.planeElevation === 'number' ? spec.hazard.planeElevation : -2.5;
+  const max = typeof spec.hazard?.rise?.maxElevation === 'number' ? spec.hazard.rise.maxElevation : MODE_LIMITS.hazardRise.maxElevation.max;
+  return {
+    mode: kind,
+    biome: typeof spec.biome === 'string' ? spec.biome : 'garden',
+    relicsRequired,
+    holdSeconds: m.holdSeconds ?? MODE_LIMITS.holdSeconds.default,
+    timeLimitSec: m.timeLimitSec ?? (timed ? MODE_LIMITS.timeLimitSec.default : null),
+    relicOrder: relics.map((r, i) => ({ id: r.id, name: r.name && r.name.trim() ? r.name : `Relic ${i + 1}` })),
+    hazardKind: spec.hazard?.kind === 'lava' ? 'lava' : 'water',
+    hazardBase: base,
+    hazardMax: Math.max(max, base + 0.01),
+  };
+}
 let shownVersion = -1;
+let shownBiome: string | null = null;
 function onWorld(msg: WorldMessage) {
-  renderer.applyWorld(msg);
+  // The renderer is owned elsewhere; a failure there must not take the HUD down with it.
+  try { renderer.applyWorld(msg); } catch (err) { console.error('[beetle renderer] world failed', err); }
   emptyEl.hidden = true;
   const title = msg.spec.title || 'Untitled world';
   titleEl.textContent = stripFixture(title);
   fixtureEl.hidden = !isFixtureTitle(title);
-  const lava = msg.spec.hazard?.kind === 'lava';
+  worldInfo = readWorldInfo(msg.spec);
+  const lava = worldInfo.hazardKind === 'lava';
   document.body.dataset.hazard = lava ? 'lava' : 'water';
-  applyAudioTheme(lava ? 'volcanic' : 'serene');
+  document.body.dataset.biome = worldInfo.biome;
+  if (shownBiome !== null && shownBiome !== worldInfo.biome) audioEvent('biome_change');
+  shownBiome = worldInfo.biome;
+  applyAudioTheme(biomeTheme(worldInfo.biome, worldInfo.hazardKind));
+  modeChipEl.hidden = false;
+  modeChipEl.textContent = `${modeName(worldInfo.mode)}, ${worldInfo.biome}`;
+  modeChipEl.title = `${modeName(worldInfo.mode)} in the ${worldInfo.biome} biome`;
+  objectivePanel.dataset.mode = worldInfo.mode;
+  hazardLabelEl.textContent = lava ? 'The lava is rising' : 'The water is rising';
+  lastObjective = ''; // the next tick re-renders the objective for the new mode
   if (msg.version !== shownVersion) {
     const first = shownVersion < 0;
     shownVersion = msg.version;
@@ -184,54 +305,244 @@ function makeChip(slot: number): Chip {
 }
 for (let slot = 0; slot < WORLD_LIMITS.spawns; slot += 1) chips.push(makeChip(slot));
 
+// Hold rings (king of the hill): one per player slot, created once and updated per tick.
+type HoldRing = { row: HTMLElement; arc: SVGCircleElement; name: HTMLElement; secs: HTMLElement };
+const holdRings: HoldRing[] = [];
+function makeHoldRing(slot: number): HoldRing {
+  const row = document.createElement('div');
+  row.className = 'hud-hold empty';
+  row.innerHTML = `${RING_SVG}<span class="hud-hold-secs mono">0 s</span><span class="hud-hold-name">Player ${slot + 1}</span>`;
+  const arc = row.querySelector<SVGCircleElement>('.ring-arc') as SVGCircleElement;
+  const secs = row.querySelector<HTMLElement>('.hud-hold-secs') as HTMLElement;
+  const name = row.querySelector<HTMLElement>('.hud-hold-name') as HTMLElement;
+  holdsEl.appendChild(row);
+  return { row, arc, name, secs };
+}
+for (let slot = 0; slot < WORLD_LIMITS.spawns; slot += 1) holdRings.push(makeHoldRing(slot));
+
+function safeColor(c: string | undefined): string {
+  return typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c) ? c : '#9fb7b3';
+}
+
+const playerLabels = new Map<string, string>();
 let lastObjective = '';
 let tickSeen = false;
 let prevCollected = 0;
 let prevUnlocked = false;
 let prevWon = false;
 const prevStatus = new Map<string, PlayerStatus>();
-function tickSoundEvents(tick: TickMessage, collected: number, gate: { unlocked: boolean; won: boolean }) {
+let prevLost = false;
+let prevNextCheckpointId: string | null = null;
+let lastWarnSecond = -1;
+const prevHoldWhole = new Map<string, number>();
+function tickSoundEvents(tick: TickMessage, collected: number, gate: { unlocked: boolean; won: boolean }, obj: ObjectiveState | undefined, info: WorldInfo) {
   const players = tick.players ?? [];
+  const lost = !gate.won && !!obj?.lost;
+  const relicStates = tick.relics ?? {};
+  // Whole seconds held per player; a step up means the hill is being held right now.
+  const holdWhole = new Map<string, number>();
+  for (const p of players) holdWhole.set(p.id, Math.floor(Math.max(0, obj?.holdSec?.[p.id] ?? 0)));
+  const remaining = typeof obj?.remainingSec === 'number' && Number.isFinite(obj.remainingSec) ? Math.ceil(Math.max(0, obj.remainingSec)) : -1;
   if (tickSeen) {
-    if (collected > prevCollected) audioEvent('relic');
+    if (collected > prevCollected) {
+      // Checkpoint race: the relic that was next just got taken in order.
+      const inOrder = info.mode === 'checkpoint_race' && !!prevNextCheckpointId && relicStates[prevNextCheckpointId] === 'collected';
+      audioEvent(inOrder ? 'checkpoint' : 'relic');
+    }
     if (gate.unlocked && !prevUnlocked) audioEvent('gate_unlock');
     if (gate.won && !prevWon) audioEvent('win');
+    if (lost && !prevLost) audioEvent('lost');
     for (const p of players) {
       const was = prevStatus.get(p.id);
       if (p.status === 'falling' && was !== 'falling') audioEvent('fall');
       if (was === 'respawning' && p.status !== 'respawning') audioEvent('respawn');
+    }
+    // Countdown warning: once per second at 10 s or less, never after the timer expired or the round was won.
+    if (!lost && !gate.won && remaining >= 0 && remaining <= 10 && remaining !== lastWarnSecond) {
+      audioEvent('tick_warning');
+      lastWarnSecond = remaining;
+    }
+    // Hill tick: once per second while any player's hold time is climbing.
+    if (info.mode === 'king_of_the_hill' && !gate.won) {
+      let climbing = false;
+      for (const [id, whole] of holdWhole) {
+        const was = prevHoldWhole.get(id);
+        if (was !== undefined && whole > was) climbing = true;
+      }
+      if (climbing) audioEvent('hill_tick');
     }
   }
   tickSeen = true;
   prevCollected = collected;
   prevUnlocked = gate.unlocked;
   prevWon = gate.won;
+  prevLost = lost;
+  prevNextCheckpointId = typeof obj?.nextCheckpointId === 'string' ? obj.nextCheckpointId : null;
+  if (remaining < 0 || remaining > 10) lastWarnSecond = -1;
   prevStatus.clear();
   for (const p of players) prevStatus.set(p.id, p.status);
+  prevHoldWhole.clear();
+  for (const [id, whole] of holdWhole) prevHoldWhole.set(id, whole);
 }
-function onTick(tick: TickMessage) {
-  renderer.applyTick(tick);
-  const relicStates = Object.values(tick.relics ?? {});
-  const collected = relicStates.filter((s) => s === 'collected').length;
-  gemEls.forEach((gem, i) => gem.classList.toggle('on', i < collected));
-  gemsEl.setAttribute('aria-label', `${collected} of ${RELIC_TOTAL} relics collected`);
-  scoreEl.textContent = String(tick.score ?? 0);
 
-  const gate = tick.gate ?? { unlocked: false, won: false };
-  tickSoundEvents(tick, collected, gate);
-  const state = gate.won ? 'won' : gate.unlocked ? 'unlocked' : 'locked';
-  const objective = gate.won ? OBJECTIVE_WON : gate.unlocked ? OBJECTIVE_OPEN : OBJECTIVE_LOCKED;
-  if (objective !== lastObjective) {
-    lastObjective = objective;
-    objectiveEl.textContent = objective;
-    objectivePanel.dataset.state = state;
-    objectivePanel.classList.remove('changed');
-    void objectivePanel.offsetWidth;
-    objectivePanel.classList.add('changed');
+function setObjectiveText(text: string, state: string) {
+  if (text === lastObjective && objectivePanel.dataset.state === state) return;
+  lastObjective = text;
+  objectiveEl.textContent = text;
+  objectivePanel.dataset.state = state;
+  objectivePanel.classList.remove('changed');
+  void objectivePanel.offsetWidth;
+  objectivePanel.classList.add('changed');
+}
+
+function renderTimer(obj: ObjectiveState | undefined, info: WorldInfo, won: boolean) {
+  const timed = info.mode === 'time_trial' || info.mode === 'survival';
+  if (!timed) { timerEl.hidden = true; return; }
+  timerEl.hidden = false;
+  const lost = !!obj?.lost;
+  const remaining = typeof obj?.remainingSec === 'number' && Number.isFinite(obj.remainingSec) ? Math.max(0, obj.remainingSec) : (info.timeLimitSec ?? 0);
+  if (lost) {
+    timerValueEl.textContent = '00:00';
+    timerLabelEl.textContent = 'Time is up';
+    timerEl.dataset.level = 'expired';
+    return;
   }
+  timerValueEl.textContent = mmss(remaining);
+  timerLabelEl.textContent = '';
+  timerEl.dataset.level = won ? 'done' : remaining < 10 ? 'red' : remaining < 20 ? 'amber' : 'calm';
+}
 
+function renderHolds(tick: TickMessage, obj: ObjectiveState | undefined, info: WorldInfo) {
+  if (info.mode !== 'king_of_the_hill') { holdsEl.hidden = true; return; }
+  holdsEl.hidden = false;
+  const target = Math.max(1, obj?.holdTarget ?? info.holdSeconds);
   const bySlot = new Map<number, TickMessage['players'][number]>();
   for (const p of tick.players ?? []) bySlot.set(p.slot, p);
+  holdRings.forEach((ring, slot) => {
+    const p = bySlot.get(slot);
+    if (!p) {
+      ring.row.classList.add('empty');
+      ring.row.classList.remove('full');
+      ring.row.style.removeProperty('--ring-color');
+      ring.name.textContent = `Player ${slot + 1}`;
+      ring.secs.textContent = '0 s';
+      ring.arc.setAttribute('stroke-dashoffset', RING_C.toFixed(2));
+      return;
+    }
+    const held = Math.max(0, obj?.holdSec?.[p.id] ?? 0);
+    const frac = Math.min(1, held / target);
+    ring.row.classList.remove('empty');
+    ring.row.classList.toggle('full', frac >= 1);
+    ring.row.style.setProperty('--ring-color', safeColor(p.color));
+    ring.name.textContent = p.label;
+    ring.secs.textContent = `${Math.floor(Math.min(held, target))} s`;
+    ring.arc.setAttribute('stroke-dashoffset', (RING_C * (1 - frac)).toFixed(2));
+    ring.row.setAttribute('aria-label', `${p.label} held the hill for ${Math.floor(held)} of ${target} seconds`);
+  });
+}
+
+function renderHazard(obj: ObjectiveState | undefined, info: WorldInfo) {
+  if (info.mode !== 'survival') { hazardEl.hidden = true; return; }
+  hazardEl.hidden = false;
+  const elev = typeof obj?.hazardElevation === 'number' && Number.isFinite(obj.hazardElevation) ? obj.hazardElevation : info.hazardBase;
+  const frac = Math.min(1, Math.max(0, (elev - info.hazardBase) / (info.hazardMax - info.hazardBase)));
+  hazardFillEl.style.width = `${(frac * 100).toFixed(1)}%`;
+  hazardEl.dataset.level = frac > 0.8 ? 'high' : frac > 0.4 ? 'mid' : 'low';
+  hazardEl.setAttribute('aria-label', `${info.hazardKind === 'lava' ? 'Lava' : 'Water'} at ${Math.round(frac * 100)} percent of its rise`);
+}
+
+function renderGems(tick: TickMessage, info: WorldInfo, collected: number, nextId: string | null | undefined) {
+  const relicStates = tick.relics ?? {};
+  if (info.mode === 'checkpoint_race') {
+    // Gems in world order: lit when that relic is collected, the next one highlighted.
+    gemEls.forEach((gem, i) => {
+      const relic = info.relicOrder[i];
+      const on = !!relic && relicStates[relic.id] === 'collected';
+      gem.classList.toggle("hidden", !relic);
+      gem.classList.toggle('on', on);
+      gem.classList.toggle('next', !!relic && !on && relic.id === nextId);
+    });
+    gemsEl.setAttribute('aria-label', `${collected} of ${info.relicOrder.length} checkpoints passed`);
+    return;
+  }
+  const shown = info.mode === 'relic_hunt' ? info.relicsRequired : Math.max(info.relicOrder.length, 1);
+  gemEls.forEach((gem, i) => {
+    gem.classList.toggle("hidden", i >= shown);
+    gem.classList.toggle('on', i < collected);
+    gem.classList.remove('next');
+  });
+  gemsEl.setAttribute('aria-label', `${Math.min(collected, shown)} of ${shown} relics collected`);
+}
+
+let outcomeShown: 'won' | 'lost' | null = null;
+function renderOutcome(result: 'won' | 'lost' | null, info: WorldInfo, score: number) {
+  if (result === null) {
+    if (outcomeShown !== null) { outcomeShown = null; outcomeEl.hidden = true; }
+    return;
+  }
+  outcomeScoreEl.textContent = String(score);
+  if (result === outcomeShown) return;
+  outcomeShown = result;
+  outcomeEl.hidden = false;
+  outcomeEl.dataset.result = result;
+  outcomeSubEl.textContent = '';
+  if (result === 'won') {
+    outcomeKickerEl.textContent = 'Won';
+    outcomeTitleEl.textContent = WON_TITLES[info.mode];
+  } else {
+    outcomeKickerEl.textContent = 'Time is up';
+    outcomeTitleEl.textContent = info.mode === 'survival' ? `The ${info.hazardKind} took the islands` : 'The gate stayed closed';
+  }
+}
+
+function onTick(tick: TickMessage) {
+  try { renderer.applyTick(tick); } catch (err) { console.error('[beetle renderer] tick failed', err); }
+  const info = worldInfo ?? readWorldInfo({ relics: [], hazard: undefined } as unknown as WorldSpec);
+  const obj: ObjectiveState | undefined = tick.objective && typeof tick.objective === 'object' ? tick.objective : undefined;
+  const relicStates = Object.values(tick.relics ?? {});
+  const collected = relicStates.filter((s) => s === 'collected').length;
+  const score = tick.score ?? 0;
+  scoreEl.textContent = String(score);
+
+  const gate = tick.gate ?? { unlocked: false, won: false };
+  tickSoundEvents(tick, collected, gate, obj, info);
+  const lost = !gate.won && !!obj?.lost;
+  const state = gate.won ? 'won' : lost ? 'lost' : gate.unlocked ? 'unlocked' : 'locked';
+
+  const nextId = obj?.nextCheckpointId;
+  renderGems(tick, info, collected, nextId);
+  renderTimer(obj, info, gate.won);
+  renderHolds(tick, obj, info);
+  renderHazard(obj, info);
+
+  let text: string;
+  if (gate.won) {
+    text = WON_TITLES[info.mode];
+  } else if (lost) {
+    text = 'Time is up';
+  } else if (info.mode === 'king_of_the_hill') {
+    text = `Hold the hill for ${obj?.holdTarget ?? info.holdSeconds} s`;
+  } else if (info.mode === 'checkpoint_race') {
+    const n = info.relicOrder.length;
+    const nextIndex = nextId ? info.relicOrder.findIndex((r) => r.id === nextId) : -1;
+    if (gate.unlocked || (nextIndex < 0 && collected >= n)) text = 'All checkpoints passed: reach the temple gate';
+    else {
+      const k = nextIndex >= 0 ? nextIndex + 1 : Math.min(n, collected + 1);
+      const name = nextIndex >= 0 ? info.relicOrder[nextIndex].name : info.relicOrder[Math.min(n - 1, collected)]?.name ?? '';
+      text = name ? `Checkpoint ${k} of ${n}: ${name}` : `Checkpoint ${k} of ${n}`;
+    }
+  } else if (gate.unlocked) {
+    text = OBJECTIVE_OPEN;
+  } else {
+    // Survival shows "The lava is rising" on the hazard meter below; the objective line stays the relic count.
+    text = collectLine(info.relicsRequired);
+  }
+  setObjectiveText(text, state);
+  renderOutcome(gate.won ? 'won' : lost ? 'lost' : null, info, score);
+
+  const bySlot = new Map<number, TickMessage['players'][number]>();
+  playerLabels.clear();
+  for (const p of tick.players ?? []) { bySlot.set(p.slot, p); playerLabels.set(p.id, p.label); }
   chips.forEach((chip, slot) => {
     const p = bySlot.get(slot);
     if (!p) {
@@ -242,7 +553,7 @@ function onTick(tick: TickMessage) {
       return;
     }
     chip.row.classList.remove('empty');
-    chip.swatch.style.background = /^#[0-9a-fA-F]{6}$/.test(p.color) ? p.color : '#9fb7b3';
+    chip.swatch.style.background = safeColor(p.color);
     chip.name.textContent = p.label;
     chip.dot.className = `dot ${p.connected ? 'on' : 'off'}`;
     chip.dot.title = p.connected ? 'connected' : 'disconnected';
@@ -306,9 +617,31 @@ function onActivity(msg: ActivityMessage) {
   }
 }
 
+// ---------- markers: forwarded to the renderer, with a quiet "<player> pinged" toast ----------
+const TOAST_MS = 1500;
+let toastTimer: number | null = null;
+function showToast(text: string) {
+  toastEl.textContent = text;
+  toastEl.hidden = false;
+  void toastEl.offsetWidth;
+  toastEl.classList.add('show');
+  if (toastTimer !== null) clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toastEl.classList.remove('show');
+    toastTimer = window.setTimeout(() => { toastEl.hidden = true; toastTimer = null; }, 200);
+  }, TOAST_MS);
+}
+function onMarker(m: MarkerMessage) {
+  const r = renderer as { applyMarker?: (m: MarkerMessage) => void };
+  try { r.applyMarker?.(m); } catch (err) { console.error('[beetle renderer] marker failed', err); }
+  const label = playerLabels.get(m.playerId) ?? socket.tick?.players.find((p) => p.id === m.playerId)?.label ?? 'A player';
+  showToast(`${label} pinged`);
+}
+
 socket.on('world', onWorld);
 socket.on('tick', onTick);
 socket.on('activity', onActivity);
+socket.on('message', (m) => { if (m.type === 'marker') onMarker(m); });
 socket.connect();
 
 // ---------- debug overlay: backquote key or ?debug=1 ----------
@@ -319,6 +652,7 @@ function renderDebug() {
   const rtt = socket.rttMs === null ? 'n/a' : `${Math.round(socket.rttMs)} ms`;
   const age = s.tickAgeMs === null ? 'no ticks' : `${Math.round(s.tickAgeMs)} ms`;
   const latest = socket.activity[socket.activity.length - 1];
+  const obj = socket.tick?.objective;
   const lines = [
     `conn      ${socket.state}`,
     `ws rtt    ${rtt}`,
@@ -327,6 +661,8 @@ function renderDebug() {
     `meshes    ${s.meshes}`,
     `world     renderer v${s.worldVersion}, socket v${Math.max(0, socket.worldVersion)}`,
     `tick      ${socket.tick ? `#${socket.tick.tick}` : 'n/a'}`,
+    `mode      ${worldInfo ? `${worldInfo.mode}, ${worldInfo.biome}` : 'n/a'}`,
+    `objective ${obj ? JSON.stringify(obj) : 'n/a'}`,
   ];
   if (latest) {
     const extra = [

@@ -1,9 +1,12 @@
+/* Shared tokens and primitives. One serif for titles, one sans for everything else, one type scale, an 8 px grid. */
 :root {
   --bg: #0e2a2f;
   --bg-2: #123a40;
   --bg-3: #174951;
-  --panel: rgba(11, 33, 38, 0.94);
-  --panel-border: rgba(233, 227, 211, 0.14);
+  --panel: rgba(10, 32, 37, 0.4);
+  --panel-border: rgba(255, 255, 255, 0.12);
+  --border: rgba(255, 255, 255, 0.12);
+  --well: rgba(0, 0, 0, 0.2);
   --stone: #e9e3d3;
   --stone-2: #cfc6b0;
   --text: #eef3f1;
@@ -18,7 +21,19 @@
   --focus: #ffd27f;
   --radius: 12px;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
-  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; /* debug readouts only */
+  --fs-1: 13px;
+  --fs-2: 15px;
+  --fs-3: 17px;
+  --fs-4: 22px;
+  --fs-5: 34px;
+  --s1: 8px;
+  --s2: 16px;
+  --s3: 24px;
+  --s4: 32px;
+  --ease: 180ms ease-out;
+  --blur: blur(12px);
 }
 
 * { box-sizing: border-box; }
@@ -30,8 +45,8 @@ html, body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
-  font-size: 16px;
-  line-height: 1.4;
+  font-size: var(--fs-2);
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -46,107 +61,100 @@ button, input, textarea, select {
 
 button {
   cursor: pointer;
-  border: 1px solid var(--panel-border);
-  background: var(--bg-3);
+  border: 1px solid var(--border);
+  background: transparent;
   color: var(--text);
   border-radius: 10px;
-  padding: 10px 14px;
-  min-height: 44px;
-  min-width: 44px;
+  padding: var(--s1) var(--s2);
+  min-height: 40px;
+  min-width: 40px;
+  transition: background var(--ease), border-color var(--ease), color var(--ease);
 }
-
-button:hover { background: #1b5862; }
+button:hover { background: rgba(255, 255, 255, 0.06); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 button.primary {
   background: var(--amber);
   color: #221a0c;
   border-color: transparent;
-  font-weight: 650;
+  font-weight: 600;
 }
 button.primary:hover { background: var(--amber-2); }
 
 :focus-visible {
-  outline: 3px solid var(--focus);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
 textarea, input[type="text"] {
   width: 100%;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid var(--panel-border);
+  background: var(--well);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: var(--s1) 12px;
   color: var(--text);
+  transition: border-color var(--ease);
 }
-
-textarea { resize: vertical; min-height: 92px; }
+textarea:focus-visible, input[type="text"]:focus-visible { outline: none; border-color: var(--amber); }
+textarea { resize: vertical; min-height: 88px; }
 
 .muted { color: var(--muted); }
-.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.mono { font-variant-numeric: tabular-nums; }
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
 
+/* Status dot: the one non-text indicator. */
 .dot {
   display: inline-block;
-  width: 10px; height: 10px;
+  width: 8px; height: 8px;
   border-radius: 50%;
   background: var(--muted);
-  margin-right: 6px;
+  margin-right: var(--s1);
   vertical-align: middle;
 }
-.dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.dot.on { background: var(--ok); }
 .dot.off { background: #5a6f6c; }
 .dot.warn { background: var(--warn); }
 
-.badge {
+/* Quiet pills: 1 px border, no fill. */
+.badge, .tag, .phase {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 2px var(--s1);
   border-radius: 999px;
-  border: 1px solid var(--panel-border);
-  background: rgba(0, 0, 0, 0.3);
-  font-size: 13px;
-  font-family: var(--mono);
+  border: 1px solid var(--border);
+  background: transparent;
+  font-size: var(--fs-1);
+  line-height: 1.4;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
-.badge.pulse { animation: badge-pulse 900ms ease-out; }
-@keyframes badge-pulse {
-  0% { background: var(--amber); color: #221a0c; transform: scale(1.15); }
-  100% { background: rgba(0, 0, 0, 0.3); color: var(--text); transform: scale(1); }
-}
-
-.tag {
-  display: inline-block;
-  padding: 1px 7px;
-  border-radius: 6px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: var(--amber);
-  color: #221a0c;
-  font-weight: 700;
-}
+.tag { text-transform: uppercase; letter-spacing: 0.06em; }
+.phase.committed { color: var(--ok); }
+.phase.failed, .phase.cancelled { color: var(--lava); }
+.phase.repairing, .phase.awaiting_safe_commit { color: var(--amber-2); }
 
 .wordmark {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  font-size: 20px;
+  gap: var(--s1);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  font-size: var(--fs-2);
   color: var(--stone);
 }
-.wordmark svg { width: 34px; height: 34px; }
+.wordmark svg { width: 32px; height: 32px; }
 
 .qr-panel {
   display: grid;
-  gap: 8px;
+  gap: var(--s1);
   justify-items: center;
-  padding: 10px;
-  border: 1px solid var(--panel-border);
+  padding: var(--s2);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--well);
 }
 .qr-panel img {
   width: 200px; height: 200px;
@@ -155,24 +163,10 @@ textarea { resize: vertical; min-height: 92px; }
   image-rendering: pixelated;
 }
 .qr-panel .url {
-  font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--fs-1);
   word-break: break-all;
   text-align: center;
   color: var(--stone-2);
   user-select: all;
 }
-.qr-panel .expires { font-size: 12px; color: var(--muted); }
-
-.phase {
-  display: inline-block;
-  padding: 1px 7px;
-  border-radius: 6px;
-  font-size: 12px;
-  background: rgba(233, 227, 211, 0.12);
-  color: var(--stone);
-  white-space: nowrap;
-}
-.phase.committed { background: rgba(123, 211, 137, 0.2); color: var(--ok); }
-.phase.failed, .phase.cancelled { background: rgba(255, 90, 54, 0.2); color: var(--lava); }
-.phase.repairing, .phase.awaiting_safe_commit { background: rgba(240, 180, 90, 0.2); color: var(--amber-2); }
+.qr-panel .expires { font-size: var(--fs-1); color: var(--muted); }

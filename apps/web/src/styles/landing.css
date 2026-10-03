@@ -1,43 +1,110 @@
+/* Landing: a one prompt front door. One vignette, quiet panels, the same language as the play HUD. */
+body.landing {
+  --glass-bg: rgba(10, 32, 37, 0.4);
+  position: relative;
+  overflow-x: hidden;
+}
+/* The single allowed gradient: a soft vignette over the page background. */
+body.landing::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.3) 75%);
+}
+
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+
 .landing-main {
-  max-width: 820px;
+  position: relative;
+  z-index: 1;
+  max-width: 920px;
   margin: 0 auto;
-  padding: 48px 20px 60px;
+  padding: var(--s4) var(--s3) 80px;
   display: grid;
-  gap: 28px;
+  gap: var(--s4);
 }
-.landing-header .wordmark { font-size: 28px; }
-.landing-header .wordmark svg { width: 48px; height: 48px; }
-.tagline { margin: 10px 0 0; color: var(--muted); font-size: 18px; }
-.landing-links {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-.card {
-  display: grid;
-  gap: 6px;
-  padding: 18px;
-  border-radius: var(--radius);
-  border: 1px solid var(--panel-border);
-  background: var(--bg-2);
-  color: var(--text);
+
+/* ---------- header ---------- */
+.landing-header { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; }
+.landing-header .wordmark { color: var(--amber-2); }
+.landing-header .wordmark svg { width: 40px; height: 40px; }
+.landing-nav { display: flex; gap: var(--s1); flex-wrap: wrap; }
+.landing-nav a {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--stone-2);
   text-decoration: none;
-  min-height: 96px;
+  font-size: var(--fs-1);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: color var(--ease), border-color var(--ease);
 }
-.card:hover { background: var(--bg-3); }
-.card strong { font-size: 20px; color: var(--amber-2); }
-.card span { color: var(--muted); font-size: 14px; }
-.landing-status h2 { margin: 0 0 8px; font-size: 16px; color: var(--stone-2); text-transform: uppercase; letter-spacing: 0.08em; }
-.landing-status dl {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 6px 16px;
+.landing-nav a:hover { color: var(--amber-2); border-color: rgba(240, 180, 90, 0.5); }
+
+/* ---------- hero ---------- */
+.hero { padding: var(--s3) 0 0; }
+.hero-line {
   margin: 0;
-  padding: 14px 16px;
-  border-radius: var(--radius);
-  border: 1px solid var(--panel-border);
-  background: var(--bg-2);
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: var(--fs-5);
+  line-height: 1.15;
+  color: var(--stone);
+  max-width: 640px;
 }
+
+/* ---------- prompt box ---------- */
+.prompt-box { display: grid; gap: var(--s2); padding: var(--s3); }
+.prompt-label { font-size: var(--fs-1); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--amber-2); }
+.prompt-box textarea { font-size: var(--fs-3); line-height: 1.4; min-height: 88px; padding: var(--s2); }
+.prompt-box textarea::placeholder { color: rgba(159, 183, 179, 0.6); }
+.chip-group { display: flex; align-items: center; gap: var(--s1); flex-wrap: wrap; }
+.chip-group-label { font-size: var(--fs-1); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); min-width: 48px; }
+.chips { display: flex; gap: var(--s1); flex-wrap: wrap; }
+.chip {
+  min-height: 32px; min-width: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--stone-2);
+  font-size: var(--fs-1);
+  font-weight: 600;
+  transition: color var(--ease), border-color var(--ease);
+}
+.chip:hover { color: var(--amber-2); border-color: rgba(240, 180, 90, 0.5); background: transparent; }
+.prompt-actions { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.start { min-width: 120px; min-height: 44px; padding: var(--s1) var(--s3); font-size: var(--fs-2); font-weight: 600; }
+.prompt-note { margin: 0; flex: 1 1 280px; font-size: var(--fs-1); color: var(--amber-2); line-height: 1.5; }
+
+/* ---------- value cards ---------- */
+.values { display: grid; gap: var(--s2); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.value-card { display: grid; gap: var(--s1); align-content: start; padding: var(--s3); }
+.value-card h2 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: var(--fs-4); color: var(--stone); line-height: 1.2; }
+.value-card p { margin: 0; color: var(--muted); font-size: var(--fs-2); line-height: 1.5; }
+
+/* ---------- server status ---------- */
+.landing-status { padding: var(--s3); display: grid; gap: var(--s2); }
+.landing-status h2 { margin: 0; font-size: var(--fs-1); color: var(--amber-2); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.landing-status dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--s1) var(--s2); margin: 0; font-size: var(--fs-2); }
 .landing-status dt { color: var(--muted); }
-.landing-status dd { margin: 0; font-family: var(--mono); word-break: break-all; }
-.hint { color: var(--muted); font-size: 14px; }
+.landing-status dd { margin: 0; word-break: break-all; font-variant-numeric: tabular-nums; }
+.hint { margin: 0; color: var(--muted); font-size: var(--fs-1); line-height: 1.5; }
+
+@media (max-width: 640px) {
+  .landing-main { padding: var(--s3) var(--s2) 56px; gap: var(--s3); }
+  .prompt-box { padding: var(--s2); }
+  .chip-group-label { min-width: 100%; }
+  .landing-status dl { grid-template-columns: 1fr; gap: 2px 0; }
+  .landing-status dt { margin-top: var(--s1); }
+}

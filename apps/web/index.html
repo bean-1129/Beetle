@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
     <title>Beetle</title>
+    <meta name="description" content="Describe a game. Play it in seconds. Change it while you play." />
     <link rel="stylesheet" href="/src/styles/base.css" />
     <link rel="stylesheet" href="/src/styles/landing.css" />
   </head>
@@ -12,14 +13,50 @@
     <main id="app" class="landing-main">
       <header class="landing-header">
         <span id="wordmark"></span>
-        <p class="tagline">Change the game without stopping the game.</p>
+        <nav class="landing-nav" aria-label="Pages">
+          <a href="/play">Play screen</a>
+          <a href="/controller">Controller</a>
+          <a href="/director" id="nav-director">Director</a>
+        </nav>
       </header>
-      <nav class="landing-links" aria-label="Pages">
-        <a class="card" href="/director"><strong>Director</strong><span>Prompt the local agent, invite players, watch every phase.</span></a>
-        <a class="card" href="/play"><strong>Play</strong><span>The big screen. World, players, relics and gate.</span></a>
-        <a class="card" href="/controller"><strong>Controller</strong><span>Phone page. Open from a join QR, not by hand.</span></a>
-      </nav>
-      <section class="landing-status" aria-live="polite">
+
+      <section class="hero">
+        <h1 class="hero-line">Describe a game.<br />Play it in seconds.<br />Change it while you play.</h1>
+      </section>
+
+      <form class="prompt-box glass" id="prompt-form" aria-label="Describe a game">
+        <label for="prompt" class="prompt-label">One prompt</label>
+        <textarea id="prompt" name="prompt" rows="3" maxlength="1000" placeholder="Describe a game" autocomplete="off" spellcheck="false"></textarea>
+        <div class="chip-group" aria-label="Game modes">
+          <span class="chip-group-label">Mode</span>
+          <div class="chips" id="mode-chips"></div>
+        </div>
+        <div class="chip-group" aria-label="Biomes">
+          <span class="chip-group-label">Biome</span>
+          <div class="chips" id="biome-chips"></div>
+        </div>
+        <div class="prompt-actions">
+          <button type="submit" class="primary start" id="start">Start</button>
+          <p class="prompt-note" id="start-note" aria-live="polite"></p>
+        </div>
+      </form>
+
+      <section class="values" aria-label="Why Beetle">
+        <article class="value-card glass">
+          <h2>Local model on this machine</h2>
+          <p>The brief goes to a model running here through Ollama. Nothing leaves the room.</p>
+        </article>
+        <article class="value-card glass">
+          <h2>Validated by game code</h2>
+          <p>Every world and edit is checked: players stay supported, relics and the gate stay reachable.</p>
+        </article>
+        <article class="value-card glass">
+          <h2>Live edits without a reset</h2>
+          <p>Add a bridge or change the mode while players stand on the islands. Positions and scores are kept.</p>
+        </article>
+      </section>
+
+      <section class="landing-status glass" aria-live="polite">
         <h2>Server</h2>
         <dl id="health">
           <dt>Public URL</dt><dd id="publicUrl">checking</dd>
@@ -27,7 +64,7 @@
           <dt>Model</dt><dd id="model">checking</dd>
           <dt>Agent worker</dt><dd id="agent">checking</dd>
         </dl>
-        <p class="hint">The director link printed by the server includes its token. Open it from that console line.</p>
+        <p class="hint">The director link printed by the server at startup carries its token.</p>
       </section>
     </main>
     <script type="module" src="/src/landing/main.ts"></script>
