@@ -18,32 +18,61 @@ const configSchema = Type.Object({
 type PluginConfig = { serverUrl?: string; secretsPath?: string; model?: string };
 
 const L = WORLD_LIMITS;
-const Id = (description: string) => Type.String({ description, pattern: '^[a-z][a-z0-9_-]{0,31}$' });
-const Vec = (description: string) => Type.Object({ x: Type.Number(), z: Type.Number() }, { description });
+const M = MODE_LIMITS;
+// Compact JSON Schema on purpose: the tool definitions share the model's 8192-token context with the system prompt.
+// Field semantics are explained once in the schema description, not per field; the server's zod schemas remain the gate.
+const Enum = <T extends string>(values: readonly T[]) => Type.Unsafe<T>({ type: 'string', enum: [...values] });
+const Id = Type.String({ pattern: '^[a-z][a-z0-9_-]{0,31}$' });
+const Vec = Type.Object({ x: Type.Number(), z: Type.Number() });
+const Num = (minimum: number, maximum: number) => Type.Number({ minimum, maximum });
+const Int = (minimum: number, maximum: number) => Type.Integer({ minimum, maximum });
+
+// Mirrors packages/contracts: BIOMES, ModeSchema, MODE_LIMITS.movementSpeed and HazardRiseSchema.
+const biomeSchema = Enum(BIOMES);
+const modeSchema = Type.Object({
+  kind: Enum(GAME_MODES),
+  timeLimitSec: Type.Optional(Int(M.timeLimitSec.min, M.timeLimitSec.max)),
+  holdSeconds: Type.Optional(Int(M.holdSeconds.min, M.holdSeconds.max)),
+  relicsRequired: Type.Optional(Int(M.relicsRequired.min, M.relicsRequired.max)),
+  orderedCheckpoints: Type.Optional(Type.Boolean()),
+});
+const speedSchema = Num(M.movementSpeed.min, M.movementSpeed.max);
+const hazardRiseSchema = Type.Object({
+  afterSec: Int(M.hazardRise.afterSec.min, M.hazardRise.afterSec.max),
+  metersPerSec: Num(M.hazardRise.metersPerSec.min, M.hazardRise.metersPerSec.max),
+  maxElevation: Num(M.hazardRise.maxElevation.min, M.hazardRise.maxElevation.max),
+});
 
 const worldDraftSchema = Type.Object({
   title: Type.String({ maxLength: L.title.maxLength }),
-  islands: Type.Array(Type.Object({ id: Id('island id'), name: Type.String(), center: Vec('world position, metres'), radius: Type.Number({ minimum: L.island.minRadius, maximum: L.island.maxRadius }) }), { minItems: L.islands.min, maxItems: L.islands.max }),
-  bridges: Type.Array(Type.Object({ id: Id('bridge id'), from: Type.String(), to: Type.String(), width: Type.Number({ minimum: L.bridge.minWidth, maximum: L.bridge.maxWidth }) }), { maxItems: L.bridges.max }),
-  spawns: Type.Array(Type.Object({ islandId: Type.String(), localPosition: Vec('offset from the island centre') }), { minItems: L.spawns, maxItems: L.spawns }),
-  relics: Type.Array(Type.Object({ id: Id('relic id'), name: Type.String(), islandId: Type.String(), localPosition: Vec('offset from the island centre') }), { minItems: L.relics, maxItems: L.relics }),
-  gate: Type.Object({ islandId: Type.String(), localPosition: Vec('offset from the island centre') }),
-  hazard: Type.Union(HAZARD_KINDS.map((h) => Type.Literal(h))),
-  decorations: Type.Array(Type.Object({ id: Id('decoration id'), type: Type.Union(DECORATION_TYPES.map((d) => Type.Literal(d))), islandId: Type.String(), localPosition: Vec('offset from the island centre') }), { maxItems: L.decorations.max }),
-}, { description: 'WorldDraft: a complete small world. The server derives bridge endpoints, ids and versions.' });
+  islands: Type.Array(Type.Object({ id: Id, name: Type.String(), center: Vec, radius: Num(L.island.minRadius, L.island.maxRadius) }), { minItems: L.islands.min, maxItems: L.islands.max }),
+  bridges: Type.Array(Type.Object({ id: Id, from: Type.String(), to: Type.String(), width: Num(L.bridge.minWidth, L.bridge.maxWidth) }), { maxItems: L.bridges.max }),
+  spawns: Type.Array(Type.Object({ islandId: Type.String(), localPosition: Vec }), { minItems: L.spawns, maxItems: L.spawns }),
+  relics: Type.Array(Type.Object({ id: Id, name: Type.String(), islandId: Type.String(), localPosition: Vec }), { minItems: L.relics, maxItems: L.relics }),
+  gate: Type.Object({ islandId: Type.String(), localPosition: Vec }),
+  hazard: Enum(HAZARD_KINDS),
+  decorations: Type.Array(Type.Object({ id: Id, type: Enum(DECORATION_TYPES), islandId: Type.String(), localPosition: Vec }), { maxItems: L.decorations.max }),
+  biome: Type.Optional(biomeSchema),
+  mode: Type.Optional(modeSchema),
+  movementSpeed: Type.Optional(speedSchema),
+  hazardRise: Type.Optional(hazardRiseSchema),
+}, { description: 'center is a world position (m); localPosition is an offset from the island centre. Always set biome and mode; hazardRise only for survival.' });
 
 const patchOpSchema = Type.Object({
-  op: Type.Union(PATCH_OP_NAMES.map((o) => Type.Literal(o)), { description: 'operation name' }),
-  id: Type.Optional(Type.String({ description: 'object id: new id for add_*, existing id for remove_*, move_*' })),
-  from: Type.Optional(Type.String({ description: 'add_bridge: island id' })),
-  to: Type.Optional(Type.String({ description: 'add_bridge: island id' })),
-  width: Type.Optional(Type.Number({ description: `add_bridge: ${L.bridge.minWidth} to ${L.bridge.maxWidth}` })),
-  kind: Type.Optional(Type.Union(HAZARD_KINDS.map((h) => Type.Literal(h)), { description: 'set_hazard' })),
-  type: Type.Optional(Type.Union(DECORATION_TYPES.map((d) => Type.Literal(d)), { description: 'add_decoration' })),
-  islandId: Type.Optional(Type.String({ description: 'add_decoration, move_decoration, move_relic' })),
-  localPosition: Type.Optional(Vec('add_decoration, move_decoration, move_relic: offset from the island centre')),
-  title: Type.Optional(Type.String({ description: 'set_title' })),
-}, { description: 'one patch operation; include only the fields the op needs' });
+  op: Enum(PATCH_OP_NAMES),
+  id: Type.Optional(Type.String()),
+  from: Type.Optional(Type.String()),
+  to: Type.Optional(Type.String()),
+  width: Type.Optional(Num(L.bridge.minWidth, L.bridge.maxWidth)),
+  kind: Type.Optional(Enum(HAZARD_KINDS)),
+  type: Type.Optional(Enum(DECORATION_TYPES)),
+  islandId: Type.Optional(Type.String()),
+  localPosition: Type.Optional(Vec),
+  title: Type.Optional(Type.String({ maxLength: L.title.maxLength })),
+  mode: Type.Optional(modeSchema),
+  biome: Type.Optional(biomeSchema),
+  speed: Type.Optional(speedSchema),
+}, { description: 'Only the fields of the op: add_bridge id,from,to,width?; remove_bridge id; set_hazard kind; add_decoration id,type,islandId,localPosition; move_decoration|move_relic id,islandId,localPosition; remove_decoration id; set_title title; set_mode mode; set_biome biome; set_movement speed' });
 
 // ---------- runtime state for one exec run ----------
 type RunState = {
@@ -181,7 +210,7 @@ export default defineToolPlugin({
     tool({
       name: 'read_world_state',
       label: 'Read world state',
-      description: 'Read the current world: islands with ids, names and compass directions, bridges, relics, gate, hazard, players and the world version. Call this first for any edit.',
+      description: 'Read the current world (islands with ids and compass directions, bridges, relics, gate, hazard, mode, biome, players, version). Call this first for any edit.',
       parameters: Type.Object({}),
       async execute(_params, config) {
         budget('read_world_state');
@@ -197,6 +226,9 @@ export default defineToolPlugin({
           version: w.version,
           title: spec.title,
           hazard: spec.hazard.kind,
+          biome: spec.biome,
+          mode: spec.mode ?? { kind: 'relic_hunt' },
+          movementSpeed: spec.movement?.speed,
           islands: spec.islands.map((i) => {
             const s = w.summary?.islands.find((x) => x.id === i.id);
             return { id: i.id, name: i.name ?? s?.name, compass: s?.compass, center: i.center, radius: i.radius, bridgeIds: bridgesOf(i.id), hasGate: spec.gate.supportingSurfaceId === i.id, hasSpawns: spec.spawns.some((sp) => sp.supportingSurfaceId === i.id) };
@@ -214,7 +246,7 @@ export default defineToolPlugin({
     tool({
       name: 'propose_world',
       label: 'Propose world',
-      description: `Stage a complete new world draft as a candidate and validate it (schema, geometry, reachability, playability). Beetle builds any requested game by mapping it onto the closest supported mode (${GAME_MODES.join(', ')}) and biome (${BIOMES.join(', ')}): always set mode and biome explicitly, add timeLimitSec, holdSeconds or relicsRequired when the brief implies them, movementSpeed (${MODE_LIMITS.movementSpeed.min} to ${MODE_LIMITS.movementSpeed.max}) and hazardRise for survival, and name the mapping in the title when the request is not an exact match. Decorations: ${DECORATION_TYPES.join(', ')}. Nothing changes until commit_candidate succeeds. Returns candidateId plus proofId when accepted, else the issues to fix.`,
+      description: 'Stage a new world and validate it. Set biome and mode from the brief (plus timeLimitSec, holdSeconds, relicsRequired, movementSpeed, hazardRise when implied). Returns candidateId and proofId, or issues to fix.',
       parameters: Type.Object({ requestId: Type.String({ description: 'the request id from the task' }), spec: worldDraftSchema }),
       async execute({ requestId, spec }, config) {
         budget('propose_world');
@@ -235,7 +267,7 @@ export default defineToolPlugin({
     tool({
       name: 'propose_patch',
       label: 'Propose patch',
-      description: `Stage a bounded edit to the current world as a candidate and validate it (schema, geometry, reachability, playability). ops: ${PATCH_OP_NAMES.join(', ')}. set_mode takes mode {kind: ${GAME_MODES.join(' | ')}; optional timeLimitSec, holdSeconds, relicsRequired} ("make it a 60 second time trial" is set_mode {kind time_trial, timeLimitSec 60}); set_biome takes biome (${BIOMES.join(', ')}; "make it snowy" is set_biome frost); set_movement takes speed ${MODE_LIMITS.movementSpeed.min} to ${MODE_LIMITS.movementSpeed.max} ("faster players" is set_movement 6). Nothing changes until commit_candidate succeeds. Returns candidateId plus proofId when accepted, else the issues to fix.`,
+      description: 'Stage a bounded edit and validate it. Examples: set_mode {mode:{kind:time_trial,timeLimitSec:60}}; set_biome {biome:frost}; set_movement {speed:6}. Returns candidateId and proofId, or issues to fix.',
       parameters: Type.Object({
         requestId: Type.Optional(Type.String({ description: 'the request id from the task (optional, the worker knows it)' })),
         summary: Type.String({ description: 'one short sentence describing the change', maxLength: L.summary.maxLength }),
@@ -262,7 +294,7 @@ export default defineToolPlugin({
     tool({
       name: 'validate_candidate',
       label: 'Validate candidate',
-      description: 'Run the world validator on a staged candidate with the live session. Returns accepted plus a proofId, or the issues (code, objectIds, evidence) to repair with a new propose call.',
+      description: 'Validate a staged candidate. Returns proofId, or issues to repair with a new propose call.',
       parameters: Type.Object({ candidateId: Type.String() }),
       async execute({ candidateId }, config) {
         budget('validate_candidate');
@@ -282,7 +314,7 @@ export default defineToolPlugin({
     tool({
       name: 'run_playability_checks',
       label: 'Run playability checks',
-      description: 'Connectivity and supported-movement checks on a validated candidate (headless walk from spawns to relics and gate). Informational; not a fun guarantee.',
+      description: 'Connectivity and movement checks on a validated candidate.',
       parameters: Type.Object({ candidateId: Type.String() }),
       async execute({ candidateId }, config) {
         budget('run_playability_checks');
@@ -296,7 +328,7 @@ export default defineToolPlugin({
     tool({
       name: 'commit_candidate',
       label: 'Commit candidate',
-      description: 'Commit a validated candidate at the next safe simulation tick using the proofId returned with the accepted candidate. Players keep their positions. On success the build report is published too. Returns the new world version or a failure code.',
+      description: 'Commit a validated candidate with its proofId; publishes the build report. Returns the new world version or a failure code.',
       parameters: Type.Object({ candidateId: Type.String(), proofId: Type.String() }),
       async execute({ candidateId, proofId }, config) {
         budget('commit_candidate');
@@ -321,7 +353,7 @@ export default defineToolPlugin({
     tool({
       name: 'publish_build_report',
       label: 'Publish build report',
-      description: 'Publish the final build report for this request (outcome, summary, world version). Call once at the end.',
+      description: 'Publish the final build report. Call once at the end.',
       parameters: Type.Object({
         requestId: Type.Optional(Type.String({ description: 'optional, the worker knows it' })),
         outcome: Type.Union([Type.Literal('committed'), Type.Literal('failed'), Type.Literal('cancelled')]),

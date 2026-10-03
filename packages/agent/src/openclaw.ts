@@ -99,8 +99,8 @@ export function buildOpenClawConfig(config: AgentConfig, gatewayToken: string): 
           models: [{
             id: config.model, name: config.model, reasoning: false, input: ['text'],
             cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-            contextWindow: 32768, contextTokens: 8192, maxTokens: 2048,
-            params: { num_ctx: 8192, think: false, temperature: 0.2, keep_alive: '15m' },
+            contextWindow: 32768, contextTokens: 16384, maxTokens: 2048,
+            params: { num_ctx: 16384, think: false, temperature: 0.2, keep_alive: '15m' },
           }],
         },
       },

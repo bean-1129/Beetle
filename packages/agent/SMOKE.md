@@ -432,3 +432,40 @@ What changed in packages/agent as a result:
 - The runner audits the config on disk before every run and refuses anything that is not the loopback profile.
 
 Blocker that remains outside this package: the Ollama daemon must be serving `/api/chat`. While it is wedged (idle runner, no completions, probes hang) neither mode can work; while it is merely saturated by another client, the OpenClaw path needs the longer timeout above. Recommended: restart Ollama with OLLAMA_NUM_PARALLEL=1 (qwen35 ignores higher values anyway) and keep the corpus builder and the `ollama pull qwen3.8:27b` (restarted at 13:19 after "digest mismatch, file must be downloaded again") away from the rehearsal window; then rerun `npm run agent -- --mode openclaw --once` against a server with a fixture world. The shortened flow has not been verified end to end with the real model because of the wedge; runs G and J verified the previous flow.
+
+## Plugin schema catch-up and live brief on 7797 (added 14:58 local)
+
+Problem: `packages/agent/openclaw-plugin/src/index.ts` declared typebox schemas for `propose_world` and `propose_patch` that predated the mode/biome contract, so the model could not pass `mode`, `biome`, `movementSpeed`, `hazardRise` or the `set_mode`, `set_biome`, `set_movement` ops through OpenClaw.
+
+What changed in the plugin (mirrors `packages/contracts/src/world.ts` WorldDraftSchema and `patch.ts` PatchOpSchema):
+
+- `worldDraftSchema`: optional `biome` (garden, volcanic, frost, desert, night), `mode` { kind: relic_hunt | time_trial | king_of_the_hill | checkpoint_race | survival; timeLimitSec 20..600; holdSeconds 3..60; relicsRequired 1..3; orderedCheckpoints }, `movementSpeed` 3..7, `hazardRise` { afterSec 5..300, metersPerSec 0.01..0.5, maxElevation -2..-0.6 }. Decoration types come from `DECORATION_TYPES` (tree, rock, lantern, pillar, bush, shrine, tower, ruin, crystal, mushroom, statue).
+- `patchOpSchema`: optional `mode` (set_mode), `biome` (set_biome), `speed` (set_movement); `op` lists all eleven `PATCH_OP_NAMES`.
+- `read_world_state` now also returns `biome`, `mode` and `movementSpeed` so an edit can see the current mode.
+- Context budget: the first live attempt with the new fields (req-fd265d37) failed at the model with `request (8202 tokens) exceeds the available context size (8192 tokens)` (OpenClaw diag: payload 29244 bytes, tools 12131 bytes of it). Every enum was serialised as `anyOf` of `const` literals and every field carried a description. The schemas were compacted: enums as `{type: string, enum: [...]}` (typebox `Type.Unsafe`, which `Value.Check` accepts), one description per schema instead of per field, shorter tool descriptions. Serialised tool definitions went from 12131 to 7227 bytes (about 1200 tokens). The OpenClaw system prompt (about 14 KB) and `num_ctx: 8192` are outside this package; a brief now fits with roughly 1 KB of headroom on the commit turn.
+
+Commands run (exact):
+
+```bash
+node packages/agent/openclaw-plugin/build.mjs                                               # dist/index.js 395.5kb
+openclaw plugins build --root packages/agent/openclaw-plugin --entry ./dist/index.js        # Wrote openclaw.plugin.json
+openclaw plugins validate --root packages/agent/openclaw-plugin --entry ./dist/index.js     # Plugin beetle-tools is valid.
+openclaw plugins install /home/dell/Beetle/packages/agent/openclaw-plugin --force --accept-capabilities
+openclaw plugins inspect beetle-tools --runtime     # Status: loaded; Tools: the seven Beetle tools; Installed at 2026-10-03T19:53:20Z
+```
+
+Live run (real server, real model, no fixture world):
+
+```bash
+BEETLE_HOST=127.0.0.1 BEETLE_PORT=7797 BEETLE_DATA_DIR=<scratch>/server-data BEETLE_DIRECTOR_TOKEN=<48 hex> BEETLE_AGENT_TOKEN=<48 hex> BEETLE_START_WORLD=none \
+  npx tsx apps/server/src/main.ts
+BEETLE_SERVER_URL=http://127.0.0.1:7797 BEETLE_AGENT_TOKEN=<same> BEETLE_DATA_DIR=<scratch>/agent-data BEETLE_OPENCLAW_TIMEOUT_MS=600000 \
+  npx tsx packages/agent/src/main.ts --mode openclaw --once
+POST /api/director/requests {"kind":"brief","prompt":"King of the hill on a frozen arena of four islands, hold the hill for ten seconds","authorizeNewWorld":true}
+```
+
+Result (req-2f8eddb1, claimed 14:54:03 local): `openclaw agent exec` status ok, 3 assistant turns, usage input 16613 / output 856 tokens over the run. Plugin run file: `propose_world` ok -> `validate_candidate` ok -> `run_playability_checks` ok (all inside the one propose call) -> `commit_candidate` ok, world v1, deferredMs 0 -> `publish_build_report` ok (rep-cd4d7fc9, outcome committed). Worker: `committed v1 (189665 ms)`. The model skipped `read_world_state` for the fresh brief and the first `propose_world` was accepted without a repair.
+
+`GET /api/world` afterwards: `hasWorld true, version 1`, `summary.mode = { kind: "king_of_the_hill", timeLimitSec: null, holdSeconds: 10, relicsRequired: 3 }`, `summary.biome = "frost"`, title "Frozen King of the Hill Arena", 4 islands, 3 bridges, `spec.movement.speed 5`. Both requested fields landed: `summary.mode.kind = king_of_the_hill`, `summary.biome = frost`.
+
+Not explained: the 7797 server process received SIGTERM twice, each time within the same second that the `--once` worker exited (after the failed run and after the committed run); the world and report were already persisted, and a restart restored `world-current.json` as version 1, which is where the `GET /api/world` above was taken. The server was started with `setsid nohup` the second time, so it was not process-group signalling from the worker's shell; not investigated further.
