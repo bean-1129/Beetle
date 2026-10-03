@@ -13,6 +13,28 @@ export function vibrate(pattern: number | number[]): boolean {
   try { return navigator.vibrate(pattern) === true; } catch { return false; }
 }
 
+let audio: AudioContext | null = null;
+/** Short click for button presses. Created lazily inside a user gesture so the context is allowed to start. */
+export function tickSound(kind: 'press' | 'tap' = 'press'): void {
+  try {
+    const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctor) return;
+    audio ??= new Ctor();
+    if (audio.state === 'suspended') void audio.resume();
+    const t = audio.currentTime;
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(kind === 'tap' ? 880 : 620, t);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.06, t + 0.004);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    osc.connect(gain).connect(audio.destination);
+    osc.start(t);
+    osc.stop(t + 0.06);
+  } catch { /* audio is optional */ }
+}
+
 const DURATION: Record<keyof Cues, number> = { relic: 650, fall: 560, win: 2800 };
 const PATTERN: Record<keyof Cues, number | number[]> = { relic: [28, 36, 28], fall: 45, win: [60, 50, 60, 50, 140] };
 
