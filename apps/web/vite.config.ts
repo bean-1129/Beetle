@@ -1,11 +1,13 @@
 import { defineConfig, type Plugin, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
+import { studio2dRuntimePlugin } from './src/studio2d/build/runtime-plugin.mjs';
 
 // Clean routes in dev. In production the server maps these paths to the html files itself.
 const PAGES: Record<string, string> = {
   '/director': '/director.html',
   '/play': '/play.html',
   '/controller': '/controller.html',
+  '/2d': '/studio2d.html',
 };
 
 function cleanRoutes(): Plugin {
@@ -27,7 +29,7 @@ function cleanRoutes(): Plugin {
 export default defineConfig({
   base: '/',
   // apps/web resolves its own vite copy; the react plugin is typed against the root copy, so cast once.
-  plugins: [react() as unknown as PluginOption, cleanRoutes()],
+  plugins: [react() as unknown as PluginOption, cleanRoutes(), studio2dRuntimePlugin() as unknown as PluginOption],
   server: {
     host: '127.0.0.1',
     port: 5173,
@@ -49,6 +51,7 @@ export default defineConfig({
         director: 'director.html',
         play: 'play.html',
         controller: 'controller.html',
+        studio2d: 'studio2d.html',
       },
       output: {
         manualChunks(id) {
