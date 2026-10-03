@@ -61,7 +61,7 @@ Beetle now maps any requested game onto a mode library and a biome, then builds 
 | Server: frontier trigger (4 m from a rim with no crossing within 45 degrees), 12 s cooldown, one in-flight request, autoExpand setting, snapshot persistence | implemented, tested (10 expansion tests; 75 server tests total) | apps/server/src/expansion.ts |
 | Agent: expansion prompt for automatic requests; briefs start small when streaming is on | implemented (measurement in progress) | packages/agent |
 | Director toggle, HUD "building ahead" line, docs | implemented | apps/web, docs/ARCHITECTURE.md |
-| Live run | verified once: extension committed 9.5 s after the trigger with the player preserved (docs/RESULTS.md) | |
+| Live runs | verified: extension committed 9.5 s after the trigger with the player preserved (docs/RESULTS.md); real-server integration tests 4 of 4 (tests/integration/streaming.test.ts); unattended acceptance 21 of 21 on run 3 with two extensions at 56.0 s and 10.6 s on a GPU shared with nine other workers, two of six automatic requests across three runs failed cleanly on the model side with the world untouched (docs/ACCEPTANCE.md) | |
 
 ## Required test cases (section 14)
 
