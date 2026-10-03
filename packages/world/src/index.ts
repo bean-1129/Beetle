@@ -34,5 +34,5 @@ export { FIXTURE_NAMES } from './fixtures.ts';
 export { DEFAULT_BRIDGE_WIDTH, hazardPolicyFor } from './patch.ts';
 
 /** Deterministic normalization of model output (reference resolution, range clamping). Applied inside expandDraft and applyPatch. */
-export { normalizeDraft, normalizePatchDraft, resolveIslandRef, resolveNamedRef, normalizeLocalPosition, slugify } from './normalize.ts';
+export { normalizeDraft, normalizePatchDraft, resolveIslandRef, resolveNamedRef, normalizeLocalPosition, separateIslands, slugify } from './normalize.ts';
 export type { Normalization } from './normalize.ts';

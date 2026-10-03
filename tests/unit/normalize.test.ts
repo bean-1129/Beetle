@@ -67,4 +67,36 @@ describe('model output normalization', () => {
     for (const rel of r.spec.relics) expect(Math.hypot(rel.localPosition.x, rel.localPosition.z)).toBeLessThan(9);
     expect(validateSpec(r.spec).ok).toBe(true);
   });
+
+  it('expandDraft separates overlapping islands so the draft validates, keeping ids and bridges', () => {
+    const draft = {
+      title: 'Crowded', hazard: 'water',
+      islands: [
+        { id: 'a', name: 'Hearth', center: { x: 0, z: 0 }, radius: 9 },
+        { id: 'b', name: 'Temple', center: { x: 0, z: 12 }, radius: 8 },   // overlaps a by 6 m
+        { id: 'c', name: 'East', center: { x: 14, z: 0 }, radius: 7 },     // overlaps a by 3 m
+        { id: 'd', name: 'West', center: { x: -24, z: 0 }, radius: 7 },
+        { id: 'e', name: 'South', center: { x: 0, z: -22 }, radius: 6 },
+      ],
+      bridges: [
+        { id: 'ab', from: 'a', to: 'b', width: 2.4 }, { id: 'ac', from: 'a', to: 'c', width: 2.4 },
+        { id: 'ad', from: 'a', to: 'd', width: 2.4 }, { id: 'ae', from: 'a', to: 'e', width: 1.6 },
+      ],
+      spawns: [{ islandId: 'a', localPosition: { x: 1, z: 1 } }, { islandId: 'a', localPosition: { x: -1, z: 1 } }],
+      relics: [
+        { id: 'r1', name: 'Sun', islandId: 'c', localPosition: { x: 0, z: 0 } },
+        { id: 'r2', name: 'Moon', islandId: 'd', localPosition: { x: 0, z: 0 } },
+        { id: 'r3', name: 'Star', islandId: 'e', localPosition: { x: 0, z: 0 } },
+      ],
+      gate: { islandId: 'b', localPosition: { x: 0, z: 2 } },
+      decorations: [],
+    };
+    const r = expandDraft(draft, { seed: 3, worldId: 'crowded' });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.normalizations.some((n) => n.reason.includes('moved apart'))).toBe(true);
+    const v = validateSpec(r.spec);
+    expect(v.issues.map((i) => i.code)).not.toContain('ISLAND_OVERLAP');
+    expect(v.ok).toBe(true);
+  });
 });

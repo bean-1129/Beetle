@@ -114,6 +114,46 @@ function clampNum(v: unknown, min: number, max: number, log: Normalization[], pa
   return n;
 }
 
+
+const ISLAND_MIN_GAP = 1.0;
+
+/**
+ * Push overlapping island discs apart so every pair keeps at least ISLAND_MIN_GAP (plus a small margin), keeping
+ * the layout's shape: each iteration moves the two discs of the worst-overlapping pair equally along their centre
+ * line, clamped to the bounds. Deterministic; at most 60 iterations. Touching islands are left alone.
+ */
+export function separateIslands(islands: IslandLike[], log: Normalization[]): void {
+  const H = WORLD_LIMITS.bounds.halfExtent;
+  const margin = 0.25;
+  for (let iter = 0; iter < 60; iter++) {
+    let worst: { a: IslandLike; b: IslandLike; depth: number } | null = null;
+    for (let i = 0; i < islands.length; i++) {
+      for (let j = i + 1; j < islands.length; j++) {
+        const a = islands[i]; const b = islands[j];
+        const d = Math.hypot(a.center.x - b.center.x, a.center.z - b.center.z);
+        const depth = a.radius + b.radius + ISLAND_MIN_GAP + margin - d;
+        if (depth > 1e-6 && (!worst || depth > worst.depth)) worst = { a, b, depth };
+      }
+    }
+    if (!worst) return;
+    const { a, b, depth } = worst;
+    let dx = b.center.x - a.center.x; let dz = b.center.z - a.center.z;
+    let d = Math.hypot(dx, dz);
+    if (d < 1e-6) { dx = 1; dz = 0; d = 1; } // coincident centres: push along +X
+    const ux = dx / d; const uz = dz / d;
+    const half = depth / 2;
+    const fromA = { ...a.center }; const fromB = { ...b.center };
+    a.center = { x: r3(clampTo(a.center.x - ux * half, -(H - a.radius), H - a.radius)), z: r3(clampTo(a.center.z - uz * half, -(H - a.radius), H - a.radius)) };
+    b.center = { x: r3(clampTo(b.center.x + ux * half, -(H - b.radius), H - b.radius)), z: r3(clampTo(b.center.z + uz * half, -(H - b.radius), H - b.radius)) };
+    log.push({ path: `islands[${a.id}]`, from: fromA, to: a.center, reason: `moved apart from ${b.id} (overlap ${r3(depth)} m)` });
+    log.push({ path: `islands[${b.id}]`, from: fromB, to: b.center, reason: `moved apart from ${a.id} (overlap ${r3(depth)} m)` });
+  }
+}
+
+function clampTo(v: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, v));
+}
+
 const OBJECT_CLEARANCE = 1.2;
 
 /** Normalize a raw model WorldDraft. Returns a new object; never throws on odd shapes. */
@@ -139,6 +179,18 @@ export function normalizeDraft(draft: unknown): { draft: unknown; normalizations
         }
       }
     });
+  }
+  // Overlapping islands are the most common structural failure in model drafts: separate them deterministically.
+  if (islands.length > 1) {
+    separateIslands(islands, log);
+    if (Array.isArray(d.islands)) {
+      for (const raw of d.islands) {
+        if (!raw || typeof raw !== 'object') continue;
+        const is = raw as Record<string, unknown>;
+        const moved = islands.find((i) => i.id === is.id);
+        if (moved && is.center && typeof is.center === 'object') { (is.center as Record<string, unknown>).x = moved.center.x; (is.center as Record<string, unknown>).z = moved.center.z; }
+      }
+    }
   }
   const fixRef = (obj: Record<string, unknown>, key: string, path: string) => {
     const ref = obj[key];

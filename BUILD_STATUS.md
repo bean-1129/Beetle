@@ -1,6 +1,6 @@
 # BUILD_STATUS
 
-Last updated: 2026-10-03 12:35 CDT (13:35 Boston). Code deadline 18:00 Boston.
+Last updated: 2026-10-03 12:35 CDT. Submission deadline set by the user: 15:32 CDT (3 hours from 12:32). Integration and packaging reserve starts 14:45 CDT.
 
 Legend: implemented = code exists; tested = an automated or recorded manual test ran and passed; untested = exists, no test run; blocked = cannot proceed without something external; omitted = deliberately cut.
 
