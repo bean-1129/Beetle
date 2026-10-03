@@ -1,0 +1,1015 @@
+{
+  "test": "acceptance-volcanic",
+  "startedAt": "2026-10-03T18:46:35.167Z",
+  "finishedAt": "2026-10-03T18:47:08.293Z",
+  "prompt": "Turn the environment volcanic: water becomes lava. Also add one new bridge from the centre island to the east island as an alternative route. Keep our players and collected relics.",
+  "config": {
+    "port": 7784,
+    "host": "127.0.0.1",
+    "model": "qwen3.5:4b",
+    "ollamaBaseUrl": "http://127.0.0.1:11434",
+    "requestTimeoutMs": 240000,
+    "inputHz": 20,
+    "tickHz": 30,
+    "agentMode": "direct",
+    "requestDeadlineMs": 180000,
+    "modelCallTimeoutMs": 170000
+  },
+  "phases": {
+    "start-server": {
+      "startMs": 1791053195170,
+      "endMs": 1791053195512,
+      "durationMs": 342
+    },
+    "start-worker": {
+      "startMs": 1791053195512,
+      "endMs": 1791053195720,
+      "durationMs": 208
+    },
+    "join-controllers": {
+      "startMs": 1791053195720,
+      "endMs": 1791053195807,
+      "durationMs": 87
+    },
+    "collect-relic": {
+      "startMs": 1791053195807,
+      "endMs": 1791053202304,
+      "durationMs": 6497
+    },
+    "return-to-centre": {
+      "startMs": 1791053202304,
+      "endMs": 1791053208702,
+      "durationMs": 6398
+    },
+    "baseline": {
+      "startMs": 1791053208702,
+      "endMs": 1791053208705,
+      "durationMs": 3
+    },
+    "director-request": {
+      "startMs": 1791053208705,
+      "endMs": 1791053216723,
+      "durationMs": 8018
+    },
+    "post-commit-observe": {
+      "startMs": 1791053216723,
+      "endMs": 1791053219723,
+      "durationMs": 3000
+    },
+    "collect-results": {
+      "startMs": 1791053219723,
+      "endMs": 1791053219730,
+      "durationMs": 7
+    },
+    "cleanup": {
+      "startMs": 1791053219730,
+      "endMs": 1791053228293,
+      "durationMs": 8563
+    }
+  },
+  "health": {
+    "atServerReady": {
+      "ok": true,
+      "worldVersion": 1,
+      "hasWorld": true,
+      "players": 0,
+      "connectedControllers": 0,
+      "model": {
+        "name": "qwen3.5:4b",
+        "reachable": true,
+        "present": true
+      },
+      "agentConnected": false,
+      "publicUrl": "http://127.0.0.1:7784",
+      "uptimeMs": 179
+    },
+    "atAgentConnected": {
+      "ok": true,
+      "worldVersion": 1,
+      "hasWorld": true,
+      "players": 0,
+      "connectedControllers": 0,
+      "model": {
+        "name": "qwen3.5:4b",
+        "reachable": true,
+        "present": true
+      },
+      "agentConnected": true,
+      "publicUrl": "http://127.0.0.1:7784",
+      "uptimeMs": 389
+    }
+  },
+  "players": {
+    "p1": {
+      "playerId": "player-0",
+      "label": "Amber",
+      "slot": 0,
+      "welcomePlayerId": "player-0",
+      "tickHz": 30
+    },
+    "p2": {
+      "playerId": "player-1",
+      "label": "Azure",
+      "slot": 1,
+      "welcomePlayerId": "player-1",
+      "tickHz": 30
+    }
+  },
+  "baseline": {
+    "tick": 398,
+    "worldVersion": 1,
+    "worldVersionHttp": 1,
+    "score": 10,
+    "collectedRelicIds": [
+      "relic-east"
+    ],
+    "relics": {
+      "relic-east": "collected",
+      "relic-west": "present",
+      "relic-south": "present"
+    },
+    "gate": {
+      "unlocked": false,
+      "won": false
+    },
+    "players": [
+      {
+        "id": "player-0",
+        "label": "Amber",
+        "connected": true,
+        "status": "active",
+        "supportId": "centre",
+        "x": -1.29,
+        "z": -2.98
+      },
+      {
+        "id": "player-1",
+        "label": "Azure",
+        "connected": true,
+        "status": "active",
+        "supportId": "centre",
+        "x": -3.95,
+        "z": 3
+      }
+    ],
+    "p1": {
+      "id": "player-0",
+      "label": "Amber",
+      "connected": true,
+      "status": "active",
+      "supportId": "centre",
+      "x": -1.29,
+      "z": -2.98
+    },
+    "p2": {
+      "id": "player-1",
+      "label": "Azure",
+      "connected": true,
+      "status": "active",
+      "supportId": "centre",
+      "x": -3.95,
+      "z": 3
+    },
+    "bridgeIds": [
+      "bridge-east",
+      "bridge-north",
+      "bridge-south",
+      "bridge-west"
+    ],
+    "islandIds": [
+      "centre",
+      "east",
+      "south",
+      "temple",
+      "west"
+    ],
+    "hazard": "water",
+    "title": "Garden of Five Islands (fixture)"
+  },
+  "request": {
+    "id": "req-ef9a1b86",
+    "kind": "edit",
+    "prompt": "Turn the environment volcanic: water becomes lava. Also add one new bridge from the centre island to the east island as an alternative route. Keep our players and collected relics.",
+    "createdAt": 1791053208706,
+    "worldVersionAtRequest": 1,
+    "status": "committed",
+    "claimedBy": "agent-promaxgb10-5ca9-227717",
+    "finishedAt": 1791053216626,
+    "resultWorldVersion": 2,
+    "reportId": "rep-69a47400",
+    "submittedAtMs": 1791053208705,
+    "terminalAtMs": 1791053216722,
+    "directorObservedMs": 8017,
+    "timedOut": false,
+    "pollLog": [
+      {
+        "t": 1791053209709,
+        "status": "planning",
+        "sockets": [
+          true,
+          true
+        ],
+        "tickAgeMs": [
+          12,
+          12
+        ]
+      },
+      {
+        "t": 1791053210711,
+        "status": "planning",
+        "sockets": [
+          true,
+          true
+        ],
+        "tickAgeMs": [
+          18,
+          18
+        ]
+      },
+      {
+        "t": 1791053211713,
+        "status": "planning",
+        "sockets": [
+          true,
+          true
+        ],
+        "tickAgeMs": [
+          27,
+          27
+        ]
+      },
+      {
+        "t": 1791053212713,
+        "status": "planning",
+        "sockets": [
+          true,
+          true
+        ],
+        "tickAgeMs": [
+          1,
+          1
+        ]
+      },
+      {
+        "t": 1791053213715,
+        "status": "planning",
+        "sockets": [
+          true,
+          true
+        ],
+        "tickAgeMs": [
+          11,
+          11
+        ]
+      },
+      {
+        "t": 1791053214718,
+        "status": "planning",
+        "sockets": [
+          true,
+          true
+        ],
+        "tickAgeMs": [
+          19,
+          19
+        ]
+      },
+      {
+        "t": 1791053215721,
+        "status": "planning",
+        "sockets": [
+          true,
+          true
+        ],
+        "tickAgeMs": [
+          29,
+          29
+        ]
+      },
+      {
+        "t": 1791053216722,
+        "status": "committed",
+        "sockets": [
+          true,
+          true
+        ],
+        "tickAgeMs": [
+          12,
+          12
+        ]
+      }
+    ]
+  },
+  "activity": [
+    {
+      "id": "act-1-musqu4jn",
+      "requestId": "req-ef9a1b86",
+      "phase": "queued",
+      "message": "Edit queued for the agent",
+      "at": 1791053208707,
+      "elapsedMs": 1,
+      "worldVersion": 1
+    },
+    {
+      "id": "act-2-musqu4jn",
+      "requestId": "req-ef9a1b86",
+      "phase": "planning",
+      "message": "Agent claimed the request",
+      "at": 1791053208707,
+      "elapsedMs": 1,
+      "worldVersion": 1
+    },
+    {
+      "id": "act-3-musqu4jz",
+      "requestId": "req-ef9a1b86",
+      "phase": "planning",
+      "message": "[direct] reading the current world",
+      "at": 1791053208719,
+      "elapsedMs": 13,
+      "worldVersion": 1,
+      "tool": "read_world_state"
+    },
+    {
+      "id": "act-4-musqu4k5",
+      "requestId": "req-ef9a1b86",
+      "phase": "planning",
+      "message": "[direct] drafting a patch for v1 with qwen3.5:4b",
+      "at": 1791053208725,
+      "elapsedMs": 19,
+      "worldVersion": 1
+    },
+    {
+      "id": "act-5-musqualk",
+      "requestId": "req-ef9a1b86",
+      "phase": "validating",
+      "message": "[direct] validating the candidate",
+      "at": 1791053216552,
+      "elapsedMs": 7846,
+      "worldVersion": 1,
+      "tool": "validate_candidate"
+    },
+    {
+      "id": "act-6-musquamb",
+      "requestId": "req-ef9a1b86",
+      "phase": "validating",
+      "message": "[direct] running connectivity and supported-movement checks",
+      "at": 1791053216579,
+      "elapsedMs": 7873,
+      "worldVersion": 1,
+      "tool": "run_playability_checks"
+    },
+    {
+      "id": "act-7-musquamr",
+      "requestId": "req-ef9a1b86",
+      "phase": "awaiting_safe_commit",
+      "message": "[direct] committing at the next safe tick",
+      "at": 1791053216595,
+      "elapsedMs": 7889,
+      "worldVersion": 1,
+      "tool": "commit_candidate"
+    },
+    {
+      "id": "act-8-musquani",
+      "requestId": "req-ef9a1b86",
+      "phase": "committed",
+      "message": "[direct] committed v2",
+      "at": 1791053216622,
+      "elapsedMs": 7916,
+      "worldVersion": 2,
+      "tool": "commit_candidate"
+    },
+    {
+      "id": "act-9-musquank",
+      "requestId": "req-ef9a1b86",
+      "phase": "committed",
+      "message": "direct / qwen3.5:4b: [direct] The world hazard is changed from water to lava, and a new bridge connects the centre island to the east island.",
+      "at": 1791053216624,
+      "elapsedMs": 7918,
+      "worldVersion": 2
+    },
+    {
+      "id": "act-a-musquanm",
+      "requestId": "req-ef9a1b86",
+      "phase": "committed",
+      "message": "Committed world version 2",
+      "at": 1791053216626,
+      "elapsedMs": 7920,
+      "worldVersion": 2
+    }
+  ],
+  "activityPhaseTimings": {
+    "byPhase": [
+      {
+        "phase": "queued",
+        "firstMs": 1,
+        "lastMs": 1,
+        "count": 1
+      },
+      {
+        "phase": "planning",
+        "firstMs": 1,
+        "lastMs": 19,
+        "count": 3
+      },
+      {
+        "phase": "validating",
+        "firstMs": 7846,
+        "lastMs": 7873,
+        "count": 2
+      },
+      {
+        "phase": "awaiting_safe_commit",
+        "firstMs": 7889,
+        "lastMs": 7889,
+        "count": 1
+      },
+      {
+        "phase": "committed",
+        "firstMs": 7916,
+        "lastMs": 7920,
+        "count": 3
+      }
+    ],
+    "segments": [
+      {
+        "from": "queued",
+        "to": "planning",
+        "ms": 0
+      },
+      {
+        "from": "planning",
+        "to": "validating",
+        "ms": 7845
+      },
+      {
+        "from": "validating",
+        "to": "awaiting_safe_commit",
+        "ms": 43
+      },
+      {
+        "from": "awaiting_safe_commit",
+        "to": "committed",
+        "ms": 27
+      }
+    ],
+    "totalMs": 7920,
+    "codes": [],
+    "repairs": 0
+  },
+  "report": {
+    "reportId": "rep-69a47400",
+    "requestId": "req-ef9a1b86",
+    "mode": "direct",
+    "model": "qwen3.5:4b",
+    "outcome": "committed",
+    "worldVersion": 2,
+    "baseWorldVersion": 1,
+    "summary": "[direct] The world hazard is changed from water to lava, and a new bridge connects the centre island to the east island.",
+    "validation": {
+      "attempts": 1,
+      "failedCodes": []
+    },
+    "playability": {
+      "ok": true,
+      "checks": 5,
+      "failed": 0
+    },
+    "timings": {
+      "requestedAt": 1791053208706,
+      "firstModelResponseMs": 7831,
+      "validatedMs": 7862,
+      "committedMs": 7905,
+      "totalMs": 7908
+    },
+    "toolCalls": [
+      {
+        "tool": "read_world_state",
+        "ok": true,
+        "ms": 2
+      },
+      {
+        "tool": "propose_patch",
+        "ok": true,
+        "ms": 4
+      },
+      {
+        "tool": "validate_candidate",
+        "ok": true,
+        "ms": 24
+      },
+      {
+        "tool": "run_playability_checks",
+        "ok": true,
+        "ms": 13
+      },
+      {
+        "tool": "commit_candidate",
+        "ok": true,
+        "ms": 24
+      }
+    ],
+    "createdAt": 1791053216624
+  },
+  "after": {
+    "worldVersionHttp": 2,
+    "hazard": "lava",
+    "title": "Garden of Five Islands (fixture)",
+    "worldId": "garden5",
+    "bridgeIds": [
+      "bridge-east",
+      "bridge-east-alt",
+      "bridge-north",
+      "bridge-south",
+      "bridge-west"
+    ],
+    "islandIds": [
+      "centre",
+      "east",
+      "south",
+      "temple",
+      "west"
+    ],
+    "newBridges": [
+      {
+        "id": "bridge-east-alt",
+        "width": 2.4,
+        "endpoints": [
+          {
+            "islandId": "centre",
+            "point": {
+              "x": 9,
+              "z": 0
+            }
+          },
+          {
+            "islandId": "east",
+            "point": {
+              "x": 17,
+              "z": 0
+            }
+          }
+        ],
+        "lengthM": 8
+      }
+    ],
+    "removedBridgeIds": [],
+    "newBridgesTouchingEast": [
+      "bridge-east-alt"
+    ],
+    "newBridgesCentreToEast": [
+      "bridge-east-alt"
+    ],
+    "summary": {
+      "worldVersion": 2,
+      "worldTitle": "Garden of Five Islands (fixture)",
+      "elapsedSec": 24.3,
+      "players": [
+        {
+          "id": "player-0",
+          "label": "Amber",
+          "onSurfaceId": "centre",
+          "status": "active",
+          "connected": true
+        },
+        {
+          "id": "player-1",
+          "label": "Azure",
+          "onSurfaceId": "centre",
+          "status": "active",
+          "connected": true
+        }
+      ],
+      "collectedRelicIds": [
+        "relic-east"
+      ],
+      "remainingRelicIds": [
+        "relic-west",
+        "relic-south"
+      ],
+      "gateUnlocked": false,
+      "won": false,
+      "score": 10,
+      "islands": [
+        {
+          "id": "centre",
+          "name": "Hearth Island",
+          "compass": "centre",
+          "bridgeIds": [
+            "bridge-north",
+            "bridge-east",
+            "bridge-west",
+            "bridge-south",
+            "bridge-east-alt"
+          ]
+        },
+        {
+          "id": "temple",
+          "name": "Temple Island",
+          "compass": "north",
+          "bridgeIds": [
+            "bridge-north"
+          ]
+        },
+        {
+          "id": "east",
+          "name": "Orchard Island",
+          "compass": "east",
+          "bridgeIds": [
+            "bridge-east",
+            "bridge-east-alt"
+          ]
+        },
+        {
+          "id": "west",
+          "name": "Mossy Island",
+          "compass": "west",
+          "bridgeIds": [
+            "bridge-west"
+          ]
+        },
+        {
+          "id": "south",
+          "name": "Lantern Island",
+          "compass": "south",
+          "bridgeIds": [
+            "bridge-south"
+          ]
+        }
+      ]
+    },
+    "tick1": {
+      "tick": 729,
+      "worldVersion": 2,
+      "score": 10,
+      "collectedRelicIds": [
+        "relic-east"
+      ],
+      "gate": {
+        "unlocked": false,
+        "won": false
+      },
+      "players": [
+        {
+          "id": "player-0",
+          "label": "Amber",
+          "connected": true,
+          "status": "active",
+          "supportId": "centre",
+          "x": -1.44,
+          "z": -3
+        },
+        {
+          "id": "player-1",
+          "label": "Azure",
+          "connected": true,
+          "status": "active",
+          "supportId": "centre",
+          "x": -3.2,
+          "z": 3
+        }
+      ]
+    },
+    "tick2": {
+      "tick": 729,
+      "worldVersion": 2,
+      "score": 10,
+      "collectedRelicIds": [
+        "relic-east"
+      ],
+      "players": [
+        {
+          "id": "player-0",
+          "label": "Amber",
+          "connected": true,
+          "status": "active",
+          "supportId": "centre",
+          "x": -1.44,
+          "z": -3
+        },
+        {
+          "id": "player-1",
+          "label": "Azure",
+          "connected": true,
+          "status": "active",
+          "supportId": "centre",
+          "x": -3.2,
+          "z": 3
+        }
+      ]
+    },
+    "p1": {
+      "id": "player-0",
+      "label": "Amber",
+      "connected": true,
+      "status": "active",
+      "supportId": "centre",
+      "x": -1.44,
+      "z": -3
+    },
+    "p2": {
+      "id": "player-1",
+      "label": "Azure",
+      "connected": true,
+      "status": "active",
+      "supportId": "centre",
+      "x": -3.2,
+      "z": 3
+    },
+    "worldMessages": {
+      "display": [
+        {
+          "t": 1791053195738,
+          "reason": "snapshot",
+          "version": 1
+        },
+        {
+          "t": 1791053216619,
+          "reason": "commit",
+          "version": 2,
+          "changedIds": [
+            "hazard",
+            "bridge-east-alt"
+          ],
+          "patchSummary": "The world hazard is changed from water to lava, and a new bridge connects the centre island to the east island."
+        }
+      ],
+      "p1": [],
+      "p2": []
+    }
+  },
+  "tickGaps": {
+    "p1": {
+      "wait": {
+        "ticks": 241,
+        "gaps": 240,
+        "meanMs": 33.23,
+        "p50Ms": 33,
+        "p95Ms": 34,
+        "p99Ms": 47,
+        "maxMs": 66,
+        "gapsOver1000": 0,
+        "firstT": 1791053208735,
+        "lastT": 1791053216710
+      },
+      "wholeRun": {
+        "ticks": 721,
+        "gaps": 720,
+        "meanMs": 33.31,
+        "p50Ms": 33,
+        "p95Ms": 34,
+        "p99Ms": 44,
+        "maxMs": 66,
+        "gapsOver1000": 0,
+        "firstT": 1791053195741,
+        "lastT": 1791053219721
+      }
+    },
+    "p2": {
+      "wait": {
+        "ticks": 241,
+        "gaps": 240,
+        "meanMs": 33.23,
+        "p50Ms": 33,
+        "p95Ms": 34,
+        "p99Ms": 47,
+        "maxMs": 67,
+        "gapsOver1000": 0,
+        "firstT": 1791053208735,
+        "lastT": 1791053216710
+      },
+      "wholeRun": {
+        "ticks": 721,
+        "gaps": 720,
+        "meanMs": 33.31,
+        "p50Ms": 33,
+        "p95Ms": 34,
+        "p99Ms": 44,
+        "maxMs": 67,
+        "gapsOver1000": 0,
+        "firstT": 1791053195741,
+        "lastT": 1791053219721
+      }
+    }
+  },
+  "motion": {
+    "p1": {
+      "wait": {
+        "samples": 241,
+        "movedSamples": 240,
+        "pathLengthM": 36,
+        "maxStationaryMs": 0,
+        "statusCounts": {
+          "active": 241
+        },
+        "supportIds": [
+          "centre"
+        ],
+        "bbox": {
+          "minX": -4.144,
+          "maxX": 4.256,
+          "minZ": -3,
+          "maxZ": -2.984
+        }
+      },
+      "wholeRun": {
+        "samples": 721,
+        "movedSamples": 709,
+        "pathLengthM": 106.35,
+        "maxStationaryMs": 166,
+        "statusCounts": {
+          "active": 721
+        },
+        "supportIds": [
+          "centre",
+          "bridge-east",
+          "east"
+        ],
+        "bbox": {
+          "minX": -4.144,
+          "maxX": 25.734,
+          "minZ": -3,
+          "maxZ": 0
+        }
+      }
+    },
+    "p2": {
+      "wait": {
+        "samples": 241,
+        "movedSamples": 240,
+        "pathLengthM": 36,
+        "maxStationaryMs": 0,
+        "statusCounts": {
+          "active": 241
+        },
+        "supportIds": [
+          "centre"
+        ],
+        "bbox": {
+          "minX": -4.254,
+          "maxX": 4.296,
+          "minZ": 3,
+          "maxZ": 3
+        }
+      },
+      "wholeRun": {
+        "samples": 721,
+        "movedSamples": 717,
+        "pathLengthM": 107.55,
+        "maxStationaryMs": 132,
+        "statusCounts": {
+          "active": 721
+        },
+        "supportIds": [
+          "centre"
+        ],
+        "bbox": {
+          "minX": -4.254,
+          "maxX": 4.296,
+          "minZ": -2,
+          "maxZ": 3
+        }
+      }
+    }
+  },
+  "sockets": {
+    "p1": {
+      "open": true,
+      "closedAt": null,
+      "closeInfo": null,
+      "errors": [],
+      "inputsSent": 543
+    },
+    "p2": {
+      "open": true,
+      "closedAt": null,
+      "closeInfo": null,
+      "errors": [],
+      "inputsSent": 477
+    },
+    "display": {
+      "open": true,
+      "closedAt": null,
+      "closeInfo": null,
+      "errors": [],
+      "worldMessages": 2
+    }
+  },
+  "patrol": {
+    "p1": {
+      "flips": 6,
+      "sent": 222,
+      "zeroSent": 0
+    },
+    "p2": {
+      "flips": 12,
+      "sent": 477,
+      "zeroSent": 0
+    }
+  },
+  "assertions": [
+    {
+      "id": "A0",
+      "name": "server + worker up",
+      "pass": true,
+      "detail": "health ok, agentConnected, world v1"
+    },
+    {
+      "id": "A1",
+      "name": "fixture world is serene",
+      "pass": true,
+      "detail": "worldId garden5, hazard water, v1, bridges [bridge-north, bridge-east, bridge-west, bridge-south]"
+    },
+    {
+      "id": "A2",
+      "name": "two controllers joined",
+      "pass": true,
+      "detail": "Amber player-0, Azure player-1"
+    },
+    {
+      "id": "A3",
+      "name": "baseline: relic collected, both players on centre island",
+      "pass": true,
+      "detail": "collected [relic-east], score 10, v1, p1 on centre, p2 on centre"
+    },
+    {
+      "id": "A4",
+      "name": "request reached committed",
+      "pass": true,
+      "detail": "status committed, 8.0 s observed by the director"
+    },
+    {
+      "id": "A5",
+      "name": "neither socket closed",
+      "pass": true,
+      "detail": "p1 open true, p2 open true, ws errors p1 0 p2 0"
+    },
+    {
+      "id": "A6",
+      "name": "ticks kept arriving during the wait (max gap < 1 s)",
+      "pass": true,
+      "detail": "p1 241 ticks, max gap 66 ms, p99 47 ms; p2 241 ticks, max gap 67 ms, p99 47 ms"
+    },
+    {
+      "id": "A7",
+      "name": "both players kept moving during the wait",
+      "pass": true,
+      "detail": "p1 path 36 m, moved 240/241 ticks, longest still 0 ms; p2 path 36 m, moved 240/241 ticks, longest still 0 ms"
+    },
+    {
+      "id": "A8",
+      "name": "worldVersion increased by exactly one",
+      "pass": true,
+      "detail": "v1 -> v2 (ticks: p1 v2, p2 v2)"
+    },
+    {
+      "id": "A9",
+      "name": "hazard is lava",
+      "pass": true,
+      "detail": "hazard lava, title \"Garden of Five Islands (fixture)\""
+    },
+    {
+      "id": "A10",
+      "name": "bridge set changed with a new bridge touching the east island",
+      "pass": true,
+      "detail": "new [bridge-east-alt centre->east], removed [-], touching east [bridge-east-alt], centre<->east [bridge-east-alt]"
+    },
+    {
+      "id": "A11",
+      "name": "collected relics and score unchanged",
+      "pass": true,
+      "detail": "before [relic-east] score 10; after [relic-east] score 10"
+    },
+    {
+      "id": "A12",
+      "name": "both player ids still present and connected",
+      "pass": true,
+      "detail": "p1 player-0 connected true, p2 player-1 connected true"
+    },
+    {
+      "id": "A13",
+      "name": "player supportId values are surfaces of the new world",
+      "pass": true,
+      "detail": "p1 on centre (active), p2 on centre (active); surfaces [centre, temple, east, west, south, bridge-north, bridge-east, bridge-west, bridge-south, bridge-east-alt]"
+    },
+    {
+      "id": "A14",
+      "name": "display observer received the commit world message",
+      "pass": true,
+      "detail": "v2 at +7914 ms after submit, changed [hazard, bridge-east-alt], summary \"The world hazard is changed from water to lava, and a new bridge connects the centre island to the east island.\""
+    },
+    {
+      "id": "A15",
+      "name": "build report published for the request",
+      "pass": true,
+      "detail": "outcome committed, mode direct, model qwen3.5:4b, attempts 1, failedCodes [], preserved null, timings {\"requestedAt\":1791053208706,\"firstModelResponseMs\":7831,\"validatedMs\":7862,\"committedMs\":7905,\"totalMs\":7908}"
+    }
+  ],
+  "verdict": "PASS",
+  "error": null,
+  "dataDir": "/tmp/claude-1000/-home-dell-Beetle/21ab41dd-867e-4ca2-b74f-579f811eb422/scratchpad/acceptance/run2",
+  "childLogsTail": {
+    "server": "[beetle] world: fixture garden5 as version 1\n[beetle] listening on 127.0.0.1:7784 (http://127.0.0.1:7784); agent token: from environment\n[beetle] director: http://127.0.0.1:7784/director?token=<BEETLE_DIRECTOR_TOKEN from environment>\n[beetle] SIGTERM received, stopping\n",
+    "worker": "2026-10-03T18:46:35.616Z [direct] worker agent-promaxgb10-5ca9-227717 polling http://127.0.0.1:7784 for requests (model qwen3.5:4b)\n2026-10-03T18:46:48.714Z [direct] claimed req-ef9a1b86 (edit)\n2026-10-03T18:46:56.627Z [direct] req-ef9a1b86 committed v2 (7908 ms)\n2026-10-03T18:46:59.764Z [direct] stopping after the current job\n2026-10-03T18:47:08.271Z [direct] worker stopped after 1 request\n"
+  },
+  "totalMs": 33126
+}

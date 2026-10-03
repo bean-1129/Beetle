@@ -12,5 +12,6 @@ data/*
 !data/prompt-runs/
 !data/offline-proof/
 !data/reports/
+!data/acceptance/
 .openclaw-home/
 submission/
