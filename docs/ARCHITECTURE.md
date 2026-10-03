@@ -232,3 +232,29 @@ An extension is validated as a full world, not as a delta: `OUT_OF_BOUNDS` (isla
 - Replay: the trigger is a pure function of (compiled world, tick positions, cooldown clock), so an extension seen in the demo can be reproduced from the event log and tested without a model by driving a scripted controller to a rim and asserting the automatic request.
 - Single writer: the server is the only thing that creates requests, so manual and automatic requests share one queue, one cooldown and one transaction path, and the "manual wins" rule is enforceable.
 - Status at 15:20 CDT: contracts, limits, the island ops and applier, the director toggle and the trail tagging are in the tree (`npx tsc -p apps/web/tsconfig.json` clean). The server trigger, the settings route and the agent prompt for extensions are owned by the server and agent owners and were still landing when this section was written; no streaming run is recorded in docs/RESULTS.md yet.
+
+## Terrain types (added 15:31 CDT)
+
+A world is either floating islands over a hazard or one continuous landmass. The terrain changes how zones and crossings read and how an edge behaves; it does not change their geometry, so the compiler, validator and agent work the same on both.
+
+### Contract field
+
+- `WorldSpec.terrain`: `'islands' | 'ground'`, optional (`TERRAINS` in packages/contracts/src/limits.ts, schema in packages/contracts/src/world.ts). `effectiveTerrain(spec)` returns `'islands'` when the field is absent, so every world written before this field is unchanged.
+- Patch op `set_terrain { terrain }` (packages/contracts/src/patch.ts, applied in packages/world/src/patch.ts) switches it live through the normal validated commit path.
+- The same `islands`, `bridges` and hazard arrays describe both terrains. On `ground` an island is a plateau and a bridge is a path; nothing is renamed in the contract.
+- The model chooses the terrain from the brief and alternates when the brief implies neither, so islands are not the default look of generated worlds.
+
+### Movement rule difference (packages/world/src/movement.ts)
+
+- `islands`: a step that leaves every supporting surface sets `fell`; the player drops into the hazard and respawns, as before.
+- `ground`: a step that would leave support is cancelled. The position stays where it was and the velocity on that step is zeroed, so the plateau or path edge blocks like a wall; the existing axis-separated slide against `blockedAt` lets the player keep moving along the edge. There is nothing to fall into, so `fell` is never set on ground.
+
+### Renderer difference (apps/web)
+
+- `islands`: floating terrain bodies with undersides, plank bridges, and the water or lava plane below, as described under "Web".
+- `ground`: one continuous landmass. Zones render as raised plateaus and crossings as paths on the ground surface, with no floating undersides and no void between zones. The biome preset (garden, volcanic, frost, desert, night) applies to both.
+- Status at 15:31 CDT: the contract field, `set_terrain` and the movement rule are in the tree; the ground renderer and the prompt rule for choosing terrain are owned by the web and agent owners and are not yet visible in the tree. No ground world is measured in docs/RESULTS.md yet.
+
+### Validator unchanged
+
+The validator (packages/world/src/validate.ts) needs no terrain branch, because zones and crossings keep their geometry: island discs still carry centre and radius, bridges still join two rims, and the walk field is compiled from the same shapes. Every existing check applies unchanged on ground (`ISLAND_OVERLAP`, `OUT_OF_BOUNDS`, the bridge geometry codes, reachability of spawns, relics and the gate, `OBJECT_NOT_ON_SURFACE`, the live `PLAYER_CUT_OFF` and `OCCUPIED_SUPPORT` checks). Reachability means the same thing on both: a relic off the walk field is unreachable whether the gap below it is water or the side of a plateau.

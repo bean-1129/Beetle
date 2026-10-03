@@ -72,11 +72,18 @@ The engine implements five game modes (`GAME_MODES` in packages/contracts/src/li
 | `checkpoint_race` | Run through the relics as checkpoints, in order by default, then the gate. Race requests map here | Every checkpoint reached (ordered when `orderedCheckpoints` is true, the default for this mode), then the gate | `orderedCheckpoints` true or false, `relicsRequired` 1 to 3; the validator requires at least 2 relics (MODE_INVALID otherwise) |
 | `survival` | Grab a relic and get to the gate while the hazard plane rises; once it passes -1.0 m every bridge submerges and stops supporting players | Collect `relicsRequired` relics (default 1 in this mode) and reach the gate before `timeLimitSec` ends; `lost` when the timer expires. The objective state carries `remainingSec`, `hazardElevation` and `lost`; the validator requires `hazard.rise` with `maxElevation` above the starting plane | `timeLimitSec` 20 to 600 s (default 120); `hazard.rise`: `afterSec` 5 to 300, `metersPerSec` 0.01 to 0.5, `maxElevation` -2 to -0.6 m (bridges below -1.0 m submerge) |
 
-Common to every mode: 2 to 24 islands (worlds start small and stream in), at most 48 bridges, 2 spawns, 3 relics, 1 gate, at most 40 decorations, movement speed 3 to 7 m/s (default 4.5, changed live with `set_movement`), and a hazard of `water` or `lava` under everything.
+Common to every mode: 2 to 24 zones (worlds start small and stream in), at most 48 crossings, 2 spawns, 3 relics, 1 gate, at most 40 decorations, movement speed 3 to 7 m/s (default 4.5, changed live with `set_movement`).
+
+Terrains (`TERRAINS`, the `terrain` field of the world): a world is one of two types, and the model picks one from the brief.
+
+- `islands`: floating platforms over water or lava, joined by bridges; step off the edge and you fall into the hazard. A world with no `terrain` field is islands.
+- `ground`: one continuous landmass. Zones are plateaus, crossings are paths, and there is nothing to fall into: at a plateau edge the server stops the player and they slide along it.
+
+When the brief implies neither ("floating", "over lava" points to islands; "valley", "hills", "a landscape" to ground) the model alternates, so islands are no longer the default look. The terrain can be changed live with `set_terrain`. Modes, relics, the gate and the validator are shared by both (docs/ARCHITECTURE.md "Terrain types"; implementation status in docs/CAPABILITIES.md).
 
 Biomes (`BIOMES`): `garden`, `volcanic`, `frost`, `desert`, `night`. The biome is a world field, chosen by the brief and changed live with `set_biome`; the hazard kind is separate (`set_hazard`). Serene (garden, water) and volcanic (lava) rendering is verified in the browser with two moving players (docs/ACCEPTANCE.md); the biome presets for frost, desert and night are implemented and the frost hill fixture was verified in the browser at 32 fps in the software-rendered pane (BUILD_STATUS.md, renderer row); desert and night have no separate browser check recorded. Decoration types (11): tree, rock, lantern, pillar, bush, shrine, tower, ruin, crystal, mushroom, statue.
 
-Live patch ops: `add_bridge`, `remove_bridge`, `set_hazard`, `add_decoration`, `move_decoration`, `remove_decoration`, `move_relic`, `set_title`, `set_mode`, `set_biome`, `set_movement`, `add_island`, `remove_island` (packages/contracts/src/patch.ts), at most 16 ops per patch.
+Live patch ops: `add_bridge`, `remove_bridge`, `set_hazard`, `add_decoration`, `move_decoration`, `remove_decoration`, `move_relic`, `set_title`, `set_mode`, `set_biome`, `set_movement`, `add_island`, `remove_island`, `set_terrain` (packages/contracts/src/patch.ts), at most 16 ops per patch.
 
 Example briefs and where they land:
 
@@ -89,6 +96,15 @@ Example briefs and where they land:
 | "The flood is coming: stay above the water as it rises" | `survival` | garden, water | `hazard.rise` within the contract ranges |
 
 These examples show the mapping rule. The measured runs (18 briefs, 4 edits, 7 out-of-library requests) are in docs/RESULTS.md "Game modes from one prompt" and summarised under "What works today" below; note that the measured king-of-the-hill brief asked for desert and committed as volcanic because the model never wrote `desert`.
+
+## Not yet
+
+Beetle builds any request inside its mechanic library and says what it mapped. These are not in the library today; a request for one becomes the closest playable mechanic and the title or summary says so (for example "shoot walking trees" becomes a relic hunt in a dense forest where the trees are scenery). Full table and roadmap: docs/CAPABILITIES.md.
+
+- Shooting, enemies and combat (fights map to king of the hill, monsters to survival)
+- First-person camera: the display is one shared screen for two players and phones are controllers
+- Vehicles (races are on foot)
+- Building, and inventories beyond relics
 
 ## Streaming worlds
 
