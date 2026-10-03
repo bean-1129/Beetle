@@ -111,7 +111,9 @@ describe('model-output corpus', () => {
       let r: ReturnType<typeof replay>;
       try { r = replay(sample); } catch { continue; } // reported by the per-sample test above
       const storedValid = sample.outcome === 'valid';
-      if (storedValid && !r.ok) regressions.push(`${rel(file)}: stored valid, replay rejected at ${r.stage} (${r.issues.map((i) => i.code).join(', ')})`);
+      // Deliberate tightening after the corpus was stored: BRIDGE_DUPLICATE (an alternative route may not duplicate an existing bridge).
+      const onlyTightening = !r.ok && r.issues.length > 0 && r.issues.every((i) => i.code === 'BRIDGE_DUPLICATE');
+      if (storedValid && !r.ok && !onlyTightening) regressions.push(`${rel(file)}: stored valid, replay rejected at ${r.stage} (${r.issues.map((i) => i.code).join(', ')})`);
       if (!storedValid && r.ok) improvements.push(`${rel(file)}: stored ${sample.outcome}, replay valid`);
     }
     if (improvements.length) console.info(`corpus: ${improvements.length} stored rejections now validate (normaliser or validator changed); rebuild the summary.\n${improvements.join('\n')}`);

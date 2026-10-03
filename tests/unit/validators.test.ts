@@ -326,3 +326,21 @@ function ringWorld16(): WorldSpec {
     objectiveRules: ['collect_all_relics_then_enter_gate'],
   };
 }
+
+describe('BRIDGE_DUPLICATE', () => {
+  it('rejects a second bridge along the same line between the same islands and accepts a genuinely different route', async () => {
+    const { applyPatch, fixtureWorld, validateSpec } = await import('@beetle/world');
+    const spec = fixtureWorld('garden5');
+    const dup = applyPatch(spec, { summary: 'dup', ops: [{ op: 'add_bridge', id: 'bridge-north-new', from: 'centre', to: 'temple' }] });
+    expect(dup.ok).toBe(true);
+    if (!dup.ok) return;
+    const v = validateSpec(dup.spec);
+    expect(v.ok).toBe(false);
+    expect(v.issues.map((i) => i.code)).toContain('BRIDGE_DUPLICATE');
+    const alt = applyPatch(spec, { summary: 'alt', ops: [{ op: 'add_bridge', id: 'bridge-east-temple', from: 'east', to: 'temple' }] });
+    expect(alt.ok).toBe(true);
+    if (!alt.ok) return;
+    const v2 = validateSpec(alt.spec);
+    expect(v2.issues.map((i) => i.code)).not.toContain('BRIDGE_DUPLICATE');
+  });
+});

@@ -165,6 +165,23 @@ export function validateSpec(input: unknown, ctx: LiveContext = {}): ValidationO
       issues.push(issue('BRIDGE_TOO_NARROW', `bridge "${b.id}" is ${b.width} m wide; minimum ${round3(MIN_BRIDGE_WIDTH)} m`, [b.id], { width: b.width, min: round3(MIN_BRIDGE_WIDTH) }));
     }
   }
+  // 6b. Two bridges that run along the same line between the same two islands are one route, not an alternative.
+  const DUP_TOL = 2.0;
+  const seenBridges = spec.bridges.filter((b) => bridgeRefsOk.has(b.id));
+  for (let i = 0; i < seenBridges.length; i++) {
+    for (let j = i + 1; j < seenBridges.length; j++) {
+      const a = seenBridges[i]; const c = seenBridges[j];
+      const pairA = [a.endpoints[0].islandId, a.endpoints[1].islandId].sort().join('|');
+      const pairC = [c.endpoints[0].islandId, c.endpoints[1].islandId].sort().join('|');
+      if (pairA !== pairC) continue;
+      const same = (p: Vec2, q: Vec2) => dist(p, q) <= DUP_TOL;
+      const [a0, a1] = [a.endpoints[0].point, a.endpoints[1].point];
+      const [c0, c1] = [c.endpoints[0].point, c.endpoints[1].point];
+      if ((same(a0, c0) && same(a1, c1)) || (same(a0, c1) && same(a1, c0))) {
+        issues.push(issue('BRIDGE_DUPLICATE', `bridge "${c.id}" runs along the same line as "${a.id}" between the same islands; an alternative route must start from a different island or end point`, [c.id, a.id], { islands: pairA.split('|') }));
+      }
+    }
+  }
 
   // 7. Reachability with the gate locked
   const compiled = compileWorld(spec);

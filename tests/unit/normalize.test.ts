@@ -17,13 +17,13 @@ describe('model output normalization', () => {
   it('applyPatch accepts a model patch that names islands instead of ids and records the normalization', () => {
     const r = applyPatch(spec, { summary: 'lava and a new crossing', ops: [
       { op: 'set_hazard', kind: 'lava' },
-      { op: 'add_bridge', id: 'bridge-northern', from: 'hearth-island', to: 'temple-island' },
+      { op: 'add_bridge', id: 'bridge-northern', from: 'Orchard Island', to: 'temple-island' },
     ] });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.spec.hazard.kind).toBe('lava');
     const b = r.spec.bridges.find((x) => x.id === 'bridge-northern');
-    expect(b?.endpoints.map((e) => e.islandId).sort()).toEqual(['centre', 'temple']);
+    expect(b?.endpoints.map((e) => e.islandId).sort()).toEqual(['east', 'temple']);
     expect(r.normalizations.length).toBe(2);
     expect(validateSpec(r.spec).ok).toBe(true);
   });
