@@ -32,7 +32,7 @@ The machine timezone is America/Chicago, not America/New_York. All deadline math
 | Node | 24.21.0 | .tools/node/bin |
 | npm | 11.19.0 | .tools/node/bin |
 | OpenClaw | 2026.9.8 (fc23bc8) | .tools/npm-global/bin/openclaw |
-| Ollama | 0.35.1 | .tools/ollama/bin/ollama, server bound to 127.0.0.1:11434 |
+| Ollama | 0.35.1 | .tools/ollama/bin/ollama, server bound to 127.0.0.1:11434; restarted at 13:43 CDT with OLLAMA_NUM_PARALLEL=1 OLLAMA_FLASH_ATTENTION=1 OLLAMA_KEEP_ALIVE=1h after the daemon stopped answering chat requests; this model architecture ignores parallel slots (daemon log) |
 | Python | system python3 | used only for scripts, not product inference |
 
 Note: the earlier setup ran `npm config set prefix .tools/npm-global --location=user`, which changed the user npmrc prefix for global installs. OpenClaw's install scripts (esbuild, koffi, protobufjs, openclaw postinstall) were blocked by npm allow-scripts; see BUILD_STATUS.md for whether that needed a rerun.
@@ -42,7 +42,7 @@ Note: the earlier setup ran `npm config set prefix .tools/npm-global --location=
 | Tag | Size | Status at inspection |
 |---|---|---|
 | qwen3.5:4b | 3.39 GB | pulling, 78 percent, ~5 MB/s |
-| qwen3.8:27b | 17.74 GB | queued behind the 4b pull; ~45 to 60 minutes at observed bandwidth |
+| qwen3.8:27b | 17.74 GB | not present: the first pull ended in a digest mismatch after a daemon restart, the second was stopped at 41 percent when the daemon had to be restarted again; never benchmarked (docs/MODEL_SELECTION.md) |
 
 Quantization and exact digest are recorded by `scripts/benchmark-local.mjs` output once a model is present (`ollama show`). No cloud model is configured anywhere in the product path. Qwen3.8-2.4T-A95B is explicitly not downloaded.
 
