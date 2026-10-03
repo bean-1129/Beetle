@@ -6,3 +6,11 @@ data/
 .env
 *.log
 .openclaw-home/
+# measured evidence is committed; raw runtime state is not
+!data/benchmarks/
+!data/latency/
+!data/prompt-runs/
+!data/offline-proof/
+!data/reports/
+.openclaw-home/
+submission/
