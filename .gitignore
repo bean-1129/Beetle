@@ -13,5 +13,6 @@ data/*
 !data/offline-proof/
 !data/reports/
 !data/acceptance/
+!data/studio2d-runs/
 .openclaw-home/
 submission/

@@ -1,0 +1,200 @@
+{
+  "startedAt": "2026-10-03T21:04:31.946Z",
+  "finishedAt": "2026-10-03T21:06:07.084Z",
+  "model": "qwen3.5:4b",
+  "numCtx": 8192,
+  "node": "v24.21.0",
+  "gpuNote": "14 % GPU util at start; other processes may share it",
+  "warmup": {
+    "id": "warmup",
+    "ok": true,
+    "ms": 13992,
+    "model": "qwen3.5:4b",
+    "promptTokens": 358,
+    "outTokens": 384,
+    "loadMs": 5483
+  },
+  "rows": [
+    {
+      "prompt": "a platformer where a fox collects acorns across floating cliffs",
+      "route": "genre",
+      "genre": "platformer",
+      "title": "Fox & Acorn",
+      "designSource": "model",
+      "valid": true,
+      "validatorIssues": [],
+      "repairFixes": 0,
+      "modelMs": 10943,
+      "modelCalls": 1,
+      "totalMs": 14740,
+      "retries": 0,
+      "calls": [
+        {
+          "id": "design",
+          "ok": true,
+          "ms": 10943,
+          "model": "qwen3.5:4b",
+          "promptTokens": 359,
+          "outTokens": 469,
+          "loadMs": 1
+        }
+      ],
+      "notes": [],
+      "buildMs": 3792,
+      "levels": 5,
+      "botPassed": "5/5",
+      "levelAttempts": 5
+    },
+    {
+      "prompt": "a top-down dungeon crawler with keys and doors",
+      "route": "genre",
+      "genre": "top-down",
+      "title": "Key & Door",
+      "designSource": "model",
+      "valid": true,
+      "validatorIssues": [],
+      "repairFixes": 0,
+      "modelMs": 11453,
+      "modelCalls": 1,
+      "totalMs": 11615,
+      "retries": 0,
+      "calls": [
+        {
+          "id": "design",
+          "ok": true,
+          "ms": 11453,
+          "model": "qwen3.5:4b",
+          "promptTokens": 356,
+          "outTokens": 503,
+          "loadMs": 2
+        }
+      ],
+      "notes": [],
+      "buildMs": 162,
+      "levels": 5,
+      "botPassed": "5/5",
+      "levelAttempts": 5
+    },
+    {
+      "prompt": "a tower defense where bees protect a hive",
+      "route": "genre",
+      "genre": "defense",
+      "title": "Hive Guard",
+      "designSource": "model",
+      "valid": true,
+      "validatorIssues": [],
+      "repairFixes": 0,
+      "modelMs": 10319,
+      "modelCalls": 1,
+      "totalMs": 10656,
+      "retries": 0,
+      "calls": [
+        {
+          "id": "design",
+          "ok": true,
+          "ms": 10319,
+          "model": "qwen3.5:4b",
+          "promptTokens": 355,
+          "outTokens": 463,
+          "loadMs": 1
+        }
+      ],
+      "notes": [],
+      "buildMs": 337,
+      "levels": 4,
+      "botPassed": "4/4",
+      "levelAttempts": 4
+    },
+    {
+      "prompt": "a sliding block puzzle in a candy factory",
+      "route": "genre",
+      "genre": "puzzle",
+      "title": "Candy Slide",
+      "designSource": "model",
+      "valid": true,
+      "validatorIssues": [],
+      "repairFixes": 0,
+      "modelMs": 12695,
+      "modelCalls": 1,
+      "totalMs": 12931,
+      "retries": 0,
+      "calls": [
+        {
+          "id": "design",
+          "ok": true,
+          "ms": 12695,
+          "model": "qwen3.5:4b",
+          "promptTokens": 355,
+          "outTokens": 494,
+          "loadMs": 1
+        }
+      ],
+      "notes": [],
+      "buildMs": 235,
+      "levels": 5,
+      "botPassed": "5/5",
+      "levelAttempts": 5
+    },
+    {
+      "prompt": "a game like Red Ball 5",
+      "route": "genre",
+      "genre": "runner",
+      "title": "Red Roll",
+      "designSource": "model",
+      "valid": true,
+      "validatorIssues": [],
+      "repairFixes": 0,
+      "modelMs": 12226,
+      "modelCalls": 1,
+      "totalMs": 16857,
+      "retries": 0,
+      "calls": [
+        {
+          "id": "design",
+          "ok": true,
+          "ms": 12226,
+          "model": "qwen3.5:4b",
+          "promptTokens": 354,
+          "outTokens": 455,
+          "loadMs": 1
+        }
+      ],
+      "notes": [],
+      "buildMs": 4630,
+      "levels": 5,
+      "botPassed": "5/5",
+      "levelAttempts": 6
+    },
+    {
+      "prompt": "a stickman fight game",
+      "route": "genre",
+      "genre": "arena",
+      "title": "Stick Duel",
+      "designSource": "model",
+      "valid": true,
+      "validatorIssues": [],
+      "repairFixes": 0,
+      "modelMs": 10581,
+      "modelCalls": 1,
+      "totalMs": 14345,
+      "retries": 0,
+      "calls": [
+        {
+          "id": "design",
+          "ok": true,
+          "ms": 10581,
+          "model": "qwen3.5:4b",
+          "promptTokens": 352,
+          "outTokens": 371,
+          "loadMs": 1
+        }
+      ],
+      "notes": [],
+      "buildMs": 3764,
+      "levels": 3,
+      "botPassed": "3/3",
+      "levelAttempts": 4
+    }
+  ],
+  "skipped": []
+}
