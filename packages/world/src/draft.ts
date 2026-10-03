@@ -109,6 +109,7 @@ export function expandDraft(
     objectiveRules: ['collect_all_relics_then_enter_gate'],
     ...(d.mode ? { mode: { ...d.mode } } : {}),
     ...(d.movementSpeed !== undefined ? { movement: { speed: d.movementSpeed } } : {}),
+    ...(d.streaming !== undefined ? { streaming: d.streaming } : {}),
   };
 
   const check = WorldSpecSchema.safeParse(spec);
