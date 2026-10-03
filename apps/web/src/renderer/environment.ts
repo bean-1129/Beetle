@@ -222,7 +222,7 @@ export function createEnvironment(scene: Scene, mats: Materials, sun: Directiona
     scene.ambientColor.copyFrom(live.ambient);
     scene.fogMode = Scene.FOGMODE_EXP2;
     scene.fogColor.copyFrom(live.fogColor);
-    scene.fogDensity = live.fogDensity;
+    scene.fogDensity = live.fogDensity * (ground ? 1.5 : 1);
     scene.environmentIntensity = live.envIntensity;
     // lights
     sunDirV.set(live.sunDir.x, live.sunDir.y, live.sunDir.z);
@@ -247,7 +247,8 @@ export function createEnvironment(scene: Scene, mats: Materials, sun: Directiona
       cloudColor: live.cloudColor, cloudUnderGlow: live.cloudUnderGlow, cloudCover: live.cloudCover,
       waterShallow: live.waterShallow, waterDeep: live.waterDeep, moon: live.moon, stars: live.stars,
     });
-    mats.setHazardMix(live.hazardMix);
+    // ground worlds have no hazard: no lava/water material swap
+    mats.setHazardMix(ground ? 0 : live.hazardMix);
     sunMat.emissiveColor.copyFrom(live.sunColor);
     // god-ray source follows the camera so the sun keeps its direction
     tmpCam.copyFrom(cameraPos);
@@ -294,12 +295,16 @@ export function createEnvironment(scene: Scene, mats: Materials, sun: Directiona
 
   function pulseLight(now: number) { pulseStart = now; }
 
+  // terrain 'ground': skip the hazard material swap, thicken the fog so the far field fades out
+  let ground = false;
+  function setGround(on: boolean) { if (on !== ground) { ground = on; dirty = true; } }
+
   function dispose() {
     skyDome.dispose(); cloudSheet.dispose(); sunDisc.dispose(); sunMat.dispose(); envCube.dispose();
   }
 
   const env = {
-    live, setTheme, update, applyTheme, pulseLight, dispose, envCube, skyDome, cloudSheet, sunDisc,
+    live, setTheme, update, applyTheme, pulseLight, setGround, dispose, envCube, skyDome, cloudSheet, sunDisc,
     get theme() { return current; },
     get biome(): BiomeName { return biomeOf(current); },
     get lava() { return lavaOf(current); },

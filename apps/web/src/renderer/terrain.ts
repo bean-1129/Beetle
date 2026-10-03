@@ -167,10 +167,16 @@ export function buildIslandBody(scene: Scene, o: IslandBodyOptions): IslandBody 
   const mossW = Math.max(0.1, Math.min(0.3, o.moss?.width ?? 0.18));
   const uvScale = 0.35; // repeats of the detail textures per metre
 
+  // per-island texture rotation and offset (own PRNG so the shape stream is unchanged): neighbouring islands
+  // never show the same tile pattern
+  const uvRng = mulberry32(hashString(o.id, 211 ^ vseed));
+  const uvAng = uvRng() * Math.PI * 2;
+  const uvCos = Math.cos(uvAng); const uvSin = Math.sin(uvAng);
+  const uvOffU = uvRng() * 7; const uvOffV = uvRng() * 7;
   const pushVertex = (x: number, y: number, z: number, c: [number, number, number], u?: number, v?: number) => {
     positions.push(x, y, z);
     colors.push(c[0], c[1], c[2], 1);
-    uvs.push(u ?? x * uvScale, v ?? z * uvScale);
+    uvs.push(u ?? (x * uvCos - z * uvSin) * uvScale + uvOffU, v ?? (x * uvSin + z * uvCos) * uvScale + uvOffV);
     return positions.length / 3 - 1;
   };
   const mix = (a: [number, number, number], b: [number, number, number], t: number): [number, number, number] =>

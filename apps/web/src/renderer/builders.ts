@@ -968,14 +968,15 @@ export function buildRelic(scene: Scene, _mats: Materials, relic: Relic, pos: { 
     emph += (emphasis - emph) * k;
     const up = Math.max(0, emph);
     const down = Math.max(0, -emph);
-    const pulse = 0.5 + 0.5 * Math.sin(now / 260);
-    const hs = 1 + up * (0.6 + 0.5 * pulse);
+    // slow breath (about 0.23 Hz) under 10 % amplitude, never a flashing pulse
+    const pulse = 0.5 + 0.5 * Math.sin(now / 700);
+    const hs = 1 + up * (0.6 + 0.12 * pulse);
     halo.scaling.setAll(hs);
     const vis = 1 - 0.55 * down;
     gem.visibility = vis; core.visibility = vis; pool.visibility = vis;
     halo.visibility = 1 - 0.8 * down;
     ps.emitRate = baseRate * (1 - 0.8 * down) * (1 + 1.5 * up);
-    beamMat.alpha = up * (0.08 + 0.07 * pulse);
+    beamMat.alpha = up * (0.08 + 0.012 * pulse);
     if (up < 0.01 && beam.isEnabled()) beam.setEnabled(false);
     else if (up >= 0.01) { beam.rotation.y += dtMs * 0.0004; }
   }
@@ -1188,17 +1189,18 @@ export function buildGate(scene: Scene, _mats: Materials, gate: Gate, pos: { x: 
     lintel.position.y = lintelY + newLift;
     glyph.position.y = lintelY + 0.95 + newLift;
     keystone.position.y = glyph.position.y;
-    const targetIntensity = unlocked ? 0.9 + 0.2 * Math.sin(now / 500) : 0;
+    // ambient breath only: about 0.2 Hz and under 10 % amplitude; a locked gate keeps a dim amber ember as the focal accent
+    const targetIntensity = unlocked ? 0.9 + 0.07 * Math.sin(now / 800) : 0.3;
     light.intensity += (targetIntensity - light.intensity) * k;
-    const targetCone = unlocked ? 0.14 + 0.05 * Math.sin(now / 700) : 0;
+    const targetCone = unlocked ? 0.14 + 0.012 * Math.sin(now / 900) : 0;
     coneAlpha += (targetCone - coneAlpha) * k;
     coneMat.alpha = coneAlpha;
-    const targetGlow = unlocked ? 0.85 + 0.15 * Math.sin(now / 420) : 0;
+    const targetGlow = unlocked ? 0.88 + 0.07 * Math.sin(now / 850) : 0.32;
     glow += (targetGlow - glow) * k;
     // warm emissive runes (the rune glow mask is the emissive texture) on the shared gate stone
     stone.emissiveColor.copyFrom(warm).scaleInPlace(glow);
     stone.emissiveIntensity = 1.4;
-    embers.visibility = Math.max(gm.volcanic(), glow);
+    embers.visibility = Math.max(gm.volcanic(), unlocked ? glow : 0);
     if (!unlocked && coneAlpha < 0.005 && cone.isEnabled()) { cone.setEnabled(false); keyCore.setEnabled(false); }
     if (unlocked) keystone.rotation.y += dtMs * 0.0012;
   }
@@ -1607,10 +1609,10 @@ export function createMarkerPool(scene: Scene, size = 6): MarkerPool {
       const fadeIn = Math.min(1, (now - b.start) / 250);
       const fadeOut = Math.min(1, (b.until - now) / Math.min(900, life * 0.4));
       const k = fadeIn * fadeOut;
-      const pulse = 0.5 + 0.5 * Math.sin(now / 180);
-      b.mat.alpha = k * (0.12 + 0.08 * pulse);
-      b.ringMat.alpha = k * (0.55 + 0.35 * pulse);
-      const rs = 1 + 0.35 * pulse;
+      const pulse = 0.5 + 0.5 * Math.sin(now / 600);
+      b.mat.alpha = k * (0.12 + 0.012 * pulse);
+      b.ringMat.alpha = k * (0.55 + 0.05 * pulse);
+      const rs = 1 + 0.08 * pulse;
       b.ring.scaling.set(rs, 1, rs);
       b.column.rotation.y += 0.01;
     }

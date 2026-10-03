@@ -31,6 +31,7 @@ import {
   buildBridge, buildDecoration, buildGate, buildIsland, buildPlayer, buildRelic, createMarkerPool,
   type Built, type BridgeBuilt, type GateBuilt, type HoldArc, type IslandBuilt, type PlayerBuilt, type RelicBuilt,
 } from './builders.ts';
+import { buildGround, buildRoad, type GroundBuilt } from './ground.ts';
 
 export type Quality = 'high' | 'low';
 export type RendererStats = {
@@ -241,6 +242,8 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
   const bridgeEntries = new Map<string, BridgeBuilt>();
   const nodesById = new Map<string, Node>();
   let spec: WorldSpec | null = null;
+  let groundEntry: { json: string; built: GroundBuilt } | null = null;
+  let groundMode = false;
   let worldVersion = -1;
   let changedIds: string[] = [];
 
@@ -284,13 +287,29 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
     worldVersion = msg.version;
     changedIds = [];
     const wanted = new Set<string>();
+    const ground = s.terrain === 'ground';
+    groundMode = ground;
+
+    // ground terrain: one heightfield + vegetation, rebuilt only when the zone/crossing layout, biome or seed changes
+    {
+      const json = ground ? JSON.stringify([s.worldId, s.seed, s.biome, s.islands.map((i) => [i.id, i.center, i.radius]), s.bridges.map((b) => [b.id, b.endpoints, b.width])]) : '';
+      if (groundEntry && groundEntry.json !== json) { removeBuilt(groundEntry.built); groundEntry = null; }
+      if (ground && !groundEntry) {
+        const built = buildGround(scene, mats, s);
+        addBuilt(built);
+        groundEntry = { json, built };
+      }
+    }
+    hazardPlane.setEnabled(!ground);
+    env.setGround(ground);
 
     for (const island of s.islands) {
       const key = `island:${island.id}`;
       wanted.add(key);
-      sync(key, island.id, JSON.stringify(island), () => {
+      sync(key, island.id, JSON.stringify([island, ground]), () => {
         const built = buildIsland(scene, mats, island);
         islandEntries.set(island.id, built);
+        if (ground) groundIsland(built);
         return built;
       });
       islandEntries.get(island.id)?.setHazardY(s.hazard.planeElevation);
@@ -298,8 +317,8 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
     for (const bridge of s.bridges) {
       const key = `bridge:${bridge.id}`;
       wanted.add(key);
-      sync(key, bridge.id, JSON.stringify(bridge), () => {
-        const built = buildBridge(scene, mats, bridge);
+      sync(key, bridge.id, JSON.stringify(ground ? [bridge, s.biome] : bridge), () => {
+        const built = ground ? buildRoad(scene, mats, bridge, s.biome) : buildBridge(scene, mats, bridge);
         bridgeEntries.set(bridge.id, built);
         return built;
       });
@@ -369,7 +388,7 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
     mats.setHazardIslands(s);
     particles.setBounds(s);
     particles.setHazardY(hazardY);
-    const theme = themeFor(s.biome, s.hazard.kind);
+    const theme = themeFor(s.biome, ground ? 'none' : s.hazard.kind);
     if (theme !== env.theme) {
       env.setTheme(theme, now);
       effects.onThemeChange?.(theme);
@@ -381,6 +400,19 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
       env.pulseLight(now);
     }
     effects.onWorldApplied?.(changedIds, nodesById, msg.reason);
+  }
+
+  /** Ground worlds: the island body (skirt + top), under-shadow, crust ring, overhang boulders and rim pebbles are hidden;
+   *  the heightfield is the walk surface. Grass tufts on the plateau stay. */
+  function groundIsland(b: IslandBuilt) {
+    for (const c of b.casters) shadows.removeShadowCaster(c);
+    b.casters = [];
+    b.receivers = [];
+    for (const m of b.root.getChildMeshes(false)) {
+      if (/:(body|shadow|crust|boulder|pebble)(:|$)/.test(m.name) || m === b.crust) { m.isVisible = false; m.setEnabled(false); }
+    }
+    b.crust.isVisible = false;
+    b.setHazardY = () => { /* no hazard on land */ };
   }
 
   // ---- hazard plane height (survival rise) ----
@@ -566,7 +598,9 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
 
     // survival: the hazard plane eases toward the objective height; steam at the skirts while it moves, and
     // bridges darken and hiss once the plane is above -1.0 m
-    if (hazardY !== null) {
+    if (hazardY !== null && groundMode) {
+      particles.setSteam(0, false);
+    } else if (hazardY !== null) {
       const diff = hazardTarget - hazardY;
       if (Math.abs(diff) > 0.0015) {
         hazardY += diff * Math.min(1, dt / 600);
