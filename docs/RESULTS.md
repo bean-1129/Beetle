@@ -229,11 +229,11 @@ Stack: real server on port 7781 with the world produced by a fresh brief (4 isla
 
 | Id | Kind | Status | Version | Codes seen | Elapsed |
 |---|---|---|---|---|---|
-| E1 | edit | failed | vNone -> vNone | - | 8.0 s |
-| E2 | edit | committed | vNone -> vNone | - | 2.0 s |
-| E3 | edit | committed | vNone -> vNone | - | 3.0 s |
-| E4 | edit | committed | vNone -> vNone | - | 14.0 s |
-| E5 | edit | committed | vNone -> vNone | - | 3.0 s |
-| E6 | edit | committed | vNone -> vNone | - | 8.0 s |
+| E1 | edit | failed | v1 -> v1 | - | 8.0 s |
+| E2 | edit | committed | v1 -> v2 | - | 2.0 s |
+| E3 | edit | committed | v2 -> v3 | - | 3.0 s |
+| E4 | edit | committed | v3 -> v4 | - | 14.0 s |
+| E5 | edit | committed | v4 -> v5 | - | 3.0 s |
+| E6 | edit | committed | v5 -> v6 | - | 8.0 s |
 
 Committed: 5 of 6 (run 2 before normalization: 2 of 6). Elapsed min/p50/max: 2.0 / 8.0 / 14.0 s. Repairs still happen (INVALID_REFERENCE and BRIDGE_CROSSES_ISLAND were reported by the validator and repaired within the two-attempt budget in E6; E1 exhausted its budget and left the world untouched). No invalid world was ever committed. Note: this run used a model-generated world, not the garden5 fixture, so the "expected failure" annotations in PROMPTS.md (written for garden5) do not apply one to one.
