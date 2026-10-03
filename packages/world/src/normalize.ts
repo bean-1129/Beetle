@@ -166,6 +166,38 @@ function clampTo(v: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, v));
 }
 
+
+/**
+ * Pull islands joined by an over-long bridge closer together: the island with fewer bridges moves toward the other
+ * by the excess, clamped to bounds, then overlaps are re-resolved. At most 30 rounds. Deterministic.
+ */
+export function contractLongBridges(islands: IslandLike[], bridges: { from: string; to: string }[], log: Normalization[]): void {
+  const H = WORLD_LIMITS.bounds.halfExtent;
+  const maxRim = WORLD_LIMITS.bridge.maxLength - 1.0;
+  const degree = (id: string) => bridges.filter((b) => b.from === id || b.to === id).length;
+  for (let iter = 0; iter < 30; iter++) {
+    let worst: { a: IslandLike; c: IslandLike; rim: number } | null = null;
+    for (const b of bridges) {
+      const a = islands.find((i) => i.id === b.from); const c = islands.find((i) => i.id === b.to);
+      if (!a || !c || a === c) continue;
+      const rim = Math.hypot(a.center.x - c.center.x, a.center.z - c.center.z) - a.radius - c.radius;
+      if (rim > maxRim && (!worst || rim > worst.rim)) worst = { a, c, rim };
+    }
+    if (!worst) break;
+    const mover = degree(worst.a.id) <= degree(worst.c.id) ? worst.a : worst.c;
+    const anchor = mover === worst.a ? worst.c : worst.a;
+    const dx = anchor.center.x - mover.center.x; const dz = anchor.center.z - mover.center.z;
+    const d = Math.hypot(dx, dz) || 1;
+    const excess = worst.rim - maxRim + 0.5;
+    const lim = H - mover.radius;
+    mover.center = {
+      x: r3(clampTo(mover.center.x + (dx / d) * excess, -lim, lim)),
+      z: r3(clampTo(mover.center.z + (dz / d) * excess, -lim, lim)),
+    };
+    separateIslands(islands, log);
+  }
+}
+
 const OBJECT_CLEARANCE = 1.2;
 
 /** Normalize a raw model WorldDraft. Returns a new object; never throws on odd shapes. */
@@ -192,9 +224,34 @@ export function normalizeDraft(draft: unknown): { draft: unknown; normalizations
       }
     });
   }
-  // Overlapping islands are the most common structural failure in model drafts: separate them deterministically.
+  const fixRefEarly = (obj: Record<string, unknown>, key: string, path: string) => {
+    const ref = obj[key];
+    if (typeof ref !== 'string' || islands.some((i) => i.id === ref)) return;
+    const resolved = resolveIslandRef(islands, ref);
+    if (resolved) { log.push({ path, from: ref, to: resolved, reason: 'island reference resolved by name or direction' }); obj[key] = resolved; }
+  };
+  const bridgeRefs: { from: string; to: string }[] = [];
+  if (Array.isArray(d.bridges)) {
+    d.bridges.forEach((raw, i) => {
+      if (!raw || typeof raw !== 'object') return;
+      const b = raw as Record<string, unknown>;
+      fixRefEarly(b, 'from', `bridges[${i}].from`);
+      fixRefEarly(b, 'to', `bridges[${i}].to`);
+      if (typeof b.from === 'string' && typeof b.to === 'string') bridgeRefs.push({ from: b.from, to: b.to });
+    });
+  }
+  // Overlapping islands and over-long bridges are the most common structural failures in model drafts: resolve both
+  // deterministically (separate, contract, separate) and log one displacement per island.
   if (islands.length > 1) {
-    separateIslands(islands, log);
+    const start = new Map(islands.map((i) => [i.id, { ...i.center }]));
+    const scratch: Normalization[] = [];
+    separateIslands(islands, scratch);
+    contractLongBridges(islands, bridgeRefs, scratch);
+    for (const i of islands) {
+      const from = start.get(i.id)!;
+      const moved = Math.hypot(i.center.x - from.x, i.center.z - from.z);
+      if (moved > 1e-3) log.push({ path: `islands[${i.id}].center`, from, to: i.center, reason: `moved ${r3(moved)} m to resolve overlaps or over-long bridges` });
+    }
     if (Array.isArray(d.islands)) {
       for (const raw of d.islands) {
         if (!raw || typeof raw !== 'object') continue;
@@ -227,6 +284,31 @@ export function normalizeDraft(draft: unknown): { draft: unknown; normalizations
       fixRef(b, 'to', `bridges[${i}].to`);
       if (b.width !== undefined) b.width = clampNum(b.width, WORLD_LIMITS.bridge.minWidth, WORLD_LIMITS.bridge.maxWidth, log, `bridges[${i}].width`);
     });
+  }
+  // A relic on the gate's island would be hidden behind the locked gate (GATE_HIDES_RELIC): move it to the island
+  // with the fewest relics among the others, preferring islands that have a bridge. The offset is clamped later.
+  if (d.gate && typeof d.gate === 'object' && Array.isArray(d.relics) && islands.length > 1) {
+    const gate = d.gate as Record<string, unknown>;
+    fixRefEarly(gate, 'islandId', 'gate.islandId');
+    const gateIsland = gate.islandId;
+    if (typeof gateIsland === 'string') {
+      const counts = new Map(islands.map((i) => [i.id, 0]));
+      for (const r of d.relics as unknown[]) { const id = (r as { islandId?: unknown })?.islandId; if (typeof id === 'string' && counts.has(id)) counts.set(id, (counts.get(id) ?? 0) + 1); }
+      d.relics.forEach((raw, i) => {
+        if (!raw || typeof raw !== 'object') return;
+        const rel = raw as Record<string, unknown>;
+        fixRefEarly(rel, 'islandId', `relics[${i}].islandId`);
+        if (rel.islandId !== gateIsland) return;
+        const candidates = islands.filter((is) => is.id !== gateIsland);
+        const bridged = candidates.filter((is) => bridgeRefs.some((b) => b.from === is.id || b.to === is.id));
+        const pool = bridged.length ? bridged : candidates;
+        const target = pool.slice().sort((a, b) => (counts.get(a.id) ?? 0) - (counts.get(b.id) ?? 0))[0];
+        if (!target) return;
+        log.push({ path: `relics[${i}].islandId`, from: gateIsland, to: target.id, reason: 'relic moved off the gate island so the locked gate cannot hide it' });
+        rel.islandId = target.id;
+        counts.set(target.id, (counts.get(target.id) ?? 0) + 1);
+      });
+    }
   }
   for (const key of ['spawns', 'relics', 'decorations'] as const) {
     if (Array.isArray(d[key])) (d[key] as unknown[]).forEach((raw, i) => { if (raw && typeof raw === 'object') fixPlaced(raw as Record<string, unknown>, `${key}[${i}]`); });

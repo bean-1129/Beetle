@@ -94,9 +94,41 @@ describe('model output normalization', () => {
     const r = expandDraft(draft, { seed: 3, worldId: 'crowded' });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.normalizations.some((n) => n.reason.includes('apart'))).toBe(true);
+    expect(r.normalizations.some((n) => n.reason.includes('resolve overlaps'))).toBe(true);
     const v = validateSpec(r.spec);
     expect(v.issues.map((i) => i.code)).not.toContain('ISLAND_OVERLAP');
+    expect(v.ok).toBe(true);
+  });
+});
+
+describe('structural normalization of drafts', () => {
+  it('contracts over-long bridges and moves a relic off the gate island', () => {
+    const draft = {
+      title: 'Far', hazard: 'water',
+      islands: [
+        { id: 'a', name: 'Hearth', center: { x: 0, z: 0 }, radius: 8 },
+        { id: 'b', name: 'Temple', center: { x: 0, z: 58 }, radius: 8 },   // rim gap 42 m, over the 36 m limit
+        { id: 'c', name: 'East', center: { x: 22, z: 0 }, radius: 6 },
+        { id: 'd', name: 'West', center: { x: -22, z: 0 }, radius: 6 },
+      ],
+      bridges: [{ id: 'ab', from: 'a', to: 'b', width: 2.4 }, { id: 'ac', from: 'a', to: 'c', width: 2.4 }, { id: 'ad', from: 'a', to: 'd', width: 2.4 }],
+      spawns: [{ islandId: 'a', localPosition: { x: 1, z: 0 } }, { islandId: 'a', localPosition: { x: -1, z: 0 } }],
+      relics: [
+        { id: 'r1', name: 'Sun', islandId: 'c', localPosition: { x: 0, z: 0 } },
+        { id: 'r2', name: 'Moon', islandId: 'd', localPosition: { x: 0, z: 0 } },
+        { id: 'r3', name: 'Key', islandId: 'b', localPosition: { x: 0, z: 2 } },  // on the gate island
+      ],
+      gate: { islandId: 'b', localPosition: { x: 0, z: -5 } },
+      decorations: [],
+    };
+    const r = expandDraft(draft, { seed: 1, worldId: 'far' });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.normalizations.some((n) => n.reason.includes('relic moved off the gate island'))).toBe(true);
+    expect(r.spec.relics.find((x) => x.id === 'r3')?.supportingSurfaceId).not.toBe('b');
+    const v = validateSpec(r.spec);
+    expect(v.issues.map((i) => i.code)).not.toContain('BRIDGE_LENGTH');
+    expect(v.issues.map((i) => i.code)).not.toContain('GATE_HIDES_RELIC');
     expect(v.ok).toBe(true);
   });
 });

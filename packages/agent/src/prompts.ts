@@ -28,6 +28,7 @@ export function worldDraftSystemPrompt(): string {
     `Exactly ${L.spawns} spawns, ${L.relics} relics and 1 gate. ${L.islands.min} to ${L.islands.max} islands, at most ${L.bridges.max} bridges, at most ${L.decorations.max} decorations (types: ${DECORATION_TYPES.join(', ')}). Hazard is one of: ${HAZARD_KINDS.join(', ')}.`,
     'Both spawns go on the same central island. Every relic and the gate must be reachable from the spawns by walking over bridges. Put the gate on its own island with exactly one bridge leading to it, so the locked gate guards that bridge mouth. Do not place a relic on the gate island.',
     'Give a wide safe route plus one optional narrow risky bridge. Keep decorations away from bridge mouths so they never block a route.',
+    'Never place a relic on the gate island: the locked gate would hide it. Keep bridged islands within 30 m rim to rim and keep every bridge clear of other islands.',
     'Use between 4 and 8 decorations in total (more than 8 is wasteful and gets truncated). Output compact JSON on one line with no extra whitespace and no commentary.',
     'Output only JSON matching the schema. No commentary.',
   ].join('\n');
@@ -113,7 +114,7 @@ export function validatorRepairPrompt(issues: IssueList, world?: WorldSpec | nul
   const out = [
     'The world validator rejected the candidate. Nothing was changed. Fix every issue below and output the complete corrected JSON again.',
     ...lines,
-    'Hints: DISCONNECTED_GOAL or UNREACHABLE_RELIC means add a bridge from a reachable island to the named island. BRIDGE_ENDPOINT_GAP or BRIDGE_LENGTH means the islands are too far apart or too close; move an island or pick a closer pair. ISLAND_OVERLAP means move one island. OBJECT_NOT_ON_SURFACE means shrink the local offset (an offset from the island centre in metres, within radius minus 1.5). DUPLICATE_ID means rename the object. INVALID_SCHEMA quotes the exact field path and limit to fix.',
+    'Hints: DISCONNECTED_GOAL or UNREACHABLE_RELIC means add a bridge from a reachable island to the named island. BRIDGE_ENDPOINT_GAP or BRIDGE_LENGTH means the islands are too far apart or too close; move an island or pick a closer pair. ISLAND_OVERLAP means move one island. BRIDGE_CROSSES_ISLAND means the straight bridge passes through a third island: connect a different pair or move the island aside. GATE_HIDES_RELIC means a relic sits on the gate island behind the locked gate: move that relic to another island. OBJECT_NOT_ON_SURFACE means shrink the local offset (an offset from the island centre in metres, within radius minus 1.5). DUPLICATE_ID means rename the object. INVALID_SCHEMA quotes the exact field path and limit to fix.',
   ];
   if (world && issues.some((i) => i.code === 'INVALID_REFERENCE' || i.code === 'INVALID_SCHEMA' || i.code === 'DUPLICATE_ID')) {
     const ids = validIds(world);
