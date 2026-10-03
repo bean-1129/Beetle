@@ -63,6 +63,7 @@ export function createCameras(scene: Scene, getAspect: () => number) {
   // ---- world fit (used by the debug camera and as the fallback framing) ----
   let fitRadius = 48;
   let fitHalfW = 20;
+  let fitHalfD = 20;
   const fitCenter = new Vector3(0, 0, 0);
   let islandsCentroidX = 0; let islandsCentroidZ = 0;
   function fitWorld(s: WorldSpec) {
@@ -78,6 +79,7 @@ export function createCameras(scene: Scene, getAspect: () => number) {
     }
     halfW += 3; halfD += 3;
     fitHalfW = halfW;
+    fitHalfD = halfD;
     const aspect = Math.max(0.3, getAspect());
     const vfov = BASE_FOV;
     const hfov = 2 * Math.atan(Math.tan(vfov / 2) * aspect);
@@ -136,15 +138,18 @@ export function createCameras(scene: Scene, getAspect: () => number) {
     // distance at which the islands' half-width fills a given fraction of the half-frame width
     const halfTanH = Math.tan(BASE_FOV / 2) * Math.max(0.3, getAspect());
     const fillRadius = (fill: number) => fitHalfW / (fill * halfTanH);
+    // every island's bounding circle stays in frame front to back: the ground depth is foreshortened by
+    // cos(beta) and must fit in 75 % of the half-frame height
+    const depthRadius = (fitHalfD * Math.cos(CINE_BETA)) / (0.75 * Math.tan(BASE_FOV / 2)) + 2;
     if (playerCount > 0) {
       const playersRadius = (RADIUS_BASE + sep * RADIUS_PER_SEP) * aspectFactor;
       // never closer than the 70 % fill; further only when the players' spread needs it
-      wantRadius = Math.max(RADIUS_MIN, Math.min(maxRadius, Math.max(playersRadius, fillRadius(FILL_MAX))));
+      wantRadius = Math.max(RADIUS_MIN, Math.min(maxRadius, Math.max(playersRadius, fillRadius(FILL_MAX), depthRadius)));
       wantFov = BASE_FOV + FOV_WIDEN * Math.max(0, Math.min(1, sep / 55));
     } else {
       // no players: the islands fill 65 % of the width, centred on the world
       wantX = fitCenter.x; wantY = 0; wantZ = fitCenter.z;
-      wantRadius = Math.max(RADIUS_MIN, Math.min(maxRadius, fillRadius((FILL_MIN + FILL_MAX) / 2)));
+      wantRadius = Math.max(RADIUS_MIN, Math.min(maxRadius, Math.max(depthRadius, fillRadius((FILL_MIN + FILL_MAX) / 2))));
       wantFov = BASE_FOV;
     }
 

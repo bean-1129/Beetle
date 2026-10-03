@@ -227,11 +227,19 @@ export function createWsHub(ctx: HubContext): WsHub {
     if (msg.seq <= player.lastInputSeq) return;
     player.lastInputSeq = msg.seq;
     player.lastInputAtMs = now;
+    const prevAxes = rt.axes;
+    const prevInteract = rt.interact;
+    const prevButtons = rt.buttons;
     rt.axes = { x: clamp(msg.axes.x), z: clamp(msg.axes.z) };
     rt.interact = msg.interact;
     // Buttons are optional (older controllers): absent means none held. Schema-validated upstream; booleans only.
     const b = msg.buttons;
     rt.buttons = { sprint: b?.sprint === true, slow: b?.slow === true, ping: b?.ping === true, emote: b?.emote === true };
+    // A changed command pulls the next fixed step forward so it is visible at once (repeats of the same command do not).
+    const changed = prevAxes.x !== rt.axes.x || prevAxes.z !== rt.axes.z || prevInteract !== rt.interact
+      || prevButtons.sprint !== rt.buttons.sprint || prevButtons.slow !== rt.buttons.slow
+      || prevButtons.ping !== rt.buttons.ping || prevButtons.emote !== rt.buttons.emote;
+    if (changed) ctx.sim.requestEarlyStep();
   }
 
   function handleMessage(conn: Conn, data: RawData, isBinary: boolean): void {

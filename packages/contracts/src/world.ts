@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import {
-  BIOMES, DECORATION_TYPES, GAME_MODES, HAZARD_KINDS, MODE_LIMITS, OBJECTIVE_RULES, SCHEMA_VERSION, MOVEMENT_RULES_VERSION, WORLD_LIMITS,
+  BIOMES, DECORATION_TYPES, GAME_MODES, HAZARD_KINDS, MODE_LIMITS, OBJECTIVE_RULES, SCHEMA_VERSION, MOVEMENT_RULES_VERSION, TERRAINS, WORLD_LIMITS,
 } from './limits.ts';
 
 const H = WORLD_LIMITS.bounds.halfExtent;
@@ -110,7 +110,13 @@ export const WorldSpecSchema = z.object({
   movement: MovementSchema.optional(),
   /** Streaming generation on: the world grows ahead of players through automatic extension requests. */
   streaming: z.boolean().optional(),
+  /** islands (default): platforms over a hazard; ground: one continuous landmass, zones are plateaus, crossings are paths, nothing to fall into. */
+  terrain: z.enum(TERRAINS).optional(),
 }).strict();
+
+export function effectiveTerrain(spec: { terrain?: 'islands' | 'ground' }): 'islands' | 'ground' {
+  return spec.terrain ?? 'islands';
+}
 
 /** Effective mode with defaults applied (relic_hunt, all relics required, no timer). */
 export function effectiveMode(spec: { mode?: Mode; relics: unknown[] }): Required<Pick<Mode, 'kind' | 'relicsRequired' | 'orderedCheckpoints'>> & { timeLimitSec: number | null; holdSeconds: number } {
@@ -163,6 +169,7 @@ export const WorldDraftSchema = z.object({
   movementSpeed: Finite.min(MODE_LIMITS.movementSpeed.min).max(MODE_LIMITS.movementSpeed.max).optional(),
   hazardRise: HazardRiseSchema.optional(),
   streaming: z.boolean().optional(),
+  terrain: z.enum(TERRAINS).optional(),
 }).strict();
 export type WorldDraft = z.infer<typeof WorldDraftSchema>;
 
@@ -210,6 +217,7 @@ export const WORLD_DRAFT_JSON_SCHEMA = {
     mode: { type: 'object', additionalProperties: false, required: ['kind'], properties: { kind: { type: 'string', enum: [...GAME_MODES] }, timeLimitSec: { type: 'integer', minimum: MODE_LIMITS.timeLimitSec.min, maximum: MODE_LIMITS.timeLimitSec.max }, holdSeconds: { type: 'integer', minimum: MODE_LIMITS.holdSeconds.min, maximum: MODE_LIMITS.holdSeconds.max }, relicsRequired: { type: 'integer', minimum: 1, maximum: 3 }, orderedCheckpoints: { type: 'boolean' } } },
     movementSpeed: { type: 'number', minimum: MODE_LIMITS.movementSpeed.min, maximum: MODE_LIMITS.movementSpeed.max },
     streaming: { type: 'boolean' },
+    terrain: { type: 'string', enum: [...TERRAINS] },
     hazardRise: { type: 'object', additionalProperties: false, required: ['afterSec', 'metersPerSec', 'maxElevation'], properties: { afterSec: { type: 'integer', minimum: 5, maximum: 300 }, metersPerSec: { type: 'number', minimum: 0.01, maximum: 0.5 }, maxElevation: { type: 'number', minimum: -2, maximum: -0.6 } } },
     decorations: {
       type: 'array', maxItems: WORLD_LIMITS.decorations.max,

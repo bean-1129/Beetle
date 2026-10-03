@@ -89,6 +89,7 @@ export function stepMover(
     const n = Math.max(1, Math.ceil(total / MAX_SUBSTEP_M));
     const sdt = dt / n;
     for (let k = 0; k < n; k++) {
+      const px = nx; const pz = nz;
       const cx = nx + vx * sdt;
       const cz = nz + vz * sdt;
       if (compiled.blockedAt(cx, cz, opts) === null) {
@@ -101,7 +102,11 @@ export function stepMover(
         vx = 0; vz = 0; // fully blocked: stop
         break;
       }
-      if (compiled.supportAt(nx, nz) === null) { fell = true; break; }
+      if (compiled.supportAt(nx, nz) === null) {
+        // Ground worlds have nothing to fall into: the edge of a plateau or path blocks like a wall and the player slides.
+        if (compiled.spec.terrain === 'ground') { nx = px; nz = pz; vx = 0; vz = 0; break; }
+        fell = true; break;
+      }
     }
   }
   m.x = nx; m.z = nz; m.vx = vx; m.vz = vz;

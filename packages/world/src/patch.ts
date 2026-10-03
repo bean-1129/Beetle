@@ -192,6 +192,11 @@ export function applyPatch(
         note('mode');
         break;
       }
+      case 'set_terrain': {
+        out.terrain = op.terrain;
+        note('terrain');
+        break;
+      }
       case 'set_biome': {
         out.biome = op.biome;
         note('biome');

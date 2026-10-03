@@ -595,13 +595,15 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
   });
 
   function resize() {
-    engine.resize();
+    // force the drawing buffer to follow the canvas box (clientWidth * devicePixelRatio) after layout changes
+    engine.resize(true);
     if (spec) cameras.fitWorld(spec);
   }
   const onResize = () => resize();
   window.addEventListener('resize', onResize);
   const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => resize()) : null;
   ro?.observe(canvas);
+  if (canvas.parentElement) ro?.observe(canvas.parentElement);
 
   function stats(): RendererStats {
     return {

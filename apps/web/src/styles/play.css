@@ -87,6 +87,9 @@ body.play[data-biome="night"] { --glass-bg: rgba(6, 12, 24, 0.55); }
   line-height: 1.3;
   color: var(--stone);
   transition: color var(--ease);
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .hud-objective[data-state="unlocked"] .hud-objective-text { color: var(--amber-2); }
 .hud-objective[data-state="won"] .hud-objective-text { color: var(--ok); }
@@ -112,7 +115,7 @@ body.play[data-biome="night"] { --glass-bg: rgba(6, 12, 24, 0.55); }
 .hud-score-value { font-variant-numeric: tabular-nums; font-size: var(--fs-2); color: var(--stone); }
 
 /* Countdown (time trial, survival): amber under 20 s, red under 10 s. */
-.hud-timer { display: flex; align-items: baseline; gap: var(--s1); --timer-color: var(--stone); }
+.hud-timer { display: flex; align-items: baseline; gap: var(--s1); --timer-color: var(--stone); flex-shrink: 0; min-width: max-content; }
 .hud-timer-value {
   font-variant-numeric: tabular-nums;
   font-size: var(--fs-5);

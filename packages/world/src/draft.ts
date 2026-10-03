@@ -110,6 +110,7 @@ export function expandDraft(
     ...(d.mode ? { mode: { ...d.mode } } : {}),
     ...(d.movementSpeed !== undefined ? { movement: { speed: d.movementSpeed } } : {}),
     ...(d.streaming !== undefined ? { streaming: d.streaming } : {}),
+    ...(d.terrain !== undefined ? { terrain: d.terrain } : {}),
   };
 
   const check = WorldSpecSchema.safeParse(spec);

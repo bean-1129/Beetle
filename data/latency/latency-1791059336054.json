@@ -1,0 +1,2971 @@
+{
+  "kind": "beetle-controller-latency",
+  "startedAt": 1791059247122,
+  "finishedAt": 1791059336054,
+  "durationMs": 88932,
+  "server": {
+    "mode": "child process (pid 352048, own event loop)",
+    "host": "127.0.0.1",
+    "port": 7782,
+    "startWorld": "fixture",
+    "tickHz": 30,
+    "tickMs": 33.333333333333336,
+    "inputTimeoutMs": 600,
+    "inputRateLimitPerSec": 60,
+    "playerSpeed": 4.5
+  },
+  "config": {
+    "rttSamplesPerController": 200,
+    "inputSamplesPerController": 100,
+    "tickSamples": 300,
+    "loadInputHz": 30
+  },
+  "machine": {
+    "hostname": "promaxgb10-5ca9",
+    "platform": "Linux 7.0.0-1019-nvidia (arm64)",
+    "cpuModel": "Cortex-X925 + Cortex-A725",
+    "cpuCount": 20,
+    "totalMemGiB": 121.6,
+    "loadAvg1m": 4.6,
+    "nodeVersion": "v24.21.0",
+    "transport": "WebSocket over TCP loopback 127.0.0.1:7782"
+  },
+  "controllers": [
+    {
+      "label": "Amber",
+      "slot": 0,
+      "playerId": "player-0"
+    },
+    {
+      "label": "Azure",
+      "slot": 1,
+      "playerId": "player-1"
+    }
+  ],
+  "clock": "performance.now() in the measuring process for every client-side timestamp; serverMs is the server wall clock and only used for the secondary server-interval row",
+  "notIncluded": [
+    "phone or browser input sampling",
+    "Wi-Fi or any non-loopback network",
+    "display rendering, GPU frame time, display refresh (this is not input-to-photon latency)"
+  ],
+  "results": {
+    "websocketRtt": {
+      "all": {
+        "n": 400,
+        "min": 0.08388899999999921,
+        "p50": 0.5259390000001076,
+        "p95": 0.7480359999999564,
+        "max": 0.9513649999999529,
+        "mean": 0.5199457825000011
+      },
+      "perController": [
+        {
+          "label": "Amber",
+          "stats": {
+            "n": 200,
+            "min": 0.0921769999999924,
+            "p50": 0.555505999999923,
+            "p95": 0.7732360000001108,
+            "max": 0.9513649999999529,
+            "mean": 0.5460600699999916
+          }
+        },
+        {
+          "label": "Azure",
+          "stats": {
+            "n": 200,
+            "min": 0.08388899999999921,
+            "p50": 0.5008500000003551,
+            "p95": 0.7193160000001626,
+            "max": 0.8795879999997851,
+            "mean": 0.49383149500001083
+          }
+        }
+      ]
+    },
+    "inputToTickIdle": {
+      "all": {
+        "n": 200,
+        "min": 0.20307300000058603,
+        "p50": 0.5776669999977457,
+        "p95": 0.7601960000029067,
+        "max": 2.5335489999997662,
+        "mean": 0.5799242549994688
+      },
+      "perController": [
+        {
+          "label": "Amber idle",
+          "stats": {
+            "n": 100,
+            "min": 0.20307300000058603,
+            "p50": 0.5542750000022352,
+            "p95": 0.7148190000007162,
+            "max": 0.8945330000005924,
+            "mean": 0.555730389999826
+          },
+          "ticksElapsed": {
+            "n": 100,
+            "min": 1,
+            "p50": 1,
+            "p95": 1,
+            "max": 2,
+            "mean": 1.01
+          },
+          "failures": []
+        },
+        {
+          "label": "Azure idle",
+          "stats": {
+            "n": 100,
+            "min": 0.30420900000899564,
+            "p50": 0.598931000000448,
+            "p95": 0.7738119999994524,
+            "max": 2.5335489999997662,
+            "mean": 0.6041181199991115
+          },
+          "ticksElapsed": {
+            "n": 100,
+            "min": 1,
+            "p50": 1,
+            "p95": 1,
+            "max": 2,
+            "mean": 1.01
+          },
+          "failures": []
+        }
+      ]
+    },
+    "inputToTickLoad": {
+      "all": {
+        "n": 200,
+        "min": 0.16076899999461602,
+        "p50": 0.529699000006076,
+        "p95": 15.971410999991349,
+        "max": 31.352628000007826,
+        "mean": 2.255138460000089
+      },
+      "perController": [
+        {
+          "label": "Amber load",
+          "stats": {
+            "n": 100,
+            "min": 0.16076899999461602,
+            "p50": 0.4944030000042403,
+            "p95": 14.045001000005868,
+            "max": 31.352628000007826,
+            "mean": 1.984350949999498
+          },
+          "ticksElapsed": {
+            "n": 100,
+            "min": 1,
+            "p50": 1,
+            "p95": 1,
+            "max": 2,
+            "mean": 1.01
+          },
+          "failures": []
+        },
+        {
+          "label": "Azure load",
+          "stats": {
+            "n": 100,
+            "min": 0.2918729999946663,
+            "p50": 0.5780989999911981,
+            "p95": 16.209012999999686,
+            "max": 31.175923000002513,
+            "mean": 2.5259259700006806
+          },
+          "ticksElapsed": {
+            "n": 100,
+            "min": 1,
+            "p50": 1,
+            "p95": 1,
+            "max": 2,
+            "mean": 1.01
+          },
+          "failures": []
+        }
+      ],
+      "streamInputsSent": [
+        688,
+        688
+      ],
+      "effectiveStreamHz": [
+        30.2,
+        30.2
+      ],
+      "durationMs": 22818
+    },
+    "tickJitter": {
+      "arrivalInterval": {
+        "n": 299,
+        "min": 0.041424000000006345,
+        "p50": 33.310443999998824,
+        "p95": 33.650078000000576,
+        "max": 66.46559100000013,
+        "mean": 33.344313431438124
+      },
+      "arrivalDeviation": {
+        "n": 299,
+        "min": 0.00013466666647588,
+        "p50": 0.09589466666754021,
+        "p95": 1.11443133333281,
+        "max": 33.29190933333333,
+        "mean": 0.9570881984392439
+      },
+      "serverInterval": {
+        "n": 299,
+        "min": 0,
+        "p50": 33,
+        "p95": 34,
+        "max": 67,
+        "mean": 33.34448160535117
+      },
+      "tickGaps": 0,
+      "shortIntervals": 2,
+      "longIntervals": 4,
+      "firstTick": 78,
+      "lastTick": 377
+    }
+  },
+  "serverErrorsReceived": [],
+  "raw": {
+    "websocketRtt": [
+      {
+        "label": "Amber",
+        "samplesMs": [
+          0.951,
+          0.916,
+          0.939,
+          0.755,
+          0.489,
+          0.529,
+          0.739,
+          0.697,
+          0.534,
+          0.651,
+          0.73,
+          0.634,
+          0.626,
+          0.681,
+          0.584,
+          0.279,
+          0.558,
+          0.196,
+          0.196,
+          0.574,
+          0.391,
+          0.406,
+          0.624,
+          0.673,
+          0.836,
+          0.584,
+          0.531,
+          0.471,
+          0.493,
+          0.688,
+          0.695,
+          0.622,
+          0.633,
+          0.526,
+          0.571,
+          0.579,
+          0.521,
+          0.702,
+          0.656,
+          0.773,
+          0.62,
+          0.761,
+          0.641,
+          0.616,
+          0.669,
+          0.774,
+          0.738,
+          0.564,
+          0.579,
+          0.634,
+          0.776,
+          0.668,
+          0.486,
+          0.485,
+          0.612,
+          0.444,
+          0.473,
+          0.572,
+          0.605,
+          0.537,
+          0.654,
+          0.629,
+          0.709,
+          0.629,
+          0.551,
+          0.645,
+          0.604,
+          0.662,
+          0.64,
+          0.621,
+          0.633,
+          0.443,
+          0.473,
+          0.751,
+          0.34,
+          0.812,
+          0.684,
+          0.612,
+          0.711,
+          0.387,
+          0.512,
+          0.598,
+          0.778,
+          0.473,
+          0.553,
+          0.629,
+          0.453,
+          0.713,
+          0.434,
+          0.685,
+          0.832,
+          0.629,
+          0.677,
+          0.433,
+          0.821,
+          0.657,
+          0.538,
+          0.613,
+          0.635,
+          0.356,
+          0.598,
+          0.539,
+          0.643,
+          0.645,
+          0.387,
+          0.414,
+          0.606,
+          0.58,
+          0.573,
+          0.506,
+          0.534,
+          0.34,
+          0.585,
+          0.434,
+          0.431,
+          0.092,
+          0.632,
+          0.597,
+          0.573,
+          0.536,
+          0.644,
+          0.534,
+          0.469,
+          0.651,
+          0.427,
+          0.457,
+          0.446,
+          0.427,
+          0.57,
+          0.373,
+          0.361,
+          0.484,
+          0.66,
+          0.463,
+          0.497,
+          0.56,
+          0.567,
+          0.546,
+          0.353,
+          0.552,
+          0.367,
+          0.454,
+          0.674,
+          0.473,
+          0.471,
+          0.534,
+          0.556,
+          0.593,
+          0.599,
+          0.444,
+          0.368,
+          0.587,
+          0.574,
+          0.456,
+          0.397,
+          0.413,
+          0.365,
+          0.717,
+          0.588,
+          0.474,
+          0.614,
+          0.581,
+          0.399,
+          0.449,
+          0.451,
+          0.579,
+          0.294,
+          0.431,
+          0.608,
+          0.508,
+          0.391,
+          0.526,
+          0.485,
+          0.473,
+          0.459,
+          0.445,
+          0.223,
+          0.203,
+          0.334,
+          0.394,
+          0.368,
+          0.506,
+          0.574,
+          0.381,
+          0.465,
+          0.426,
+          0.702,
+          0.363,
+          0.371,
+          0.526,
+          0.505,
+          0.37,
+          0.396,
+          0.499,
+          0.594,
+          0.475,
+          0.319,
+          0.36,
+          0.557,
+          0.515
+        ]
+      },
+      {
+        "label": "Azure",
+        "samplesMs": [
+          0.506,
+          0.627,
+          0.634,
+          0.516,
+          0.357,
+          0.303,
+          0.224,
+          0.084,
+          0.306,
+          0.441,
+          0.666,
+          0.61,
+          0.552,
+          0.458,
+          0.54,
+          0.638,
+          0.441,
+          0.581,
+          0.495,
+          0.366,
+          0.291,
+          0.488,
+          0.365,
+          0.305,
+          0.338,
+          0.191,
+          0.322,
+          0.661,
+          0.549,
+          0.606,
+          0.848,
+          0.486,
+          0.498,
+          0.571,
+          0.538,
+          0.335,
+          0.575,
+          0.311,
+          0.43,
+          0.292,
+          0.418,
+          0.341,
+          0.549,
+          0.577,
+          0.719,
+          0.347,
+          0.442,
+          0.411,
+          0.556,
+          0.415,
+          0.403,
+          0.678,
+          0.451,
+          0.426,
+          0.194,
+          0.331,
+          0.364,
+          0.242,
+          0.414,
+          0.433,
+          0.206,
+          0.282,
+          0.394,
+          0.503,
+          0.449,
+          0.599,
+          0.197,
+          0.656,
+          0.591,
+          0.588,
+          0.52,
+          0.605,
+          0.389,
+          0.337,
+          0.526,
+          0.691,
+          0.688,
+          0.698,
+          0.653,
+          0.535,
+          0.612,
+          0.641,
+          0.725,
+          0.63,
+          0.473,
+          0.529,
+          0.463,
+          0.51,
+          0.464,
+          0.513,
+          0.545,
+          0.467,
+          0.4,
+          0.329,
+          0.736,
+          0.458,
+          0.88,
+          0.415,
+          0.763,
+          0.63,
+          0.472,
+          0.33,
+          0.39,
+          0.469,
+          0.5,
+          0.656,
+          0.56,
+          0.528,
+          0.748,
+          0.574,
+          0.545,
+          0.477,
+          0.414,
+          0.501,
+          0.283,
+          0.504,
+          0.378,
+          0.478,
+          0.328,
+          0.53,
+          0.338,
+          0.61,
+          0.426,
+          0.505,
+          0.627,
+          0.37,
+          0.511,
+          0.55,
+          0.645,
+          0.561,
+          0.521,
+          0.338,
+          0.648,
+          0.418,
+          0.508,
+          0.306,
+          0.524,
+          0.337,
+          0.634,
+          0.361,
+          0.242,
+          0.331,
+          0.598,
+          0.577,
+          0.7,
+          0.574,
+          0.484,
+          0.539,
+          0.533,
+          0.511,
+          0.394,
+          0.311,
+          0.207,
+          0.662,
+          0.494,
+          0.651,
+          0.47,
+          0.449,
+          0.834,
+          0.492,
+          0.535,
+          0.283,
+          0.351,
+          0.681,
+          0.613,
+          0.477,
+          0.645,
+          0.376,
+          0.746,
+          0.565,
+          0.553,
+          0.465,
+          0.635,
+          0.536,
+          0.718,
+          0.601,
+          0.457,
+          0.555,
+          0.384,
+          0.566,
+          0.81,
+          0.588,
+          0.624,
+          0.537,
+          0.654,
+          0.776,
+          0.701,
+          0.52,
+          0.25,
+          0.392,
+          0.411,
+          0.497,
+          0.45,
+          0.513,
+          0.32,
+          0.597,
+          0.483,
+          0.273,
+          0.43,
+          0.398
+        ]
+      }
+    ],
+    "inputToTickIdle": [
+      {
+        "label": "Amber idle",
+        "samples": [
+          {
+            "latencyMs": 0.895,
+            "ticksElapsed": 1,
+            "sentAtMs": 13022.672
+          },
+          {
+            "latencyMs": 0.652,
+            "ticksElapsed": 1,
+            "sentAtMs": 13274.885
+          },
+          {
+            "latencyMs": 0.661,
+            "ticksElapsed": 1,
+            "sentAtMs": 13572.999
+          },
+          {
+            "latencyMs": 0.537,
+            "ticksElapsed": 1,
+            "sentAtMs": 13869.929
+          },
+          {
+            "latencyMs": 0.645,
+            "ticksElapsed": 1,
+            "sentAtMs": 14162.956
+          },
+          {
+            "latencyMs": 0.715,
+            "ticksElapsed": 1,
+            "sentAtMs": 14421.491
+          },
+          {
+            "latencyMs": 0.683,
+            "ticksElapsed": 1,
+            "sentAtMs": 14674.15
+          },
+          {
+            "latencyMs": 0.69,
+            "ticksElapsed": 1,
+            "sentAtMs": 14923.536
+          },
+          {
+            "latencyMs": 0.499,
+            "ticksElapsed": 1,
+            "sentAtMs": 15195.715
+          },
+          {
+            "latencyMs": 0.688,
+            "ticksElapsed": 1,
+            "sentAtMs": 15485.398
+          },
+          {
+            "latencyMs": 0.594,
+            "ticksElapsed": 1,
+            "sentAtMs": 15737.409
+          },
+          {
+            "latencyMs": 0.812,
+            "ticksElapsed": 1,
+            "sentAtMs": 15952.809
+          },
+          {
+            "latencyMs": 0.583,
+            "ticksElapsed": 1,
+            "sentAtMs": 16228.873
+          },
+          {
+            "latencyMs": 0.678,
+            "ticksElapsed": 1,
+            "sentAtMs": 16508.949
+          },
+          {
+            "latencyMs": 0.56,
+            "ticksElapsed": 1,
+            "sentAtMs": 16787.349
+          },
+          {
+            "latencyMs": 0.889,
+            "ticksElapsed": 1,
+            "sentAtMs": 17082.925
+          },
+          {
+            "latencyMs": 0.743,
+            "ticksElapsed": 1,
+            "sentAtMs": 17364.154
+          },
+          {
+            "latencyMs": 0.55,
+            "ticksElapsed": 1,
+            "sentAtMs": 17631.883
+          },
+          {
+            "latencyMs": 0.662,
+            "ticksElapsed": 1,
+            "sentAtMs": 17914.609
+          },
+          {
+            "latencyMs": 0.501,
+            "ticksElapsed": 1,
+            "sentAtMs": 18198.888
+          },
+          {
+            "latencyMs": 0.566,
+            "ticksElapsed": 1,
+            "sentAtMs": 18487.187
+          },
+          {
+            "latencyMs": 0.832,
+            "ticksElapsed": 1,
+            "sentAtMs": 18736.177
+          },
+          {
+            "latencyMs": 0.585,
+            "ticksElapsed": 1,
+            "sentAtMs": 18982.057
+          },
+          {
+            "latencyMs": 0.559,
+            "ticksElapsed": 1,
+            "sentAtMs": 19254.366
+          },
+          {
+            "latencyMs": 0.632,
+            "ticksElapsed": 1,
+            "sentAtMs": 19506.822
+          },
+          {
+            "latencyMs": 0.657,
+            "ticksElapsed": 1,
+            "sentAtMs": 19790.147
+          },
+          {
+            "latencyMs": 0.701,
+            "ticksElapsed": 1,
+            "sentAtMs": 20059.893
+          },
+          {
+            "latencyMs": 0.438,
+            "ticksElapsed": 1,
+            "sentAtMs": 20340.787
+          },
+          {
+            "latencyMs": 0.465,
+            "ticksElapsed": 1,
+            "sentAtMs": 20619.212
+          },
+          {
+            "latencyMs": 0.502,
+            "ticksElapsed": 1,
+            "sentAtMs": 20885.462
+          },
+          {
+            "latencyMs": 0.605,
+            "ticksElapsed": 1,
+            "sentAtMs": 21134.276
+          },
+          {
+            "latencyMs": 0.6,
+            "ticksElapsed": 1,
+            "sentAtMs": 21420.412
+          },
+          {
+            "latencyMs": 0.69,
+            "ticksElapsed": 1,
+            "sentAtMs": 21713.654
+          },
+          {
+            "latencyMs": 0.488,
+            "ticksElapsed": 2,
+            "sentAtMs": 21972.673
+          },
+          {
+            "latencyMs": 0.524,
+            "ticksElapsed": 1,
+            "sentAtMs": 22228.922
+          },
+          {
+            "latencyMs": 0.629,
+            "ticksElapsed": 1,
+            "sentAtMs": 22486.042
+          },
+          {
+            "latencyMs": 0.485,
+            "ticksElapsed": 1,
+            "sentAtMs": 22712.32
+          },
+          {
+            "latencyMs": 0.622,
+            "ticksElapsed": 1,
+            "sentAtMs": 22984.957
+          },
+          {
+            "latencyMs": 0.655,
+            "ticksElapsed": 1,
+            "sentAtMs": 23266.376
+          },
+          {
+            "latencyMs": 0.594,
+            "ticksElapsed": 1,
+            "sentAtMs": 23540.046
+          },
+          {
+            "latencyMs": 0.627,
+            "ticksElapsed": 1,
+            "sentAtMs": 23823.231
+          },
+          {
+            "latencyMs": 0.668,
+            "ticksElapsed": 1,
+            "sentAtMs": 24058.043
+          },
+          {
+            "latencyMs": 0.482,
+            "ticksElapsed": 1,
+            "sentAtMs": 24313.391
+          },
+          {
+            "latencyMs": 0.564,
+            "ticksElapsed": 1,
+            "sentAtMs": 24583.647
+          },
+          {
+            "latencyMs": 0.614,
+            "ticksElapsed": 1,
+            "sentAtMs": 24840.555
+          },
+          {
+            "latencyMs": 0.442,
+            "ticksElapsed": 1,
+            "sentAtMs": 25129.749
+          },
+          {
+            "latencyMs": 0.662,
+            "ticksElapsed": 1,
+            "sentAtMs": 25423.251
+          },
+          {
+            "latencyMs": 0.662,
+            "ticksElapsed": 1,
+            "sentAtMs": 25686.992
+          },
+          {
+            "latencyMs": 0.51,
+            "ticksElapsed": 1,
+            "sentAtMs": 25939.239
+          },
+          {
+            "latencyMs": 0.441,
+            "ticksElapsed": 1,
+            "sentAtMs": 26200.84
+          },
+          {
+            "latencyMs": 0.521,
+            "ticksElapsed": 1,
+            "sentAtMs": 26490.642
+          },
+          {
+            "latencyMs": 0.319,
+            "ticksElapsed": 1,
+            "sentAtMs": 26781.802
+          },
+          {
+            "latencyMs": 0.381,
+            "ticksElapsed": 1,
+            "sentAtMs": 27029.983
+          },
+          {
+            "latencyMs": 0.573,
+            "ticksElapsed": 1,
+            "sentAtMs": 27327.595
+          },
+          {
+            "latencyMs": 0.423,
+            "ticksElapsed": 1,
+            "sentAtMs": 27558.536
+          },
+          {
+            "latencyMs": 0.369,
+            "ticksElapsed": 1,
+            "sentAtMs": 27857.361
+          },
+          {
+            "latencyMs": 0.38,
+            "ticksElapsed": 1,
+            "sentAtMs": 28080.684
+          },
+          {
+            "latencyMs": 0.392,
+            "ticksElapsed": 1,
+            "sentAtMs": 28325.153
+          },
+          {
+            "latencyMs": 0.45,
+            "ticksElapsed": 1,
+            "sentAtMs": 28603.193
+          },
+          {
+            "latencyMs": 0.203,
+            "ticksElapsed": 1,
+            "sentAtMs": 28865.374
+          },
+          {
+            "latencyMs": 0.587,
+            "ticksElapsed": 1,
+            "sentAtMs": 29180.917
+          },
+          {
+            "latencyMs": 0.474,
+            "ticksElapsed": 1,
+            "sentAtMs": 29480.179
+          },
+          {
+            "latencyMs": 0.65,
+            "ticksElapsed": 1,
+            "sentAtMs": 29709.578
+          },
+          {
+            "latencyMs": 0.554,
+            "ticksElapsed": 1,
+            "sentAtMs": 29970.119
+          },
+          {
+            "latencyMs": 0.505,
+            "ticksElapsed": 1,
+            "sentAtMs": 30272.263
+          },
+          {
+            "latencyMs": 0.479,
+            "ticksElapsed": 1,
+            "sentAtMs": 30578.918
+          },
+          {
+            "latencyMs": 0.574,
+            "ticksElapsed": 1,
+            "sentAtMs": 30863.813
+          },
+          {
+            "latencyMs": 0.518,
+            "ticksElapsed": 1,
+            "sentAtMs": 31101.954
+          },
+          {
+            "latencyMs": 0.672,
+            "ticksElapsed": 1,
+            "sentAtMs": 31334.873
+          },
+          {
+            "latencyMs": 0.477,
+            "ticksElapsed": 1,
+            "sentAtMs": 31576.869
+          },
+          {
+            "latencyMs": 0.608,
+            "ticksElapsed": 1,
+            "sentAtMs": 31837.153
+          },
+          {
+            "latencyMs": 0.493,
+            "ticksElapsed": 1,
+            "sentAtMs": 32072.161
+          },
+          {
+            "latencyMs": 0.586,
+            "ticksElapsed": 1,
+            "sentAtMs": 32326.081
+          },
+          {
+            "latencyMs": 0.461,
+            "ticksElapsed": 1,
+            "sentAtMs": 32563.527
+          },
+          {
+            "latencyMs": 0.394,
+            "ticksElapsed": 1,
+            "sentAtMs": 32855.933
+          },
+          {
+            "latencyMs": 0.587,
+            "ticksElapsed": 1,
+            "sentAtMs": 33131.812
+          },
+          {
+            "latencyMs": 0.634,
+            "ticksElapsed": 1,
+            "sentAtMs": 33391.043
+          },
+          {
+            "latencyMs": 0.509,
+            "ticksElapsed": 1,
+            "sentAtMs": 33639.993
+          },
+          {
+            "latencyMs": 0.559,
+            "ticksElapsed": 1,
+            "sentAtMs": 33862.288
+          },
+          {
+            "latencyMs": 0.445,
+            "ticksElapsed": 1,
+            "sentAtMs": 34143.54
+          },
+          {
+            "latencyMs": 0.672,
+            "ticksElapsed": 1,
+            "sentAtMs": 34431.049
+          },
+          {
+            "latencyMs": 0.483,
+            "ticksElapsed": 1,
+            "sentAtMs": 34697.404
+          },
+          {
+            "latencyMs": 0.547,
+            "ticksElapsed": 1,
+            "sentAtMs": 34956.601
+          },
+          {
+            "latencyMs": 0.434,
+            "ticksElapsed": 1,
+            "sentAtMs": 35197.799
+          },
+          {
+            "latencyMs": 0.64,
+            "ticksElapsed": 1,
+            "sentAtMs": 35460.728
+          },
+          {
+            "latencyMs": 0.528,
+            "ticksElapsed": 1,
+            "sentAtMs": 35726.218
+          },
+          {
+            "latencyMs": 0.518,
+            "ticksElapsed": 1,
+            "sentAtMs": 36014.378
+          },
+          {
+            "latencyMs": 0.356,
+            "ticksElapsed": 1,
+            "sentAtMs": 36308.313
+          },
+          {
+            "latencyMs": 0.315,
+            "ticksElapsed": 1,
+            "sentAtMs": 36534.843
+          },
+          {
+            "latencyMs": 0.557,
+            "ticksElapsed": 1,
+            "sentAtMs": 36788.963
+          },
+          {
+            "latencyMs": 0.703,
+            "ticksElapsed": 1,
+            "sentAtMs": 37048.38
+          },
+          {
+            "latencyMs": 0.402,
+            "ticksElapsed": 1,
+            "sentAtMs": 37339.462
+          },
+          {
+            "latencyMs": 0.511,
+            "ticksElapsed": 1,
+            "sentAtMs": 37611.052
+          },
+          {
+            "latencyMs": 0.517,
+            "ticksElapsed": 1,
+            "sentAtMs": 37827.433
+          },
+          {
+            "latencyMs": 0.504,
+            "ticksElapsed": 1,
+            "sentAtMs": 38135.365
+          },
+          {
+            "latencyMs": 0.554,
+            "ticksElapsed": 1,
+            "sentAtMs": 38360.366
+          },
+          {
+            "latencyMs": 0.524,
+            "ticksElapsed": 1,
+            "sentAtMs": 38620.431
+          },
+          {
+            "latencyMs": 0.519,
+            "ticksElapsed": 1,
+            "sentAtMs": 38930.332
+          },
+          {
+            "latencyMs": 0.31,
+            "ticksElapsed": 1,
+            "sentAtMs": 39176.61
+          },
+          {
+            "latencyMs": 0.462,
+            "ticksElapsed": 1,
+            "sentAtMs": 39462.629
+          }
+        ]
+      },
+      {
+        "label": "Azure idle",
+        "samples": [
+          {
+            "latencyMs": 0.424,
+            "ticksElapsed": 1,
+            "sentAtMs": 39807.983
+          },
+          {
+            "latencyMs": 0.579,
+            "ticksElapsed": 1,
+            "sentAtMs": 40060.095
+          },
+          {
+            "latencyMs": 0.572,
+            "ticksElapsed": 1,
+            "sentAtMs": 40355.798
+          },
+          {
+            "latencyMs": 0.61,
+            "ticksElapsed": 1,
+            "sentAtMs": 40585.894
+          },
+          {
+            "latencyMs": 0.598,
+            "ticksElapsed": 1,
+            "sentAtMs": 40813.172
+          },
+          {
+            "latencyMs": 0.605,
+            "ticksElapsed": 1,
+            "sentAtMs": 41063.501
+          },
+          {
+            "latencyMs": 0.491,
+            "ticksElapsed": 1,
+            "sentAtMs": 41335.38
+          },
+          {
+            "latencyMs": 0.42,
+            "ticksElapsed": 1,
+            "sentAtMs": 41616.598
+          },
+          {
+            "latencyMs": 0.648,
+            "ticksElapsed": 1,
+            "sentAtMs": 41908.219
+          },
+          {
+            "latencyMs": 0.668,
+            "ticksElapsed": 1,
+            "sentAtMs": 42163.024
+          },
+          {
+            "latencyMs": 0.435,
+            "ticksElapsed": 1,
+            "sentAtMs": 42437.859
+          },
+          {
+            "latencyMs": 0.558,
+            "ticksElapsed": 1,
+            "sentAtMs": 42667.566
+          },
+          {
+            "latencyMs": 0.668,
+            "ticksElapsed": 1,
+            "sentAtMs": 42966.794
+          },
+          {
+            "latencyMs": 0.568,
+            "ticksElapsed": 1,
+            "sentAtMs": 43200.396
+          },
+          {
+            "latencyMs": 0.608,
+            "ticksElapsed": 1,
+            "sentAtMs": 43486.143
+          },
+          {
+            "latencyMs": 0.379,
+            "ticksElapsed": 1,
+            "sentAtMs": 43777.902
+          },
+          {
+            "latencyMs": 0.599,
+            "ticksElapsed": 1,
+            "sentAtMs": 44031.688
+          },
+          {
+            "latencyMs": 0.515,
+            "ticksElapsed": 1,
+            "sentAtMs": 44278.201
+          },
+          {
+            "latencyMs": 0.562,
+            "ticksElapsed": 1,
+            "sentAtMs": 44571.185
+          },
+          {
+            "latencyMs": 0.643,
+            "ticksElapsed": 1,
+            "sentAtMs": 44824.601
+          },
+          {
+            "latencyMs": 0.588,
+            "ticksElapsed": 1,
+            "sentAtMs": 45091.74
+          },
+          {
+            "latencyMs": 0.481,
+            "ticksElapsed": 1,
+            "sentAtMs": 45315.503
+          },
+          {
+            "latencyMs": 0.546,
+            "ticksElapsed": 1,
+            "sentAtMs": 45571.307
+          },
+          {
+            "latencyMs": 0.34,
+            "ticksElapsed": 1,
+            "sentAtMs": 45855.706
+          },
+          {
+            "latencyMs": 0.617,
+            "ticksElapsed": 1,
+            "sentAtMs": 46109.345
+          },
+          {
+            "latencyMs": 0.399,
+            "ticksElapsed": 1,
+            "sentAtMs": 46374.46
+          },
+          {
+            "latencyMs": 0.649,
+            "ticksElapsed": 1,
+            "sentAtMs": 46625.48
+          },
+          {
+            "latencyMs": 0.669,
+            "ticksElapsed": 1,
+            "sentAtMs": 46910.181
+          },
+          {
+            "latencyMs": 0.632,
+            "ticksElapsed": 1,
+            "sentAtMs": 47182.017
+          },
+          {
+            "latencyMs": 0.526,
+            "ticksElapsed": 1,
+            "sentAtMs": 47446.868
+          },
+          {
+            "latencyMs": 0.58,
+            "ticksElapsed": 1,
+            "sentAtMs": 47661.749
+          },
+          {
+            "latencyMs": 0.629,
+            "ticksElapsed": 1,
+            "sentAtMs": 47944.501
+          },
+          {
+            "latencyMs": 0.685,
+            "ticksElapsed": 1,
+            "sentAtMs": 48172.476
+          },
+          {
+            "latencyMs": 0.611,
+            "ticksElapsed": 1,
+            "sentAtMs": 48424.662
+          },
+          {
+            "latencyMs": 0.519,
+            "ticksElapsed": 1,
+            "sentAtMs": 48683.663
+          },
+          {
+            "latencyMs": 0.366,
+            "ticksElapsed": 1,
+            "sentAtMs": 48926.27
+          },
+          {
+            "latencyMs": 0.461,
+            "ticksElapsed": 1,
+            "sentAtMs": 49156.981
+          },
+          {
+            "latencyMs": 0.435,
+            "ticksElapsed": 1,
+            "sentAtMs": 49423.473
+          },
+          {
+            "latencyMs": 0.654,
+            "ticksElapsed": 1,
+            "sentAtMs": 49722.603
+          },
+          {
+            "latencyMs": 0.534,
+            "ticksElapsed": 1,
+            "sentAtMs": 49979.175
+          },
+          {
+            "latencyMs": 0.517,
+            "ticksElapsed": 1,
+            "sentAtMs": 50263.051
+          },
+          {
+            "latencyMs": 0.488,
+            "ticksElapsed": 1,
+            "sentAtMs": 50488.029
+          },
+          {
+            "latencyMs": 0.664,
+            "ticksElapsed": 1,
+            "sentAtMs": 50743.766
+          },
+          {
+            "latencyMs": 0.369,
+            "ticksElapsed": 1,
+            "sentAtMs": 51004.333
+          },
+          {
+            "latencyMs": 0.567,
+            "ticksElapsed": 1,
+            "sentAtMs": 51295.482
+          },
+          {
+            "latencyMs": 0.697,
+            "ticksElapsed": 1,
+            "sentAtMs": 51597.582
+          },
+          {
+            "latencyMs": 0.57,
+            "ticksElapsed": 1,
+            "sentAtMs": 51869.783
+          },
+          {
+            "latencyMs": 0.575,
+            "ticksElapsed": 1,
+            "sentAtMs": 52146.596
+          },
+          {
+            "latencyMs": 0.615,
+            "ticksElapsed": 1,
+            "sentAtMs": 52406.192
+          },
+          {
+            "latencyMs": 0.578,
+            "ticksElapsed": 1,
+            "sentAtMs": 52662.102
+          },
+          {
+            "latencyMs": 0.585,
+            "ticksElapsed": 1,
+            "sentAtMs": 52950.832
+          },
+          {
+            "latencyMs": 0.327,
+            "ticksElapsed": 1,
+            "sentAtMs": 53246.244
+          },
+          {
+            "latencyMs": 0.438,
+            "ticksElapsed": 1,
+            "sentAtMs": 53480.808
+          },
+          {
+            "latencyMs": 0.606,
+            "ticksElapsed": 1,
+            "sentAtMs": 53753.617
+          },
+          {
+            "latencyMs": 0.629,
+            "ticksElapsed": 1,
+            "sentAtMs": 54081.414
+          },
+          {
+            "latencyMs": 0.679,
+            "ticksElapsed": 1,
+            "sentAtMs": 54340.577
+          },
+          {
+            "latencyMs": 0.484,
+            "ticksElapsed": 1,
+            "sentAtMs": 54642.692
+          },
+          {
+            "latencyMs": 0.661,
+            "ticksElapsed": 1,
+            "sentAtMs": 54927.142
+          },
+          {
+            "latencyMs": 2.534,
+            "ticksElapsed": 1,
+            "sentAtMs": 55168.558
+          },
+          {
+            "latencyMs": 0.485,
+            "ticksElapsed": 1,
+            "sentAtMs": 55404.643
+          },
+          {
+            "latencyMs": 0.577,
+            "ticksElapsed": 1,
+            "sentAtMs": 55640.749
+          },
+          {
+            "latencyMs": 0.541,
+            "ticksElapsed": 1,
+            "sentAtMs": 55866.714
+          },
+          {
+            "latencyMs": 0.726,
+            "ticksElapsed": 1,
+            "sentAtMs": 56167.367
+          },
+          {
+            "latencyMs": 0.622,
+            "ticksElapsed": 1,
+            "sentAtMs": 56438.417
+          },
+          {
+            "latencyMs": 0.62,
+            "ticksElapsed": 1,
+            "sentAtMs": 56728.074
+          },
+          {
+            "latencyMs": 0.648,
+            "ticksElapsed": 1,
+            "sentAtMs": 56975.32
+          },
+          {
+            "latencyMs": 0.606,
+            "ticksElapsed": 1,
+            "sentAtMs": 57257.647
+          },
+          {
+            "latencyMs": 0.667,
+            "ticksElapsed": 1,
+            "sentAtMs": 57539.079
+          },
+          {
+            "latencyMs": 0.461,
+            "ticksElapsed": 1,
+            "sentAtMs": 57808.656
+          },
+          {
+            "latencyMs": 0.697,
+            "ticksElapsed": 1,
+            "sentAtMs": 58094.212
+          },
+          {
+            "latencyMs": 0.637,
+            "ticksElapsed": 1,
+            "sentAtMs": 58351.317
+          },
+          {
+            "latencyMs": 0.656,
+            "ticksElapsed": 1,
+            "sentAtMs": 58641.006
+          },
+          {
+            "latencyMs": 0.653,
+            "ticksElapsed": 1,
+            "sentAtMs": 58927.4
+          },
+          {
+            "latencyMs": 0.798,
+            "ticksElapsed": 1,
+            "sentAtMs": 59160.599
+          },
+          {
+            "latencyMs": 0.622,
+            "ticksElapsed": 1,
+            "sentAtMs": 59387.931
+          },
+          {
+            "latencyMs": 0.803,
+            "ticksElapsed": 1,
+            "sentAtMs": 59640.795
+          },
+          {
+            "latencyMs": 0.721,
+            "ticksElapsed": 1,
+            "sentAtMs": 59954.235
+          },
+          {
+            "latencyMs": 0.606,
+            "ticksElapsed": 1,
+            "sentAtMs": 60242.605
+          },
+          {
+            "latencyMs": 0.658,
+            "ticksElapsed": 1,
+            "sentAtMs": 60526.397
+          },
+          {
+            "latencyMs": 0.591,
+            "ticksElapsed": 1,
+            "sentAtMs": 60762.394
+          },
+          {
+            "latencyMs": 0.538,
+            "ticksElapsed": 1,
+            "sentAtMs": 60988.961
+          },
+          {
+            "latencyMs": 0.579,
+            "ticksElapsed": 1,
+            "sentAtMs": 61227.635
+          },
+          {
+            "latencyMs": 0.493,
+            "ticksElapsed": 1,
+            "sentAtMs": 61498.748
+          },
+          {
+            "latencyMs": 0.774,
+            "ticksElapsed": 1,
+            "sentAtMs": 61771.617
+          },
+          {
+            "latencyMs": 0.351,
+            "ticksElapsed": 1,
+            "sentAtMs": 61997.869
+          },
+          {
+            "latencyMs": 0.416,
+            "ticksElapsed": 1,
+            "sentAtMs": 62243.167
+          },
+          {
+            "latencyMs": 0.906,
+            "ticksElapsed": 1,
+            "sentAtMs": 62484.398
+          },
+          {
+            "latencyMs": 0.807,
+            "ticksElapsed": 1,
+            "sentAtMs": 62710.329
+          },
+          {
+            "latencyMs": 0.706,
+            "ticksElapsed": 1,
+            "sentAtMs": 62995.807
+          },
+          {
+            "latencyMs": 0.647,
+            "ticksElapsed": 1,
+            "sentAtMs": 63261.379
+          },
+          {
+            "latencyMs": 0.749,
+            "ticksElapsed": 1,
+            "sentAtMs": 63519.709
+          },
+          {
+            "latencyMs": 0.689,
+            "ticksElapsed": 1,
+            "sentAtMs": 63767.776
+          },
+          {
+            "latencyMs": 0.546,
+            "ticksElapsed": 1,
+            "sentAtMs": 64026.803
+          },
+          {
+            "latencyMs": 0.76,
+            "ticksElapsed": 1,
+            "sentAtMs": 64247.658
+          },
+          {
+            "latencyMs": 0.545,
+            "ticksElapsed": 1,
+            "sentAtMs": 64512.48
+          },
+          {
+            "latencyMs": 0.637,
+            "ticksElapsed": 1,
+            "sentAtMs": 64841.466
+          },
+          {
+            "latencyMs": 0.554,
+            "ticksElapsed": 1,
+            "sentAtMs": 65151.069
+          },
+          {
+            "latencyMs": 0.639,
+            "ticksElapsed": 1,
+            "sentAtMs": 65425.55
+          },
+          {
+            "latencyMs": 0.304,
+            "ticksElapsed": 2,
+            "sentAtMs": 65696.056
+          },
+          {
+            "latencyMs": 0.724,
+            "ticksElapsed": 1,
+            "sentAtMs": 65951.678
+          }
+        ]
+      }
+    ],
+    "inputToTickLoad": [
+      {
+        "label": "Amber load",
+        "samples": [
+          {
+            "latencyMs": 0.343,
+            "ticksElapsed": 1,
+            "sentAtMs": 66294.342
+          },
+          {
+            "latencyMs": 0.348,
+            "ticksElapsed": 1,
+            "sentAtMs": 66555.398
+          },
+          {
+            "latencyMs": 0.587,
+            "ticksElapsed": 1,
+            "sentAtMs": 66732.122
+          },
+          {
+            "latencyMs": 0.485,
+            "ticksElapsed": 1,
+            "sentAtMs": 66960.9
+          },
+          {
+            "latencyMs": 0.428,
+            "ticksElapsed": 1,
+            "sentAtMs": 67169.264
+          },
+          {
+            "latencyMs": 0.474,
+            "ticksElapsed": 1,
+            "sentAtMs": 67358.507
+          },
+          {
+            "latencyMs": 0.528,
+            "ticksElapsed": 1,
+            "sentAtMs": 67581.453
+          },
+          {
+            "latencyMs": 0.395,
+            "ticksElapsed": 1,
+            "sentAtMs": 67853.733
+          },
+          {
+            "latencyMs": 0.555,
+            "ticksElapsed": 1,
+            "sentAtMs": 68086.156
+          },
+          {
+            "latencyMs": 0.445,
+            "ticksElapsed": 1,
+            "sentAtMs": 68297.298
+          },
+          {
+            "latencyMs": 0.376,
+            "ticksElapsed": 1,
+            "sentAtMs": 68549.703
+          },
+          {
+            "latencyMs": 0.326,
+            "ticksElapsed": 1,
+            "sentAtMs": 68772.469
+          },
+          {
+            "latencyMs": 14.045,
+            "ticksElapsed": 1,
+            "sentAtMs": 68957.924
+          },
+          {
+            "latencyMs": 0.502,
+            "ticksElapsed": 1,
+            "sentAtMs": 69251.446
+          },
+          {
+            "latencyMs": 0.573,
+            "ticksElapsed": 1,
+            "sentAtMs": 69504.903
+          },
+          {
+            "latencyMs": 0.408,
+            "ticksElapsed": 1,
+            "sentAtMs": 69735.047
+          },
+          {
+            "latencyMs": 0.241,
+            "ticksElapsed": 1,
+            "sentAtMs": 69976.385
+          },
+          {
+            "latencyMs": 0.514,
+            "ticksElapsed": 1,
+            "sentAtMs": 70237.835
+          },
+          {
+            "latencyMs": 0.419,
+            "ticksElapsed": 1,
+            "sentAtMs": 70486.214
+          },
+          {
+            "latencyMs": 0.34,
+            "ticksElapsed": 1,
+            "sentAtMs": 70717.789
+          },
+          {
+            "latencyMs": 0.417,
+            "ticksElapsed": 1,
+            "sentAtMs": 70929.268
+          },
+          {
+            "latencyMs": 0.38,
+            "ticksElapsed": 1,
+            "sentAtMs": 71116.802
+          },
+          {
+            "latencyMs": 0.428,
+            "ticksElapsed": 1,
+            "sentAtMs": 71330.862
+          },
+          {
+            "latencyMs": 1.488,
+            "ticksElapsed": 1,
+            "sentAtMs": 71503.255
+          },
+          {
+            "latencyMs": 0.494,
+            "ticksElapsed": 1,
+            "sentAtMs": 71781.01
+          },
+          {
+            "latencyMs": 0.576,
+            "ticksElapsed": 1,
+            "sentAtMs": 71989.364
+          },
+          {
+            "latencyMs": 0.469,
+            "ticksElapsed": 1,
+            "sentAtMs": 72188.502
+          },
+          {
+            "latencyMs": 0.658,
+            "ticksElapsed": 1,
+            "sentAtMs": 72394.859
+          },
+          {
+            "latencyMs": 20.751,
+            "ticksElapsed": 1,
+            "sentAtMs": 72584.325
+          },
+          {
+            "latencyMs": 0.525,
+            "ticksElapsed": 1,
+            "sentAtMs": 72847.256
+          },
+          {
+            "latencyMs": 0.487,
+            "ticksElapsed": 1,
+            "sentAtMs": 73050.974
+          },
+          {
+            "latencyMs": 0.715,
+            "ticksElapsed": 1,
+            "sentAtMs": 73283.668
+          },
+          {
+            "latencyMs": 15.971,
+            "ticksElapsed": 1,
+            "sentAtMs": 73488.636
+          },
+          {
+            "latencyMs": 0.52,
+            "ticksElapsed": 1,
+            "sentAtMs": 73751.523
+          },
+          {
+            "latencyMs": 0.422,
+            "ticksElapsed": 1,
+            "sentAtMs": 74034.571
+          },
+          {
+            "latencyMs": 0.527,
+            "ticksElapsed": 1,
+            "sentAtMs": 74263.572
+          },
+          {
+            "latencyMs": 0.481,
+            "ticksElapsed": 1,
+            "sentAtMs": 74456.362
+          },
+          {
+            "latencyMs": 0.454,
+            "ticksElapsed": 1,
+            "sentAtMs": 74699.72
+          },
+          {
+            "latencyMs": 9.467,
+            "ticksElapsed": 1,
+            "sentAtMs": 74894.881
+          },
+          {
+            "latencyMs": 0.429,
+            "ticksElapsed": 1,
+            "sentAtMs": 75169.078
+          },
+          {
+            "latencyMs": 0.326,
+            "ticksElapsed": 1,
+            "sentAtMs": 75404.021
+          },
+          {
+            "latencyMs": 31.353,
+            "ticksElapsed": 1,
+            "sentAtMs": 75607.648
+          },
+          {
+            "latencyMs": 0.51,
+            "ticksElapsed": 1,
+            "sentAtMs": 75885.798
+          },
+          {
+            "latencyMs": 0.677,
+            "ticksElapsed": 1,
+            "sentAtMs": 76137.045
+          },
+          {
+            "latencyMs": 0.584,
+            "ticksElapsed": 1,
+            "sentAtMs": 76372.26
+          },
+          {
+            "latencyMs": 0.577,
+            "ticksElapsed": 1,
+            "sentAtMs": 76568.828
+          },
+          {
+            "latencyMs": 0.621,
+            "ticksElapsed": 1,
+            "sentAtMs": 76795.569
+          },
+          {
+            "latencyMs": 0.675,
+            "ticksElapsed": 1,
+            "sentAtMs": 77027.851
+          },
+          {
+            "latencyMs": 0.161,
+            "ticksElapsed": 1,
+            "sentAtMs": 77274.171
+          },
+          {
+            "latencyMs": 0.395,
+            "ticksElapsed": 1,
+            "sentAtMs": 77469.778
+          },
+          {
+            "latencyMs": 0.487,
+            "ticksElapsed": 1,
+            "sentAtMs": 77721.006
+          },
+          {
+            "latencyMs": 0.633,
+            "ticksElapsed": 1,
+            "sentAtMs": 77937.794
+          },
+          {
+            "latencyMs": 0.613,
+            "ticksElapsed": 1,
+            "sentAtMs": 78127.299
+          },
+          {
+            "latencyMs": 0.391,
+            "ticksElapsed": 1,
+            "sentAtMs": 78399.132
+          },
+          {
+            "latencyMs": 0.498,
+            "ticksElapsed": 1,
+            "sentAtMs": 78654.874
+          },
+          {
+            "latencyMs": 0.365,
+            "ticksElapsed": 1,
+            "sentAtMs": 78859.065
+          },
+          {
+            "latencyMs": 0.467,
+            "ticksElapsed": 1,
+            "sentAtMs": 79073.08
+          },
+          {
+            "latencyMs": 0.6,
+            "ticksElapsed": 1,
+            "sentAtMs": 79278.143
+          },
+          {
+            "latencyMs": 0.498,
+            "ticksElapsed": 1,
+            "sentAtMs": 79472.902
+          },
+          {
+            "latencyMs": 0.36,
+            "ticksElapsed": 2,
+            "sentAtMs": 79715.315
+          },
+          {
+            "latencyMs": 0.497,
+            "ticksElapsed": 1,
+            "sentAtMs": 79982.404
+          },
+          {
+            "latencyMs": 20.813,
+            "ticksElapsed": 1,
+            "sentAtMs": 80184.543
+          },
+          {
+            "latencyMs": 0.46,
+            "ticksElapsed": 1,
+            "sentAtMs": 80439.507
+          },
+          {
+            "latencyMs": 4.636,
+            "ticksElapsed": 1,
+            "sentAtMs": 80699.629
+          },
+          {
+            "latencyMs": 0.584,
+            "ticksElapsed": 1,
+            "sentAtMs": 80968.055
+          },
+          {
+            "latencyMs": 0.604,
+            "ticksElapsed": 1,
+            "sentAtMs": 81185.77
+          },
+          {
+            "latencyMs": 0.483,
+            "ticksElapsed": 1,
+            "sentAtMs": 81357.523
+          },
+          {
+            "latencyMs": 0.404,
+            "ticksElapsed": 1,
+            "sentAtMs": 81576.73
+          },
+          {
+            "latencyMs": 0.575,
+            "ticksElapsed": 1,
+            "sentAtMs": 81774.646
+          },
+          {
+            "latencyMs": 0.629,
+            "ticksElapsed": 1,
+            "sentAtMs": 82020.653
+          },
+          {
+            "latencyMs": 0.517,
+            "ticksElapsed": 1,
+            "sentAtMs": 82209.102
+          },
+          {
+            "latencyMs": 0.595,
+            "ticksElapsed": 1,
+            "sentAtMs": 82411.018
+          },
+          {
+            "latencyMs": 0.427,
+            "ticksElapsed": 1,
+            "sentAtMs": 82635.984
+          },
+          {
+            "latencyMs": 0.47,
+            "ticksElapsed": 1,
+            "sentAtMs": 82847.874
+          },
+          {
+            "latencyMs": 0.513,
+            "ticksElapsed": 1,
+            "sentAtMs": 83052.735
+          },
+          {
+            "latencyMs": 0.748,
+            "ticksElapsed": 1,
+            "sentAtMs": 83249.576
+          },
+          {
+            "latencyMs": 0.427,
+            "ticksElapsed": 1,
+            "sentAtMs": 83476.68
+          },
+          {
+            "latencyMs": 0.446,
+            "ticksElapsed": 1,
+            "sentAtMs": 83699.014
+          },
+          {
+            "latencyMs": 0.523,
+            "ticksElapsed": 1,
+            "sentAtMs": 83880.042
+          },
+          {
+            "latencyMs": 0.409,
+            "ticksElapsed": 1,
+            "sentAtMs": 84117.679
+          },
+          {
+            "latencyMs": 0.501,
+            "ticksElapsed": 1,
+            "sentAtMs": 84349.21
+          },
+          {
+            "latencyMs": 23.979,
+            "ticksElapsed": 1,
+            "sentAtMs": 84548.37
+          },
+          {
+            "latencyMs": 0.629,
+            "ticksElapsed": 1,
+            "sentAtMs": 84782.85
+          },
+          {
+            "latencyMs": 12.705,
+            "ticksElapsed": 1,
+            "sentAtMs": 84992.091
+          },
+          {
+            "latencyMs": 0.322,
+            "ticksElapsed": 1,
+            "sentAtMs": 85257.244
+          },
+          {
+            "latencyMs": 0.39,
+            "ticksElapsed": 1,
+            "sentAtMs": 85522.388
+          },
+          {
+            "latencyMs": 0.475,
+            "ticksElapsed": 1,
+            "sentAtMs": 85756.223
+          },
+          {
+            "latencyMs": 0.621,
+            "ticksElapsed": 1,
+            "sentAtMs": 85953.483
+          },
+          {
+            "latencyMs": 0.294,
+            "ticksElapsed": 1,
+            "sentAtMs": 86185.521
+          },
+          {
+            "latencyMs": 0.312,
+            "ticksElapsed": 1,
+            "sentAtMs": 86404.257
+          },
+          {
+            "latencyMs": 0.556,
+            "ticksElapsed": 1,
+            "sentAtMs": 86641.409
+          },
+          {
+            "latencyMs": 0.298,
+            "ticksElapsed": 1,
+            "sentAtMs": 86870.263
+          },
+          {
+            "latencyMs": 0.515,
+            "ticksElapsed": 1,
+            "sentAtMs": 87090.436
+          },
+          {
+            "latencyMs": 0.393,
+            "ticksElapsed": 1,
+            "sentAtMs": 87312.277
+          },
+          {
+            "latencyMs": 0.719,
+            "ticksElapsed": 1,
+            "sentAtMs": 87514.666
+          },
+          {
+            "latencyMs": 0.539,
+            "ticksElapsed": 1,
+            "sentAtMs": 87720.477
+          },
+          {
+            "latencyMs": 0.409,
+            "ticksElapsed": 1,
+            "sentAtMs": 87978.65
+          },
+          {
+            "latencyMs": 0.45,
+            "ticksElapsed": 1,
+            "sentAtMs": 88194.006
+          },
+          {
+            "latencyMs": 0.406,
+            "ticksElapsed": 1,
+            "sentAtMs": 88413.082
+          },
+          {
+            "latencyMs": 0.377,
+            "ticksElapsed": 1,
+            "sentAtMs": 88624.786
+          }
+        ]
+      },
+      {
+        "label": "Azure load",
+        "samples": [
+          {
+            "latencyMs": 12.191,
+            "ticksElapsed": 2,
+            "sentAtMs": 66294.484
+          },
+          {
+            "latencyMs": 0.631,
+            "ticksElapsed": 1,
+            "sentAtMs": 66632.726
+          },
+          {
+            "latencyMs": 0.674,
+            "ticksElapsed": 1,
+            "sentAtMs": 66853.409
+          },
+          {
+            "latencyMs": 0.53,
+            "ticksElapsed": 1,
+            "sentAtMs": 67039.91
+          },
+          {
+            "latencyMs": 0.51,
+            "ticksElapsed": 1,
+            "sentAtMs": 67267.649
+          },
+          {
+            "latencyMs": 0.5,
+            "ticksElapsed": 1,
+            "sentAtMs": 67508.957
+          },
+          {
+            "latencyMs": 0.561,
+            "ticksElapsed": 1,
+            "sentAtMs": 67698.68
+          },
+          {
+            "latencyMs": 16.209,
+            "ticksElapsed": 1,
+            "sentAtMs": 67922.954
+          },
+          {
+            "latencyMs": 0.527,
+            "ticksElapsed": 1,
+            "sentAtMs": 68192.246
+          },
+          {
+            "latencyMs": 0.614,
+            "ticksElapsed": 1,
+            "sentAtMs": 68459.514
+          },
+          {
+            "latencyMs": 0.414,
+            "ticksElapsed": 1,
+            "sentAtMs": 68665.366
+          },
+          {
+            "latencyMs": 0.642,
+            "ticksElapsed": 1,
+            "sentAtMs": 68887.97
+          },
+          {
+            "latencyMs": 0.625,
+            "ticksElapsed": 1,
+            "sentAtMs": 69131.395
+          },
+          {
+            "latencyMs": 15.118,
+            "ticksElapsed": 1,
+            "sentAtMs": 69323.971
+          },
+          {
+            "latencyMs": 22.37,
+            "ticksElapsed": 1,
+            "sentAtMs": 69550.421
+          },
+          {
+            "latencyMs": 20.317,
+            "ticksElapsed": 1,
+            "sentAtMs": 69785.272
+          },
+          {
+            "latencyMs": 0.532,
+            "ticksElapsed": 1,
+            "sentAtMs": 70082.498
+          },
+          {
+            "latencyMs": 4.675,
+            "ticksElapsed": 1,
+            "sentAtMs": 70299.673
+          },
+          {
+            "latencyMs": 11.048,
+            "ticksElapsed": 1,
+            "sentAtMs": 70527.76
+          },
+          {
+            "latencyMs": 0.482,
+            "ticksElapsed": 1,
+            "sentAtMs": 70812.979
+          },
+          {
+            "latencyMs": 0.394,
+            "ticksElapsed": 1,
+            "sentAtMs": 70989.629
+          },
+          {
+            "latencyMs": 0.417,
+            "ticksElapsed": 1,
+            "sentAtMs": 71178.827
+          },
+          {
+            "latencyMs": 0.489,
+            "ticksElapsed": 1,
+            "sentAtMs": 71448.312
+          },
+          {
+            "latencyMs": 0.604,
+            "ticksElapsed": 1,
+            "sentAtMs": 71627.942
+          },
+          {
+            "latencyMs": 0.49,
+            "ticksElapsed": 1,
+            "sentAtMs": 71838.484
+          },
+          {
+            "latencyMs": 0.858,
+            "ticksElapsed": 1,
+            "sentAtMs": 72064.111
+          },
+          {
+            "latencyMs": 0.559,
+            "ticksElapsed": 1,
+            "sentAtMs": 72322.208
+          },
+          {
+            "latencyMs": 0.456,
+            "ticksElapsed": 1,
+            "sentAtMs": 72537.275
+          },
+          {
+            "latencyMs": 0.578,
+            "ticksElapsed": 1,
+            "sentAtMs": 72775.289
+          },
+          {
+            "latencyMs": 0.715,
+            "ticksElapsed": 1,
+            "sentAtMs": 72955.273
+          },
+          {
+            "latencyMs": 0.372,
+            "ticksElapsed": 1,
+            "sentAtMs": 73202.003
+          },
+          {
+            "latencyMs": 0.374,
+            "ticksElapsed": 1,
+            "sentAtMs": 73434.357
+          },
+          {
+            "latencyMs": 0.454,
+            "ticksElapsed": 1,
+            "sentAtMs": 73660.039
+          },
+          {
+            "latencyMs": 0.6,
+            "ticksElapsed": 1,
+            "sentAtMs": 73917.014
+          },
+          {
+            "latencyMs": 10.968,
+            "ticksElapsed": 1,
+            "sentAtMs": 74093.684
+          },
+          {
+            "latencyMs": 25.256,
+            "ticksElapsed": 1,
+            "sentAtMs": 74314.306
+          },
+          {
+            "latencyMs": 0.549,
+            "ticksElapsed": 1,
+            "sentAtMs": 74547.607
+          },
+          {
+            "latencyMs": 0.636,
+            "ticksElapsed": 1,
+            "sentAtMs": 74814.759
+          },
+          {
+            "latencyMs": 0.718,
+            "ticksElapsed": 1,
+            "sentAtMs": 75065.949
+          },
+          {
+            "latencyMs": 0.598,
+            "ticksElapsed": 1,
+            "sentAtMs": 75277.265
+          },
+          {
+            "latencyMs": 0.575,
+            "ticksElapsed": 1,
+            "sentAtMs": 75548.311
+          },
+          {
+            "latencyMs": 0.568,
+            "ticksElapsed": 1,
+            "sentAtMs": 75801.17
+          },
+          {
+            "latencyMs": 0.725,
+            "ticksElapsed": 1,
+            "sentAtMs": 76026.355
+          },
+          {
+            "latencyMs": 19.045,
+            "ticksElapsed": 1,
+            "sentAtMs": 76186.174
+          },
+          {
+            "latencyMs": 0.632,
+            "ticksElapsed": 1,
+            "sentAtMs": 76492.06
+          },
+          {
+            "latencyMs": 0.58,
+            "ticksElapsed": 1,
+            "sentAtMs": 76710.572
+          },
+          {
+            "latencyMs": 0.479,
+            "ticksElapsed": 1,
+            "sentAtMs": 76932.239
+          },
+          {
+            "latencyMs": 0.465,
+            "ticksElapsed": 1,
+            "sentAtMs": 77125.286
+          },
+          {
+            "latencyMs": 0.426,
+            "ticksElapsed": 1,
+            "sentAtMs": 77370.041
+          },
+          {
+            "latencyMs": 0.52,
+            "ticksElapsed": 1,
+            "sentAtMs": 77610.623
+          },
+          {
+            "latencyMs": 0.734,
+            "ticksElapsed": 1,
+            "sentAtMs": 77831.747
+          },
+          {
+            "latencyMs": 0.456,
+            "ticksElapsed": 1,
+            "sentAtMs": 78031.244
+          },
+          {
+            "latencyMs": 0.511,
+            "ticksElapsed": 1,
+            "sentAtMs": 78282.383
+          },
+          {
+            "latencyMs": 0.608,
+            "ticksElapsed": 1,
+            "sentAtMs": 78521.449
+          },
+          {
+            "latencyMs": 0.52,
+            "ticksElapsed": 1,
+            "sentAtMs": 78758.295
+          },
+          {
+            "latencyMs": 0.703,
+            "ticksElapsed": 1,
+            "sentAtMs": 78983.047
+          },
+          {
+            "latencyMs": 0.864,
+            "ticksElapsed": 1,
+            "sentAtMs": 79154.669
+          },
+          {
+            "latencyMs": 0.589,
+            "ticksElapsed": 1,
+            "sentAtMs": 79382.091
+          },
+          {
+            "latencyMs": 0.647,
+            "ticksElapsed": 1,
+            "sentAtMs": 79585.176
+          },
+          {
+            "latencyMs": 0.622,
+            "ticksElapsed": 1,
+            "sentAtMs": 79858.02
+          },
+          {
+            "latencyMs": 0.55,
+            "ticksElapsed": 1,
+            "sentAtMs": 80118.195
+          },
+          {
+            "latencyMs": 0.513,
+            "ticksElapsed": 1,
+            "sentAtMs": 80349.411
+          },
+          {
+            "latencyMs": 0.457,
+            "ticksElapsed": 1,
+            "sentAtMs": 80618.851
+          },
+          {
+            "latencyMs": 0.603,
+            "ticksElapsed": 1,
+            "sentAtMs": 80824.635
+          },
+          {
+            "latencyMs": 0.659,
+            "ticksElapsed": 1,
+            "sentAtMs": 81081.264
+          },
+          {
+            "latencyMs": 0.562,
+            "ticksElapsed": 1,
+            "sentAtMs": 81262.074
+          },
+          {
+            "latencyMs": 0.501,
+            "ticksElapsed": 1,
+            "sentAtMs": 81485.281
+          },
+          {
+            "latencyMs": 0.668,
+            "ticksElapsed": 1,
+            "sentAtMs": 81693.207
+          },
+          {
+            "latencyMs": 0.701,
+            "ticksElapsed": 1,
+            "sentAtMs": 81906.135
+          },
+          {
+            "latencyMs": 0.483,
+            "ticksElapsed": 1,
+            "sentAtMs": 82088.386
+          },
+          {
+            "latencyMs": 0.597,
+            "ticksElapsed": 1,
+            "sentAtMs": 82284.976
+          },
+          {
+            "latencyMs": 0.685,
+            "ticksElapsed": 1,
+            "sentAtMs": 82491.759
+          },
+          {
+            "latencyMs": 0.67,
+            "ticksElapsed": 1,
+            "sentAtMs": 82735.66
+          },
+          {
+            "latencyMs": 0.603,
+            "ticksElapsed": 1,
+            "sentAtMs": 82944.421
+          },
+          {
+            "latencyMs": 0.78,
+            "ticksElapsed": 1,
+            "sentAtMs": 83136.201
+          },
+          {
+            "latencyMs": 0.615,
+            "ticksElapsed": 1,
+            "sentAtMs": 83342.162
+          },
+          {
+            "latencyMs": 0.574,
+            "ticksElapsed": 1,
+            "sentAtMs": 83546.992
+          },
+          {
+            "latencyMs": 0.621,
+            "ticksElapsed": 1,
+            "sentAtMs": 83813.502
+          },
+          {
+            "latencyMs": 0.479,
+            "ticksElapsed": 1,
+            "sentAtMs": 84000.305
+          },
+          {
+            "latencyMs": 0.509,
+            "ticksElapsed": 1,
+            "sentAtMs": 84241.545
+          },
+          {
+            "latencyMs": 0.572,
+            "ticksElapsed": 1,
+            "sentAtMs": 84484.438
+          },
+          {
+            "latencyMs": 0.586,
+            "ticksElapsed": 1,
+            "sentAtMs": 84686.391
+          },
+          {
+            "latencyMs": 0.431,
+            "ticksElapsed": 1,
+            "sentAtMs": 84926.925
+          },
+          {
+            "latencyMs": 0.408,
+            "ticksElapsed": 1,
+            "sentAtMs": 85152.946
+          },
+          {
+            "latencyMs": 0.613,
+            "ticksElapsed": 1,
+            "sentAtMs": 85371.939
+          },
+          {
+            "latencyMs": 31.176,
+            "ticksElapsed": 1,
+            "sentAtMs": 85573.03
+          },
+          {
+            "latencyMs": 9.821,
+            "ticksElapsed": 1,
+            "sentAtMs": 85829.365
+          },
+          {
+            "latencyMs": 0.357,
+            "ticksElapsed": 1,
+            "sentAtMs": 86050.794
+          },
+          {
+            "latencyMs": 0.568,
+            "ticksElapsed": 1,
+            "sentAtMs": 86294.881
+          },
+          {
+            "latencyMs": 0.338,
+            "ticksElapsed": 1,
+            "sentAtMs": 86506.308
+          },
+          {
+            "latencyMs": 0.292,
+            "ticksElapsed": 1,
+            "sentAtMs": 86778.175
+          },
+          {
+            "latencyMs": 0.566,
+            "ticksElapsed": 1,
+            "sentAtMs": 86963.082
+          },
+          {
+            "latencyMs": 0.447,
+            "ticksElapsed": 1,
+            "sentAtMs": 87166.223
+          },
+          {
+            "latencyMs": 5.861,
+            "ticksElapsed": 1,
+            "sentAtMs": 87366.239
+          },
+          {
+            "latencyMs": 0.538,
+            "ticksElapsed": 1,
+            "sentAtMs": 87647.914
+          },
+          {
+            "latencyMs": 0.582,
+            "ticksElapsed": 1,
+            "sentAtMs": 87814.172
+          },
+          {
+            "latencyMs": 0.396,
+            "ticksElapsed": 1,
+            "sentAtMs": 88072.207
+          },
+          {
+            "latencyMs": 0.703,
+            "ticksElapsed": 1,
+            "sentAtMs": 88264.064
+          },
+          {
+            "latencyMs": 0.532,
+            "ticksElapsed": 1,
+            "sentAtMs": 88486.168
+          },
+          {
+            "latencyMs": 0.454,
+            "ticksElapsed": 1,
+            "sentAtMs": 88728.727
+          }
+        ]
+      }
+    ],
+    "tickArrivalIntervalsMs": [
+      33.253,
+      33.151,
+      32.411,
+      33.257,
+      33.306,
+      32.307,
+      33.423,
+      33.394,
+      32.322,
+      33.385,
+      33.469,
+      33.417,
+      33.552,
+      32.208,
+      33.435,
+      33.421,
+      33.344,
+      33.263,
+      33.47,
+      33.37,
+      33.459,
+      33.377,
+      33.317,
+      33.247,
+      33.318,
+      33.316,
+      33.321,
+      33.458,
+      33.389,
+      32.369,
+      33.565,
+      33.338,
+      33.281,
+      33.544,
+      32.233,
+      33.335,
+      33.298,
+      32.385,
+      33.428,
+      33.261,
+      32.219,
+      33.443,
+      33.521,
+      32.547,
+      32.482,
+      33.429,
+      33.49,
+      32.638,
+      33.26,
+      32.43,
+      33.362,
+      33.393,
+      32.459,
+      33.492,
+      32.386,
+      33.26,
+      33.518,
+      33.308,
+      33.489,
+      32.269,
+      33.355,
+      33.501,
+      33.535,
+      33.377,
+      32.391,
+      33.314,
+      32.543,
+      33.324,
+      33.534,
+      33.431,
+      33.365,
+      32.447,
+      33.423,
+      32.752,
+      33.357,
+      65.574,
+      33.451,
+      0.041,
+      65.515,
+      33.452,
+      32.231,
+      33.302,
+      33.354,
+      33.344,
+      33.17,
+      33.476,
+      33.269,
+      33.351,
+      33.13,
+      33.356,
+      32.412,
+      33.334,
+      33.472,
+      32.153,
+      33.142,
+      33.375,
+      33.347,
+      33.291,
+      33.428,
+      33.248,
+      33.21,
+      33.38,
+      33.281,
+      32.331,
+      33.297,
+      33.287,
+      32.26,
+      33.364,
+      33.208,
+      33.242,
+      33.649,
+      33.171,
+      33.654,
+      33.68,
+      32.54,
+      33.204,
+      32.446,
+      33.333,
+      33.239,
+      32.385,
+      33.258,
+      33.371,
+      32.405,
+      33.327,
+      33.446,
+      32.519,
+      33.778,
+      33.34,
+      33.522,
+      33.412,
+      33.519,
+      33.667,
+      32.381,
+      33.311,
+      33.248,
+      32.455,
+      33.335,
+      33.745,
+      33.324,
+      33.31,
+      32.331,
+      33.985,
+      32.276,
+      33.434,
+      32.447,
+      33.39,
+      32.406,
+      33.298,
+      33.356,
+      32.439,
+      33.288,
+      33.285,
+      32.275,
+      33.422,
+      33.226,
+      32.38,
+      33.266,
+      33.354,
+      33.228,
+      33.327,
+      33.223,
+      33.493,
+      33.365,
+      33.258,
+      33.288,
+      32.283,
+      33.331,
+      33.326,
+      32.161,
+      33.48,
+      33.073,
+      33.508,
+      33.424,
+      33.361,
+      32.349,
+      33.269,
+      33.367,
+      32.216,
+      33.536,
+      33.435,
+      33.422,
+      33.348,
+      32.331,
+      33.303,
+      33.388,
+      32.231,
+      33.36,
+      33.341,
+      32.34,
+      33.28,
+      33.366,
+      32.384,
+      34.047,
+      32.585,
+      32.445,
+      33.373,
+      33.984,
+      33.338,
+      32.268,
+      33.304,
+      33.433,
+      32.19,
+      33.462,
+      33.183,
+      32.53,
+      33.398,
+      33.265,
+      33.302,
+      33.457,
+      33.623,
+      33.299,
+      33.331,
+      32.202,
+      33.404,
+      33.315,
+      32.249,
+      33.489,
+      33.331,
+      32.286,
+      33.391,
+      33.26,
+      33.252,
+      33.538,
+      32.538,
+      33.269,
+      33.249,
+      33.227,
+      33.266,
+      33.27,
+      33.282,
+      32.241,
+      66.466,
+      0.054,
+      33.258,
+      65.497,
+      33.358,
+      33.264,
+      32.215,
+      33.369,
+      33.154,
+      33.346,
+      33.377,
+      33.327,
+      33.429,
+      33.65,
+      32.207,
+      33.769,
+      33.135,
+      32.373,
+      33.249,
+      33.226,
+      33.741,
+      33.273,
+      33.284,
+      33.227,
+      33.234,
+      33.356,
+      32.303,
+      33.329,
+      33.304,
+      32.655,
+      33.31,
+      32.357,
+      33.301,
+      33.286,
+      33.402,
+      33.385,
+      33.244,
+      33.409,
+      33.25,
+      33.261,
+      33.302,
+      33.532,
+      33.431,
+      32.452,
+      33.419,
+      32.435,
+      33.422,
+      33.322,
+      32.395,
+      33.424,
+      32.374,
+      33.366,
+      33.393,
+      32.246,
+      33.363,
+      33.335,
+      32.44,
+      33.272,
+      33.351,
+      32.339,
+      33.503,
+      33.344,
+      33.391,
+      33.305,
+      32.255,
+      33.534,
+      33.347,
+      32.402
+    ]
+  }
+}

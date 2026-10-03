@@ -40,7 +40,7 @@ const MODE_NAMES: Record<GameMode, string> = {
 };
 const WON_TITLES: Record<GameMode, string> = {
   relic_hunt: 'Temple reached',
-  time_trial: 'Temple reached',
+  time_trial: 'Time trial complete',
   king_of_the_hill: 'Hill held',
   checkpoint_race: 'Race complete',
   survival: 'Temple reached',
@@ -534,6 +534,10 @@ function onTick(tick: TickMessage) {
     }
   } else if (gate.unlocked) {
     text = OBJECTIVE_OPEN;
+  } else if (info.mode === 'time_trial' && info.timeLimitSec) {
+    // the clock is the goal: say it, so a racing brief never reads as a plain relic hunt
+    const n = info.relicsRequired;
+    text = `${n === 1 ? 'Grab 1 relic' : `Grab ${n} relics`}, reach the temple before ${mmss(info.timeLimitSec)}`;
   } else {
     // Survival shows "The lava is rising" on the hazard meter below; the objective line stays the relic count.
     text = collectLine(info.relicsRequired);

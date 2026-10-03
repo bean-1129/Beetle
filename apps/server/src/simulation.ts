@@ -91,6 +91,10 @@ export class Simulation {
   private modeRt: ModeRuntime | null = null;
   running = false;
   ticksBehind = 0;
+  /** Steps run ahead of schedule by requestEarlyStep (diagnostics). */
+  earlySteps = 0;
+  private earlyPending = false;
+  private deferredEarly: NodeJS.Timeout | null = null;
 
   constructor(private readonly o: SimulationOptions) {}
 
@@ -111,6 +115,10 @@ export class Simulation {
       clearInterval(this.timer);
       this.timer = null;
     }
+    if (this.deferredEarly) {
+      clearTimeout(this.deferredEarly);
+      this.deferredEarly = null;
+    }
     for (const pending of this.queue.splice(0)) {
       pending.resolve({ ok: false, code: 'INTERNAL', message: 'server stopping', objectIds: [], retryable: true });
     }
@@ -129,6 +137,44 @@ export class Simulation {
       this.ticksBehind += Math.floor((now - this.expectedAt) / TICK_MS);
       this.expectedAt = now + TICK_MS;
     }
+  }
+
+  /**
+   * Input-driven early step: runs the next fixed step now instead of at its scheduled slot, so a changed controller
+   * command reaches the next tick broadcast without waiting up to one tick period. The step itself is unchanged
+   * (same fixed TICK_MS dt), and the slot it used is consumed: expectedAt moves forward by one tick, so the long-run
+   * rate stays SIMULATION.tickHz. At most one step may run ahead of the schedule, so a burst of changed inputs cannot
+   * speed the simulation up. Coalesced with setImmediate so several inputs in one socket read cause one step.
+   * Interval mode only; manual mode (tests) is untouched.
+   */
+  requestEarlyStep(): void {
+    if (this.o.mode !== 'interval' || !this.timer || this.earlyPending) return;
+    this.earlyPending = true;
+    setImmediate(() => {
+      this.earlyPending = false;
+      if (!this.timer) return;
+      const now = this.o.clock.now();
+      // Already one step ahead of the schedule (expectedAt more than one tick away): run the early step as soon as
+      // the one-step-ahead budget frees up, instead of waiting for the next scheduled slot (up to two ticks away).
+      const ahead = this.expectedAt - now - TICK_MS;
+      if (ahead > 0) {
+        if (!this.deferredEarly) {
+          this.deferredEarly = setTimeout(() => {
+            this.deferredEarly = null;
+            this.requestEarlyStep();
+          }, Math.ceil(ahead));
+        }
+        return;
+      }
+      // A step is due anyway: let the regular catch-up loop handle it.
+      if (now >= this.expectedAt) {
+        this.onInterval();
+        return;
+      }
+      this.step();
+      this.expectedAt += TICK_MS;
+      this.earlySteps += 1;
+    });
   }
 
   /** One manual tick. With a fake clock the clock advances by one tick first so timers progress. */

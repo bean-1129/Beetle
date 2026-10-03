@@ -181,14 +181,16 @@ void main() {
   vec3 base = mix(uWaterDeep, uWaterShallow, clamp(shore * 0.8 + 0.2 * ndl + 0.1 * vWave, 0.0, 1.0));
   float foamN = texture2D(uNoise, p * 0.22 + vec2(uTime * 0.02, -uTime * 0.015)).r;
   float foam = smoothstep(0.52, 0.8, foamN + shore * 0.25) * shore * shore;
+  // foam follows the sky brightness: at night it drops to about a third so lantern and relic light lead
+  foam *= clamp(dot(uSkyHorizon, vec3(0.3, 0.59, 0.11)) * 2.5, 0.35, 1.0);
   vec3 water = mix(base, skyRefl, fres * 0.9) + uSunColor * glint + vec3(0.85, 0.9, 0.92) * foam * 0.6;
   float waterAlpha = mix(0.86, 0.98, fres) + 0.1 * foam;
 
   // ---- lava ----
   vec2 fuv = p * 0.055 + vec2(uTime * 0.0045, uTime * 0.003);
   float n1 = texture2D(uNoise, fuv).r;
-  float n2 = texture2D(uNoise, p * 0.12 - vec2(uTime * 0.002, uTime * 0.0055)).r;
-  float n3 = texture2D(uNoise, p * 0.33 + vec2(-uTime * 0.006, uTime * 0.004)).r;
+  float n2 = texture2D(uNoise, p * 0.09 - vec2(uTime * 0.002, uTime * 0.0055)).r;
+  float n3 = texture2D(uNoise, p * 0.21 + vec2(-uTime * 0.006, uTime * 0.004)).r;
   float flow = n1 * 0.6 + n2 * 0.3 + n3 * 0.1;
   float channel = smoothstep(0.54, 0.66, flow + shore * 0.08);
   float hot = smoothstep(0.64, 0.76, flow + shore * 0.08);

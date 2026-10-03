@@ -80,6 +80,9 @@ export const DECORATION_RADIUS: Record<DecorationType, number> = {
 };
 
 export const BIOMES = ['garden', 'volcanic', 'frost', 'desert', 'night'] as const;
+/** World terrain type: floating islands over a hazard, or one continuous landmass (plateaus and paths, no void). */
+export const TERRAINS = ['islands', 'ground'] as const;
+export type Terrain = (typeof TERRAINS)[number];
 export type Biome = (typeof BIOMES)[number];
 /** Game modes the engine implements. The model maps any requested game onto the closest mode and says which. */
 export const GAME_MODES = ['relic_hunt', 'time_trial', 'king_of_the_hill', 'checkpoint_race', 'survival'] as const;
