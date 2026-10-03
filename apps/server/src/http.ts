@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import {
-  AGENT_PHASES, AgentStatusBodySchema, CommitBodySchema, DirectorRequestBodySchema, JoinRequestSchema, ProposePatchBodySchema,
+  AGENT_PHASES, AgentStatusBodySchema, CommitBodySchema, DirectorRequestBodySchema, DirectorSettingsBodySchema, JoinRequestSchema, ProposePatchBodySchema,
   ProposeWorldBodySchema, ReportBodySchema, ROUTES, canonicalJson,
   type AgentPhase, type BuildReport, type CommitResult, type ValidationCode, type WorldSpec,
 } from '@beetle/contracts';
@@ -134,6 +134,7 @@ export async function registerRoutes(app: FastifyInstance, ctx: ServerContext): 
       agentConnected: ctx.requests.agentConnected(),
       publicUrl: ctx.publicUrl(),
       uptimeMs: Math.max(0, Date.now() - ctx.startedAt),
+      settings: { autoExpand: ctx.session.settings.autoExpand },
     };
   });
 
@@ -182,6 +183,16 @@ export async function registerRoutes(app: FastifyInstance, ctx: ServerContext): 
       expiresAt: invite.expiresAt,
       slot: invite.slot,
     };
+  });
+
+  app.post(ROUTES.directorSettings, async (req, reply) => {
+    if (!requireDirector(req, reply)) return reply;
+    const body = DirectorSettingsBodySchema.safeParse(req.body ?? {});
+    if (!body.success) return invalid(reply, body.error);
+    const settings = ctx.expansion.setSettings(body.data);
+    ctx.events.emit({ name: 'director.settings', worldVersion: ctx.world.version, data: { ...settings } });
+    void ctx.persistence.writeSession(ctx.session.snapshot());
+    return { ok: true, settings };
   });
 
   app.post(ROUTES.directorRequest, async (req, reply) => {

@@ -621,7 +621,7 @@ describe('agent request lifecycle', () => {
       hazard: 'lava',
       decorations: [],
     };
-    const bad = await agentCall(server, 'POST', ROUTES.agentProposeWorld, { requestId: 'req-x', spec: { ...draft, islands: draft.islands.slice(0, 2) } });
+    const bad = await agentCall(server, 'POST', ROUTES.agentProposeWorld, { requestId: 'req-x', spec: { ...draft, islands: draft.islands.slice(0, 1) } });
     expect(bad.status).toBe(400);
     expect(bad.json.issues[0].code).toBe('INVALID_SCHEMA');
 

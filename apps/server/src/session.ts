@@ -42,6 +42,8 @@ export class SessionStore {
   readonly invites = new Map<string, Invite>();
   /** controllerToken -> playerId. Re-inviting a slot replaces the slot's token. */
   readonly controllerTokens = new Map<string, string>();
+  /** Director settings (persisted with the session snapshot). autoExpand: streaming worlds grow automatically. */
+  readonly settings: { autoExpand: boolean } = { autoExpand: true };
 
   constructor(sessionId: string = `session-${randomBytes(4).toString('hex')}`) {
     this.state = {
@@ -225,6 +227,8 @@ export class SessionStore {
    * ids are dropped. Returns false when the snapshot belongs to another world.
    */
   restore(saved: SessionState, worldId: string, knownRelicIds: string[]): boolean {
+    const savedSettings = (saved as SessionState & { settings?: { autoExpand?: unknown } }).settings;
+    if (savedSettings && typeof savedSettings.autoExpand === 'boolean') this.settings.autoExpand = savedSettings.autoExpand;
     if (saved.worldId !== worldId) return false;
     const known = new Set(knownRelicIds);
     const collected = [...new Set(saved.collectedRelicIds.filter((id) => typeof id === 'string' && known.has(id)))];
@@ -256,7 +260,9 @@ export class SessionStore {
   }
 
   snapshot(): SessionState {
-    return JSON.parse(JSON.stringify(this.state)) as SessionState;
+    const snap = JSON.parse(JSON.stringify(this.state)) as SessionState & { settings?: { autoExpand: boolean } };
+    snap.settings = { ...this.settings };
+    return snap;
   }
 }
 

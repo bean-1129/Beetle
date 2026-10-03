@@ -7,6 +7,7 @@ import { isLoopbackUrl } from './auth.ts';
 import { CandidateStore } from './candidates.ts';
 import { systemClock, type Clock } from './clock.ts';
 import { configFromEnv, derivePublicUrl, type ServerConfig } from './config.ts';
+import { ExpansionScheduler } from './expansion.ts';
 import type { ModelStatus, ServerContext } from './context.ts';
 import { registerRoutes } from './http.ts';
 import { createPersistence } from './persistence.ts';
@@ -56,6 +57,7 @@ export type BeetleServer = {
   world: WorldStore;
   candidates: CandidateStore;
   requests: RequestStore;
+  expansion: ExpansionScheduler;
   sim: Simulation;
   hub: WsHub;
   start(): Promise<{ host: string; port: number; url: string; publicUrl: string }>;
@@ -110,6 +112,12 @@ export async function createBeetleServer(opts: BeetleServerOptions = {}): Promis
   const world = new WorldStore();
   const candidates = new CandidateStore();
   const requests = new RequestStore(() => clock.now());
+  // Streaming generation: polled from the tick hook (throttled inside), settled when a request finishes.
+  const expansion = new ExpansionScheduler({
+    session, world, requests, events, now: () => clock.now(),
+    onActivity: (entries) => hub.broadcastActivity(entries),
+  });
+  requests.onFinished = (req) => expansion.settle(req.id, req.status, clock.now());
 
   // ---- initial world ----
   if (opts.startWorld && typeof opts.startWorld === 'object') {
@@ -224,14 +232,21 @@ export async function createBeetleServer(opts: BeetleServerOptions = {}): Promis
   }
 
   const ctx = {
-    config, secrets, clock, events, persistence, session, world, candidates, requests, startedAt,
+    config, secrets, clock, events, persistence, session, world, candidates, requests, expansion, startedAt,
     publicUrl, modelStatus, liveContext, summary, placeAtSpawn,
   } as ServerContext;
 
   const sim = new Simulation({
     session, world, candidates, clock, events, persistence, mode: tickMode,
     hooks: {
-      onTick: (message) => hub.broadcastTick(message),
+      onTick: (message) => {
+        hub.broadcastTick(message);
+        try {
+          expansion.poll(clock.now());
+        } catch (err) {
+          events.emit({ name: 'expansion.error', outcome: 'fail', data: { message: err instanceof Error ? err.message : String(err) } });
+        }
+      },
       onWorld: (message) => hub.broadcastWorld(message),
       onMarker: (message) => hub.broadcastMarker(message),
       onCommitDeferred: (pending) => {
@@ -242,6 +257,10 @@ export async function createBeetleServer(opts: BeetleServerOptions = {}): Promis
           objectIds: pending.blockers,
         }, world.version);
         hub.broadcastActivity([entry]);
+      },
+      onCommitResolved: (pending, result) => {
+        // A whole new world starts streaming from scratch: no cooldown, no in-flight extension.
+        if (result.ok && pending.candidate.kind === 'world') expansion.reset();
       },
     },
   });
@@ -271,6 +290,7 @@ export async function createBeetleServer(opts: BeetleServerOptions = {}): Promis
     world,
     candidates,
     requests,
+    expansion,
     sim,
     hub,
     async start() {

@@ -4,6 +4,7 @@ import type { EventLog } from '@beetle/observability';
 import type { LiveContext } from '@beetle/world';
 import type { CandidateStore } from './candidates.ts';
 import type { Clock } from './clock.ts';
+import type { ExpansionScheduler } from './expansion.ts';
 import type { ServerConfig } from './config.ts';
 import type { Persistence } from './persistence.ts';
 import type { RequestStore } from './requests.ts';
@@ -27,6 +28,8 @@ export type ServerContext = {
   requests: RequestStore;
   sim: Simulation;
   hub: WsHub;
+  /** Streaming generation: automatic add_island requests near island rims. */
+  expansion: ExpansionScheduler;
   startedAt: number;
   publicUrl(): string;
   modelStatus(): Promise<ModelStatus>;

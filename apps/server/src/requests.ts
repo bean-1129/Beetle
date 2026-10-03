@@ -36,9 +36,12 @@ export class RequestStore {
   /** Last time the agent reported progress (status/finish) on any request. */
   lastStatusAt = 0;
 
+  /** Called after finish() closes a request (streaming expansion settles its in-flight request here). */
+  onFinished: ((request: DirectorRequest) => void) | null = null;
+
   constructor(private readonly now: () => number) {}
 
-  create(kind: RequestKind, prompt: string, worldVersion: number, authorizeNewWorld: boolean): DirectorRequest {
+  create(kind: RequestKind, prompt: string, worldVersion: number, authorizeNewWorld: boolean, meta?: Pick<DirectorRequest, 'auto' | 'autoReason'>): DirectorRequest {
     const request: DirectorRequest = {
       id: shortId('req'),
       kind,
@@ -47,6 +50,8 @@ export class RequestStore {
       worldVersionAtRequest: worldVersion,
       status: 'queued',
     };
+    if (meta?.auto) request.auto = true;
+    if (meta?.autoReason) request.autoReason = { ...meta.autoReason };
     this.records.set(request.id, { request, authorizeNewWorld });
     this.order.push(request.id);
     if (this.order.length > 200) {
@@ -163,6 +168,7 @@ export class RequestStore {
     if (extra.worldVersion !== undefined) req.resultWorldVersion = extra.worldVersion;
     if (extra.reportId) req.reportId = extra.reportId;
     if (extra.error) req.error = extra.error;
+    try { this.onFinished?.(req); } catch { /* listeners never break finish */ }
     return req;
   }
 
@@ -179,6 +185,12 @@ export class RequestStore {
       elapsedMs: req ? Math.max(0, at - req.createdAt) : 0,
     };
     if (worldVersion !== undefined) entry.worldVersion = worldVersion;
+    // Automatic (streaming) requests: extra, tolerantly read properties for the HUD and director.
+    if (req?.auto) {
+      const tagged = entry as AgentActivity & { auto?: boolean; autoReason?: DirectorRequest['autoReason'] };
+      tagged.auto = true;
+      if (req.autoReason) tagged.autoReason = { ...req.autoReason };
+    }
     if (input.tool) entry.tool = input.tool;
     if (input.codes && input.codes.length) entry.codes = input.codes as ValidationCode[];
     if (input.objectIds && input.objectIds.length) entry.objectIds = input.objectIds;
