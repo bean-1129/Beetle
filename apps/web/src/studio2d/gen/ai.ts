@@ -9,7 +9,12 @@ import type { Pixels } from "../assets/pixels.ts";
 import type { PatchOp } from "../spec/patch.ts";
 import { SCRIPT_SYSTEM, SCRIPT_SCHEMA, scriptPrompt, repairPrompt, scriptedSpec } from "./script.ts";
 import { autoFix, checkScript } from "../runtime/script.ts";
-import { SCRIPT_TEMPLATES, fillTemplate } from "../samples/scripts.ts";
+import { SCRIPT_TEMPLATES, fillTemplate, findTemplate } from "../samples/scripts.ts";
+
+// Beetle's rule: runtime model output never becomes executable JavaScript. While this is
+// false the model never writes game code; only the shipped, hand-written templates run.
+export const MODEL_SCRIPTS_ENABLED = false;
+export const MODEL_SCRIPTS_OFF = "This kind of game is built from the closest genre on this machine; model-written game code is turned off.";
 
 export type Studio2DApi = {
   status: () => Promise<{ online: boolean; models: string[]; image: { ready: boolean; detail?: string } }>;
@@ -142,6 +147,12 @@ export type SandboxCheck = (spec: GameSpec) => Promise<{ ok: boolean; error?: st
 
 // Write a game from scratch, check it in the sandbox, and let the model repair what fails.
 export async function writeScriptGame(idea: string, d: DesignDoc | null, check: SandboxCheck, onStep: (step: string, detail?: string) => void, tries = 3): Promise<{ spec: GameSpec; attempts: number } | { error: string; attempts: number }> {
+  if (!MODEL_SCRIPTS_ENABLED) {
+    // Only a shipped template may run; otherwise the caller builds the closest genre.
+    const t = findTemplate(idea);
+    if (t && d) return { spec: templateSpec(idea, { ...d, template: t.id }), attempts: 0 };
+    return { error: MODEL_SCRIPTS_OFF, attempts: 0 };
+  }
   onStep("writing");
   let out = await askForScript(scriptPrompt(idea, d ?? undefined), 0.35);
   let lastError = "";
@@ -168,6 +179,7 @@ export async function writeScriptGame(idea: string, d: DesignDoc | null, check: 
 
 // Change a scripted game in words: the model edits the code, and the result is checked.
 export async function changeScriptInWords(spec: GameSpec, text: string, check: SandboxCheck): Promise<{ ok: true; spec: GameSpec; summary: string } | { ok: false; reason: string }> {
+  if (!MODEL_SCRIPTS_ENABLED) return { ok: false, reason: "This game is built from a ready template, so it cannot be changed in words on this machine; model-written game code is turned off." };
   const code = spec.script?.code ?? "";
   const out = await askForScript(`Change this game: ${text}\nKeep everything else the same and return the whole game.\n\nCode:\n${code.slice(0, 14000)}`, 0.3);
   if ("error" in out) return { ok: false, reason: out.error };

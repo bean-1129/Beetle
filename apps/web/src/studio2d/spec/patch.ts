@@ -52,6 +52,8 @@ export function getAt(root: any, path: string): unknown {
 function applyOne(root: any, op: PatchOp) {
   const parts = parsePointer(op.path);
   if (!parts.length) throw new Error("patches cannot replace the whole spec");
+  // Game code never comes from a patch: only shipped, hand-written templates run.
+  if (parts[0] === "script") throw new Error("That change would add game code, which is turned off on this machine.");
   const parent = walk(root, parts);
   const key = parts[parts.length - 1];
   if (FORBIDDEN.has(key)) throw new Error(`patch path uses a forbidden key`);

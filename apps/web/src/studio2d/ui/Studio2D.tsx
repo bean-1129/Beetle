@@ -16,7 +16,7 @@ import { SAMPLES } from "../samples/index.ts";
 import type { DesignDoc } from "../gen/design.ts";
 import { designFromIdea } from "../gen/design.ts";
 import { safeApply } from "../gen/nlpatch.ts";
-import { api, makeDesign, changeInWords, generateArt, templateSpec, writeScriptGame, changeScriptInWords } from "../gen/ai.ts";
+import { api, makeDesign, changeInWords, generateArt, templateSpec, writeScriptGame, changeScriptInWords, MODEL_SCRIPTS_ENABLED } from "../gen/ai.ts";
 import { designFromIdea as readIdea } from "../gen/design.ts";
 import type { LevelReport } from "../world/levels.ts";
 import { reachableSide, reachableTop, makeStreamer } from "../world/levels.ts";
@@ -83,9 +83,26 @@ function pixelsUrl(p: Pixels, scale = 3): string {
   return c.toDataURL();
 }
 
+// Idea prefilled from ?prompt= (the landing page forwards it). Read once on first mount, then
+// stripped from the URL; cached so StrictMode's second mount still sees it.
+let promptFromUrl: string | null = null;
+function takePromptFromUrl(): string {
+  if (promptFromUrl !== null) return promptFromUrl;
+  promptFromUrl = "";
+  try {
+    const url = new URL(location.href);
+    const p = url.searchParams.get("prompt");
+    if (p === null) return promptFromUrl;
+    url.searchParams.delete("prompt");
+    history.replaceState(history.state, "", url.pathname + (url.search ? url.search : "") + url.hash);
+    promptFromUrl = p.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").slice(0, 1000);
+  } catch {}
+  return promptFromUrl;
+}
+
 export default function Studio2D({ notify }: { notify?: (m: string) => void }) {
   const [view, setView] = useState<View>("idea");
-  const [idea, setIdea] = useState("");
+  const [idea, setIdea] = useState(takePromptFromUrl);
   const [design, setDesign] = useState<DesignDoc | null>(null);
   const [designNote, setDesignNote] = useState("");
   const [designing, setDesigning] = useState(false);
@@ -145,6 +162,11 @@ export default function Studio2D({ notify }: { notify?: (m: string) => void }) {
 
   async function buildScripted(d: DesignDoc) {
     const text = idea.trim();
+    // Model-written game code is off: a new kind of game is built from the closest genre.
+    if (d.route === "script" && !MODEL_SCRIPTS_ENABLED) {
+      say("Building this from the closest kind of game Beetle knows.");
+      return void (await onBuild({ ...d, route: "genre" }));
+    }
     setStages([
       { id: "design", label: "Idea", state: "done", detail: d.route === "template" ? `ready template: ${d.template}` : "a new kind of game" },
       { id: "spec", label: d.route === "template" ? "Game" : "Writing the game", state: "run" },
@@ -181,7 +203,7 @@ export default function Studio2D({ notify }: { notify?: (m: string) => void }) {
     }
     // The model could not get it working: say so, and build the closest built-in game instead.
     stage("playtest", { state: "fail", detail: r.error });
-    say(`The local model could not get this game working (${r.error.slice(0, 120)}). Building the closest built-in kind of game instead.`);
+    say("This one did not come together, so Beetle is building the closest kind of game it knows.");
     await onBuild({ ...d, route: "genre" });
   }
 
