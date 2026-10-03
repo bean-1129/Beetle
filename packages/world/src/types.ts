@@ -62,4 +62,6 @@ export type MoveInput = { axes: { x: number; z: number }; active: boolean }; // 
 export type StepEvent = 'fell' | 'hazard_contact' | 'respawned';
 export type StepResult = { mover: Mover; events: StepEvent[] };
 
-export type FixtureName = 'garden5' | 'garden5-gapped-bridge' | 'garden5-gate-hides-relic' | 'garden5-blocked-path' | 'garden4-no-temple-bridge';
+export type FixtureName =
+  | 'garden5' | 'garden5-gapped-bridge' | 'garden5-gate-hides-relic' | 'garden5-blocked-path' | 'garden4-no-temple-bridge'
+  | 'race5' | 'hill4' | 'survival5' | 'trial5';

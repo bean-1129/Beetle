@@ -1,6 +1,6 @@
 // Full validator pipeline from docs/ARCHITECTURE.md. Order matters; only INVALID_SCHEMA short-circuits.
 import {
-  DECORATION_RADIUS, GEOMETRY, WORLD_LIMITS, WorldSpecSchema, dist,
+  DECORATION_RADIUS, GEOMETRY, MODE_LIMITS, WORLD_LIMITS, WorldSpecSchema, dist, effectiveMode,
   type ValidationIssue, type Vec2, type WorldSpec,
 } from '@beetle/contracts';
 import type { CompiledWorld, LiveContext, ValidationOutcome } from './types.ts';
@@ -83,6 +83,31 @@ export function validateSpec(input: unknown, ctx: LiveContext = {}): ValidationO
   }
 
   const islandById = new Map(spec.islands.map((i) => [i.id, i] as const));
+
+  // 2c. MODE_INVALID: the game mode must be satisfiable by this world. Ranges are schema-checked (ModeSchema,
+  // HazardRiseSchema); these are the cross-field rules. time_trial without timeLimitSec takes the default in
+  // effectiveMode and is not an issue. Gate reachability for every mode is DISCONNECTED_GOAL below.
+  if (spec.mode) {
+    const m = spec.mode;
+    const relicCount = spec.relics.length;
+    if (m.relicsRequired !== undefined && m.relicsRequired > relicCount) {
+      issues.push(issue('MODE_INVALID', `mode ${m.kind} requires ${m.relicsRequired} relics but the world has ${relicCount}`, ['mode'], { kind: m.kind, relicsRequired: m.relicsRequired, relics: relicCount }));
+    }
+    if (m.kind === 'checkpoint_race' && relicCount < 2) {
+      issues.push(issue('MODE_INVALID', `mode checkpoint_race needs at least 2 relics as checkpoints; the world has ${relicCount}`, ['mode'], { kind: m.kind, relics: relicCount, min: 2 }));
+    }
+    if (m.kind === 'survival') {
+      if (!spec.hazard.rise) {
+        issues.push(issue('MODE_INVALID', 'mode survival needs hazard.rise (afterSec, metersPerSec, maxElevation) so the hazard plane rises', ['mode', 'hazard'], { kind: m.kind, missing: 'hazard.rise' }));
+      } else if (spec.hazard.rise.maxElevation <= spec.hazard.planeElevation) {
+        issues.push(issue('MODE_INVALID', `mode survival: hazard.rise.maxElevation ${spec.hazard.rise.maxElevation} is not above the hazard plane at ${spec.hazard.planeElevation}, so the hazard never rises`, ['mode', 'hazard'], { kind: m.kind, maxElevation: spec.hazard.rise.maxElevation, planeElevation: spec.hazard.planeElevation, limit: MODE_LIMITS.hazardRise.maxElevation }));
+      }
+    }
+    const eff = effectiveMode(spec);
+    if (eff.timeLimitSec !== null && (eff.timeLimitSec < MODE_LIMITS.timeLimitSec.min || eff.timeLimitSec > MODE_LIMITS.timeLimitSec.max)) {
+      issues.push(issue('MODE_INVALID', `mode ${m.kind}: timeLimitSec ${eff.timeLimitSec} outside [${MODE_LIMITS.timeLimitSec.min}, ${MODE_LIMITS.timeLimitSec.max}]`, ['mode'], { kind: m.kind, timeLimitSec: eff.timeLimitSec }));
+    }
+  }
 
   // 3b. OUT_OF_BOUNDS: island discs and placed objects must lie inside the world bounds (the nav grid covers only ±H).
   for (const is of spec.islands) {

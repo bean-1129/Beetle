@@ -1,0 +1,301 @@
+{
+  "schemaVersion": 1,
+  "worldId": "race5",
+  "worldVersion": 0,
+  "seed": 50501,
+  "title": "Checkpoint Race on Five Islands (fixture)",
+  "biome": "garden",
+  "bounds": {
+    "halfExtent": 60
+  },
+  "movementRulesVersion": 1,
+  "objectiveRules": [
+    "collect_all_relics_then_enter_gate"
+  ],
+  "islands": [
+    {
+      "id": "hub",
+      "name": "Starting Hub",
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "radius": 8,
+      "topElevation": 0
+    },
+    {
+      "id": "marker-1",
+      "name": "First Marker",
+      "center": {
+        "x": 26,
+        "z": 0
+      },
+      "radius": 7,
+      "topElevation": 0
+    },
+    {
+      "id": "marker-2",
+      "name": "Second Marker",
+      "center": {
+        "x": 0,
+        "z": 26
+      },
+      "radius": 7,
+      "topElevation": 0
+    },
+    {
+      "id": "marker-3",
+      "name": "Third Marker",
+      "center": {
+        "x": -26,
+        "z": 0
+      },
+      "radius": 7,
+      "topElevation": 0
+    },
+    {
+      "id": "finish",
+      "name": "Finish Line",
+      "center": {
+        "x": 0,
+        "z": -26
+      },
+      "radius": 7,
+      "topElevation": 0
+    }
+  ],
+  "bridges": [
+    {
+      "id": "bridge-start",
+      "endpoints": [
+        {
+          "islandId": "hub",
+          "point": {
+            "x": 8,
+            "z": 0
+          }
+        },
+        {
+          "islandId": "marker-1",
+          "point": {
+            "x": 19,
+            "z": 0
+          }
+        }
+      ],
+      "width": 2.4
+    },
+    {
+      "id": "bridge-loop-1",
+      "endpoints": [
+        {
+          "islandId": "marker-1",
+          "point": {
+            "x": 21.05,
+            "z": 4.95
+          }
+        },
+        {
+          "islandId": "marker-2",
+          "point": {
+            "x": 4.95,
+            "z": 21.05
+          }
+        }
+      ],
+      "width": 2.4
+    },
+    {
+      "id": "bridge-loop-2",
+      "endpoints": [
+        {
+          "islandId": "marker-2",
+          "point": {
+            "x": -4.95,
+            "z": 21.05
+          }
+        },
+        {
+          "islandId": "marker-3",
+          "point": {
+            "x": -21.05,
+            "z": 4.95
+          }
+        }
+      ],
+      "width": 2.4
+    },
+    {
+      "id": "bridge-loop-3",
+      "endpoints": [
+        {
+          "islandId": "marker-3",
+          "point": {
+            "x": -21.05,
+            "z": -4.95
+          }
+        },
+        {
+          "islandId": "finish",
+          "point": {
+            "x": -4.95,
+            "z": -21.05
+          }
+        }
+      ],
+      "width": 2.4
+    },
+    {
+      "id": "bridge-loop-4",
+      "endpoints": [
+        {
+          "islandId": "finish",
+          "point": {
+            "x": 4.95,
+            "z": -21.05
+          }
+        },
+        {
+          "islandId": "marker-1",
+          "point": {
+            "x": 21.05,
+            "z": -4.95
+          }
+        }
+      ],
+      "width": 2.4
+    }
+  ],
+  "spawns": [
+    {
+      "id": "spawn-0",
+      "supportingSurfaceId": "hub",
+      "localPosition": {
+        "x": -2,
+        "z": -2
+      },
+      "playerSlot": 0
+    },
+    {
+      "id": "spawn-1",
+      "supportingSurfaceId": "hub",
+      "localPosition": {
+        "x": -2,
+        "z": 2
+      },
+      "playerSlot": 1
+    }
+  ],
+  "relics": [
+    {
+      "id": "checkpoint-1",
+      "name": "Red Flag",
+      "supportingSurfaceId": "marker-1",
+      "localPosition": {
+        "x": 1,
+        "z": 0
+      }
+    },
+    {
+      "id": "checkpoint-2",
+      "name": "Blue Flag",
+      "supportingSurfaceId": "marker-2",
+      "localPosition": {
+        "x": 0,
+        "z": 1
+      }
+    },
+    {
+      "id": "checkpoint-3",
+      "name": "Gold Flag",
+      "supportingSurfaceId": "marker-3",
+      "localPosition": {
+        "x": -1,
+        "z": 0
+      }
+    }
+  ],
+  "gate": {
+    "id": "gate",
+    "supportingSurfaceId": "finish",
+    "localPosition": {
+      "x": 0,
+      "z": -1
+    },
+    "requiredRelicIds": [
+      "checkpoint-1",
+      "checkpoint-2",
+      "checkpoint-3"
+    ]
+  },
+  "hazard": {
+    "kind": "water",
+    "planeElevation": -2.5,
+    "policy": {
+      "onContact": "respawn",
+      "scorePenalty": 0
+    }
+  },
+  "decorations": [
+    {
+      "id": "tree-hub",
+      "type": "tree",
+      "supportingSurfaceId": "hub",
+      "localPosition": {
+        "x": 0,
+        "z": 5
+      },
+      "rotationDeg": 30,
+      "scale": 1
+    },
+    {
+      "id": "tower-1",
+      "type": "tower",
+      "supportingSurfaceId": "marker-1",
+      "localPosition": {
+        "x": 4.5,
+        "z": 3
+      },
+      "rotationDeg": 0,
+      "scale": 1
+    },
+    {
+      "id": "statue-2",
+      "type": "statue",
+      "supportingSurfaceId": "marker-2",
+      "localPosition": {
+        "x": 3,
+        "z": 4
+      },
+      "rotationDeg": 180,
+      "scale": 1
+    },
+    {
+      "id": "ruin-3",
+      "type": "ruin",
+      "supportingSurfaceId": "marker-3",
+      "localPosition": {
+        "x": -3,
+        "z": -3.5
+      },
+      "rotationDeg": 90,
+      "scale": 1
+    },
+    {
+      "id": "lantern-finish",
+      "type": "lantern",
+      "supportingSurfaceId": "finish",
+      "localPosition": {
+        "x": 3,
+        "z": -4
+      },
+      "rotationDeg": 0,
+      "scale": 1
+    }
+  ],
+  "mode": {
+    "kind": "checkpoint_race",
+    "timeLimitSec": 90,
+    "orderedCheckpoints": true
+  }
+}

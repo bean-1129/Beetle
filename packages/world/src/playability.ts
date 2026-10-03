@@ -1,5 +1,5 @@
 // Connectivity and supported-movement checks: reruns the route checks and drives a Mover along BFS paths at 30 Hz.
-import { GEOMETRY, SIMULATION, type PlayabilityCheck, type PlayabilityReport, type Vec2 } from '@beetle/contracts';
+import { GEOMETRY, SIMULATION, effectiveSpeed, type PlayabilityCheck, type PlayabilityReport, type Vec2 } from '@beetle/contracts';
 import type { CompiledWorld, LiveContext, Mover } from './types.ts';
 import { reachable } from './nav.ts';
 import { createMover, stepMover } from './movement.ts';
@@ -151,7 +151,7 @@ function walkPath(
     const dx = target.x - mover.x;
     const dz = target.z - mover.z;
     const d = Math.hypot(dx, dz);
-    const stepLen = GEOMETRY.playerSpeed * (TICK_MS / 1000);
+    const stepLen = effectiveSpeed(compiled.spec) * (TICK_MS / 1000);
     // Scale the input down near a waypoint so the walker does not overshoot thin bridges.
     const scale = d < stepLen ? Math.max(DEAD_ZONE_FLOOR, d / stepLen) : 1;
     const axes = d === 0 ? { x: 0, z: 0 } : { x: (dx / d) * scale, z: (dz / d) * scale };

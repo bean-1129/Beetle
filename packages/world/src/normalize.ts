@@ -3,7 +3,7 @@
 // (b) writes world coordinates or over-radius offsets into localPosition, (c) exceeds numeric limits the
 // JSON-schema grammar does not enforce. These are mechanical, unambiguous corrections; anything ambiguous is
 // left untouched so the validator reports it. Every change is recorded so the agent and the UI can show it.
-import { WORLD_LIMITS, compassName, type Vec2 } from '@beetle/contracts';
+import { BIOMES, GAME_MODES, MODE_LIMITS, WORLD_LIMITS, compassName, type Biome, type GameMode, type Vec2 } from '@beetle/contracts';
 
 export type Normalization = { path: string; from: unknown; to: unknown; reason: string };
 
@@ -112,6 +112,105 @@ function clampNum(v: unknown, min: number, max: number, log: Normalization[], pa
     return to;
   }
   return n;
+}
+
+
+// ---- Game mode and biome words ----
+// The model is asked for an enum but often answers with the player's words ("a race", "king of the hill", "snowy").
+// Mapping is by whole slug tokens, first match wins in this order; anything unrecognised is relic_hunt (the original game).
+const MODE_WORDS: { kind: GameMode; words: string[] }[] = [
+  { kind: 'checkpoint_race', words: ['checkpoint', 'checkpoints', 'race', 'racing', 'lap', 'laps', 'course'] },
+  { kind: 'king_of_the_hill', words: ['king', 'hill', 'hold', 'holding', 'koth', 'zone', 'capture', 'control'] },
+  { kind: 'survival', words: ['survive', 'survival', 'surviving', 'rising', 'rise', 'rises', 'flood', 'flooding', 'escape', 'outlast'] },
+  { kind: 'time_trial', words: ['time', 'timed', 'timer', 'trial', 'trials', 'sprint', 'speedrun', 'clock', 'countdown'] },
+  { kind: 'relic_hunt', words: ['relic', 'relics', 'hunt', 'collect', 'collection', 'classic', 'default'] },
+];
+const BIOME_WORDS: { biome: Biome; words: string[] }[] = [
+  { biome: 'frost', words: ['frost', 'frosty', 'frozen', 'snow', 'snowy', 'ice', 'icy', 'winter', 'glacier', 'glacial', 'arctic', 'tundra'] },
+  { biome: 'desert', words: ['desert', 'sand', 'sandy', 'sands', 'dune', 'dunes', 'dusty', 'arid', 'oasis', 'canyon'] },
+  { biome: 'night', words: ['night', 'nightly', 'dark', 'darkness', 'moon', 'moonlit', 'moonlight', 'midnight', 'nocturnal', 'starry', 'dusk'] },
+  { biome: 'volcanic', words: ['volcanic', 'volcano', 'lava', 'ash', 'ashen', 'magma', 'ember', 'embers', 'fire', 'inferno', 'cinder'] },
+  { biome: 'garden', words: ['garden', 'grass', 'grassy', 'meadow', 'forest', 'green', 'spring', 'summer', 'orchard'] },
+];
+
+function tokens(ref: string): string[] {
+  return slugify(ref).split('-').filter((t) => t.length > 0);
+}
+
+/** Resolve a model-provided mode word to a GameMode. Exact enum values pass through; unknown words become relic_hunt. */
+export function resolveModeKind(ref: unknown): GameMode {
+  if (typeof ref !== 'string') return 'relic_hunt';
+  if ((GAME_MODES as readonly string[]).includes(ref)) return ref as GameMode;
+  const t = tokens(ref);
+  // Exact enum spelled with spaces or dashes ("king of the hill", "time-trial").
+  const joined = t.join('_');
+  if ((GAME_MODES as readonly string[]).includes(joined)) return joined as GameMode;
+  for (const entry of MODE_WORDS) if (t.some((w) => entry.words.includes(w))) return entry.kind;
+  return 'relic_hunt';
+}
+
+/** Resolve a model-provided biome word to a Biome. Returns undefined when nothing matches. */
+export function resolveBiome(ref: unknown): Biome | undefined {
+  if (typeof ref !== 'string') return undefined;
+  if ((BIOMES as readonly string[]).includes(ref)) return ref as Biome;
+  const t = tokens(ref);
+  for (const entry of BIOME_WORDS) if (t.some((w) => entry.words.includes(w))) return entry.biome;
+  return undefined;
+}
+
+function clampInt(v: unknown, min: number, max: number, log: Normalization[], path: string): unknown {
+  const n = num(v);
+  if (n === undefined) return v;
+  const to = Math.min(max, Math.max(min, Math.round(n)));
+  if (to !== n) log.push({ path, from: n, to, reason: `rounded and clamped to integer in [${min}, ${max}]` });
+  return to;
+}
+
+/** Normalize a model-provided mode value (string or object) in place; returns the object or undefined when absent. */
+function normalizeModeValue(raw: unknown, log: Normalization[], path: string): Record<string, unknown> | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  let mode: Record<string, unknown>;
+  if (typeof raw === 'string') {
+    const kind = resolveModeKind(raw);
+    log.push({ path, from: raw, to: { kind }, reason: 'mode word resolved to a mode object' });
+    mode = { kind };
+  } else if (typeof raw === 'object') {
+    mode = raw as Record<string, unknown>;
+    if (!(GAME_MODES as readonly string[]).includes(String(mode.kind))) {
+      const kind = resolveModeKind(mode.kind);
+      log.push({ path: `${path}.kind`, from: mode.kind, to: kind, reason: 'mode word resolved to the closest game mode' });
+      mode.kind = kind;
+    }
+  } else {
+    return undefined;
+  }
+  if (mode.timeLimitSec !== undefined && mode.timeLimitSec !== null) mode.timeLimitSec = clampInt(mode.timeLimitSec, MODE_LIMITS.timeLimitSec.min, MODE_LIMITS.timeLimitSec.max, log, `${path}.timeLimitSec`);
+  if (mode.holdSeconds !== undefined && mode.holdSeconds !== null) mode.holdSeconds = clampInt(mode.holdSeconds, MODE_LIMITS.holdSeconds.min, MODE_LIMITS.holdSeconds.max, log, `${path}.holdSeconds`);
+  if (mode.relicsRequired !== undefined && mode.relicsRequired !== null) mode.relicsRequired = clampInt(mode.relicsRequired, MODE_LIMITS.relicsRequired.min, MODE_LIMITS.relicsRequired.max, log, `${path}.relicsRequired`);
+  for (const k of ['timeLimitSec', 'holdSeconds', 'relicsRequired', 'orderedCheckpoints'] as const) {
+    if (mode[k] === null) { log.push({ path: `${path}.${k}`, from: null, to: undefined, reason: 'null dropped' }); delete mode[k]; }
+  }
+  return mode;
+}
+
+function normalizeBiomeValue(obj: Record<string, unknown>, key: string, log: Normalization[], path: string): void {
+  const raw = obj[key];
+  if (raw === undefined) return;
+  if (typeof raw === 'string' && (BIOMES as readonly string[]).includes(raw)) return;
+  const resolved = resolveBiome(raw);
+  if (resolved) { log.push({ path, from: raw, to: resolved, reason: 'biome word resolved to the closest biome' }); obj[key] = resolved; }
+  else { log.push({ path, from: raw, to: undefined, reason: 'unknown biome dropped; default applies' }); delete obj[key]; }
+}
+
+function normalizeHazardRise(obj: Record<string, unknown>, key: string, log: Normalization[], path: string): void {
+  const raw = obj[key];
+  if (raw === null) { log.push({ path, from: null, to: undefined, reason: 'null dropped' }); delete obj[key]; return; }
+  if (!raw || typeof raw !== 'object') return;
+  const r = raw as Record<string, unknown>;
+  const L = MODE_LIMITS.hazardRise;
+  r.afterSec = clampInt(r.afterSec, L.afterSec.min, L.afterSec.max, log, `${path}.afterSec`);
+  r.metersPerSec = clampNum(r.metersPerSec, L.metersPerSec.min, L.metersPerSec.max, log, `${path}.metersPerSec`);
+  r.maxElevation = clampNum(r.maxElevation, L.maxElevation.min, L.maxElevation.max, log, `${path}.maxElevation`);
 }
 
 
@@ -318,6 +417,17 @@ export function normalizeDraft(draft: unknown): { draft: unknown; normalizations
     log.push({ path: 'decorations', from: d.decorations.length, to: WORLD_LIMITS.decorations.max, reason: 'truncated to the decoration limit' });
     d.decorations = d.decorations.slice(0, WORLD_LIMITS.decorations.max);
   }
+  // Game mode, biome, movement speed and hazard rise: words become enum values, numbers are clamped into MODE_LIMITS.
+  const mode = normalizeModeValue(d.mode, log, 'mode');
+  if (mode) d.mode = mode; else if (d.mode !== undefined) { log.push({ path: 'mode', from: d.mode, to: undefined, reason: 'unrecognised mode dropped; relic_hunt applies' }); delete d.mode; }
+  normalizeBiomeValue(d, 'biome', log, 'biome');
+  if (d.biome === undefined && d.hazard === 'lava') {
+    log.push({ path: 'biome', from: undefined, to: 'volcanic', reason: 'lava hazard without a biome: volcanic' });
+    d.biome = 'volcanic';
+  }
+  if (d.movementSpeed === null) { log.push({ path: 'movementSpeed', from: null, to: undefined, reason: 'null dropped' }); delete d.movementSpeed; }
+  if (d.movementSpeed !== undefined) d.movementSpeed = clampNum(d.movementSpeed, MODE_LIMITS.movementSpeed.min, MODE_LIMITS.movementSpeed.max, log, 'movementSpeed');
+  normalizeHazardRise(d, 'hazardRise', log, 'hazardRise');
   return { draft: d, normalizations: log };
 }
 
@@ -372,6 +482,17 @@ export function normalizePatchDraft(
         }
         break;
       }
+      case 'set_mode': {
+        const mode = normalizeModeValue(op.mode, log, `${path}.mode`);
+        if (mode) op.mode = mode;
+        break;
+      }
+      case 'set_biome':
+        normalizeBiomeValue(op, 'biome', log, `${path}.biome`);
+        break;
+      case 'set_movement':
+        if (op.speed !== undefined) op.speed = clampNum(op.speed, MODE_LIMITS.movementSpeed.min, MODE_LIMITS.movementSpeed.max, log, `${path}.speed`);
+        break;
       default:
         break;
     }

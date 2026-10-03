@@ -1,5 +1,5 @@
 // Compact agent-facing summary. Positions are reduced to a surface id; no raw coordinates, no tokens.
-import type { SessionState, SessionSummary } from '@beetle/contracts';
+import { effectiveMode, type SessionState, type SessionSummary } from '@beetle/contracts';
 import type { CompiledWorld } from './types.ts';
 
 export function buildSessionSummary(
@@ -10,6 +10,7 @@ export function buildSessionSummary(
   const collected = new Set(session.collectedRelicIds);
   const islands = compiled.surfaces.filter((s) => s.kind === 'island');
   const bridges = compiled.surfaces.filter((s) => s.kind === 'bridge');
+  const mode = effectiveMode(spec);
   return {
     worldVersion: session.worldVersion,
     worldTitle: spec.title,
@@ -26,6 +27,8 @@ export function buildSessionSummary(
     gateUnlocked: session.gateUnlocked,
     won: session.won,
     score: session.score,
+    mode: { kind: mode.kind, timeLimitSec: mode.timeLimitSec, holdSeconds: mode.holdSeconds, relicsRequired: mode.relicsRequired },
+    biome: spec.biome,
     islands: islands.map((is) => ({
       id: is.id,
       name: is.name,

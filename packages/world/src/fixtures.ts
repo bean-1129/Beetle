@@ -3,6 +3,152 @@
 import { GEOMETRY, MOVEMENT_RULES_VERSION, SCHEMA_VERSION, WORLD_LIMITS, type WorldSpec } from '@beetle/contracts';
 import type { FixtureName } from './types.ts';
 import { hazardPolicyFor } from './patch.ts';
+import { rimPointToward, round3 } from './geom.ts';
+
+/** Bridge between two islands along their centre line, sockets derived as rim points (same rule as expandDraft/add_bridge). */
+function link(islands: WorldSpec['islands'], id: string, from: string, to: string, width = 2.4): WorldSpec['bridges'][number] {
+  const a = islands.find((i) => i.id === from)!;
+  const b = islands.find((i) => i.id === to)!;
+  const pa = rimPointToward(a.center, a.radius, b.center);
+  const pb = rimPointToward(b.center, b.radius, a.center);
+  return { id, endpoints: [{ islandId: a.id, point: { x: round3(pa.x), z: round3(pa.z) } }, { islandId: b.id, point: { x: round3(pb.x), z: round3(pb.z) } }], width };
+}
+
+function base(worldId: string, seed: number, title: string, biome: WorldSpec['biome']): Pick<WorldSpec, 'schemaVersion' | 'worldId' | 'worldVersion' | 'seed' | 'title' | 'biome' | 'bounds' | 'movementRulesVersion' | 'objectiveRules'> {
+  return {
+    schemaVersion: SCHEMA_VERSION, worldId, worldVersion: 0, seed, title, biome,
+    bounds: { halfExtent: WORLD_LIMITS.bounds.halfExtent }, movementRulesVersion: MOVEMENT_RULES_VERSION,
+    objectiveRules: ['collect_all_relics_then_enter_gate'],
+  };
+}
+
+/**
+ * FIXTURE race5: valid checkpoint_race, 90 s. A hub with both spawns links east to a loop of four islands
+ * (east -> north -> west -> south -> east). The three relics are the ordered checkpoints on east, north and west;
+ * the gate (finish) sits on the south island, reachable from both loop neighbours.
+ */
+function race5(): WorldSpec {
+  const islands: WorldSpec['islands'] = [
+    { id: 'hub', name: 'Starting Hub', center: { x: 0, z: 0 }, radius: 8, topElevation: 0 },
+    { id: 'marker-1', name: 'First Marker', center: { x: 26, z: 0 }, radius: 7, topElevation: 0 },
+    { id: 'marker-2', name: 'Second Marker', center: { x: 0, z: 26 }, radius: 7, topElevation: 0 },
+    { id: 'marker-3', name: 'Third Marker', center: { x: -26, z: 0 }, radius: 7, topElevation: 0 },
+    { id: 'finish', name: 'Finish Line', center: { x: 0, z: -26 }, radius: 7, topElevation: 0 },
+  ];
+  return {
+    ...base('race5', 50501, 'Checkpoint Race on Five Islands (fixture)', 'garden'),
+    islands,
+    bridges: [
+      link(islands, 'bridge-start', 'hub', 'marker-1', 2.4),
+      link(islands, 'bridge-loop-1', 'marker-1', 'marker-2', 2.4),
+      link(islands, 'bridge-loop-2', 'marker-2', 'marker-3', 2.4),
+      link(islands, 'bridge-loop-3', 'marker-3', 'finish', 2.4),
+      link(islands, 'bridge-loop-4', 'finish', 'marker-1', 2.4),
+    ],
+    spawns: [
+      { id: 'spawn-0', supportingSurfaceId: 'hub', localPosition: { x: -2, z: -2 }, playerSlot: 0 },
+      { id: 'spawn-1', supportingSurfaceId: 'hub', localPosition: { x: -2, z: 2 }, playerSlot: 1 },
+    ],
+    relics: [
+      { id: 'checkpoint-1', name: 'Red Flag', supportingSurfaceId: 'marker-1', localPosition: { x: 1, z: 0 } },
+      { id: 'checkpoint-2', name: 'Blue Flag', supportingSurfaceId: 'marker-2', localPosition: { x: 0, z: 1 } },
+      { id: 'checkpoint-3', name: 'Gold Flag', supportingSurfaceId: 'marker-3', localPosition: { x: -1, z: 0 } },
+    ],
+    gate: { id: 'gate', supportingSurfaceId: 'finish', localPosition: { x: 0, z: -1 }, requiredRelicIds: ['checkpoint-1', 'checkpoint-2', 'checkpoint-3'] },
+    hazard: { kind: 'water', planeElevation: GEOMETRY.hazardPlaneElevation, policy: hazardPolicyFor('water') },
+    decorations: [
+      { id: 'tree-hub', type: 'tree', supportingSurfaceId: 'hub', localPosition: { x: 0, z: 5 }, rotationDeg: 30, scale: 1 },
+      { id: 'tower-1', type: 'tower', supportingSurfaceId: 'marker-1', localPosition: { x: 4.5, z: 3 }, rotationDeg: 0, scale: 1 },
+      { id: 'statue-2', type: 'statue', supportingSurfaceId: 'marker-2', localPosition: { x: 3, z: 4 }, rotationDeg: 180, scale: 1 },
+      { id: 'ruin-3', type: 'ruin', supportingSurfaceId: 'marker-3', localPosition: { x: -3, z: -3.5 }, rotationDeg: 90, scale: 1 },
+      { id: 'lantern-finish', type: 'lantern', supportingSurfaceId: 'finish', localPosition: { x: 3, z: -4 }, rotationDeg: 0, scale: 1 },
+    ],
+    mode: { kind: 'checkpoint_race', timeLimitSec: 90, orderedCheckpoints: true },
+  };
+}
+
+/**
+ * FIXTURE hill4: valid king_of_the_hill (hold 10 s), frost biome, four islands. The base holds both spawns and one
+ * relic; east and west hold the other relics; the summit to the north holds the gate (the hill zone).
+ */
+function hill4(): WorldSpec {
+  const islands: WorldSpec['islands'] = [
+    { id: 'base', name: 'Snowfield Base', center: { x: 0, z: 0 }, radius: 9, topElevation: 0 },
+    { id: 'summit', name: 'Frozen Summit', center: { x: 0, z: 24 }, radius: 7, topElevation: 0 },
+    { id: 'east', name: 'Icicle Shelf', center: { x: 22, z: 0 }, radius: 6, topElevation: 0 },
+    { id: 'west', name: 'Glacier Ledge', center: { x: -22, z: 0 }, radius: 6, topElevation: 0 },
+  ];
+  return {
+    ...base('hill4', 40404, 'King of the Frozen Hill (fixture)', 'frost'),
+    islands,
+    bridges: [
+      link(islands, 'bridge-summit', 'base', 'summit', 2.4),
+      link(islands, 'bridge-east', 'base', 'east', 2.4),
+      link(islands, 'bridge-west', 'base', 'west', 2.0),
+    ],
+    spawns: [
+      { id: 'spawn-0', supportingSurfaceId: 'base', localPosition: { x: -2, z: -2 }, playerSlot: 0 },
+      { id: 'spawn-1', supportingSurfaceId: 'base', localPosition: { x: 2, z: -2 }, playerSlot: 1 },
+    ],
+    relics: [
+      { id: 'relic-east', name: 'Ice Shard', supportingSurfaceId: 'east', localPosition: { x: 1.5, z: 0 } },
+      { id: 'relic-west', name: 'Frost Gem', supportingSurfaceId: 'west', localPosition: { x: -1.5, z: 0 } },
+      { id: 'relic-base', name: 'Snow Globe', supportingSurfaceId: 'base', localPosition: { x: 0, z: 4 } },
+    ],
+    gate: { id: 'gate', supportingSurfaceId: 'summit', localPosition: { x: 0, z: 0 }, requiredRelicIds: ['relic-east', 'relic-west', 'relic-base'] },
+    hazard: { kind: 'water', planeElevation: GEOMETRY.hazardPlaneElevation, policy: hazardPolicyFor('water') },
+    decorations: [
+      { id: 'crystal-summit', type: 'crystal', supportingSurfaceId: 'summit', localPosition: { x: 4, z: 3 }, rotationDeg: 0, scale: 1 },
+      { id: 'crystal-east', type: 'crystal', supportingSurfaceId: 'east', localPosition: { x: 3, z: 3 }, rotationDeg: 45, scale: 1 },
+      { id: 'tower-base', type: 'tower', supportingSurfaceId: 'base', localPosition: { x: -5, z: 4 }, rotationDeg: 0, scale: 1 },
+      { id: 'mushroom-west', type: 'mushroom', supportingSurfaceId: 'west', localPosition: { x: -2, z: 3 }, rotationDeg: 0, scale: 1 },
+    ],
+    mode: { kind: 'king_of_the_hill', holdSeconds: 10 },
+  };
+}
+
+/** FIXTURE survival5: the garden5 layout as a 120 s survival map: volcanic biome, lava that rises after 20 s. */
+function survival5(): WorldSpec {
+  const spec = garden5();
+  return {
+    ...spec,
+    ...base('survival5', 55505, 'Survive the Rising Lava (fixture)', 'volcanic'),
+    hazard: {
+      kind: 'lava', planeElevation: GEOMETRY.hazardPlaneElevation, policy: hazardPolicyFor('lava'),
+      rise: { afterSec: 20, metersPerSec: 0.05, maxElevation: -1.2 },
+    },
+    decorations: [
+      { id: 'ruin-1', type: 'ruin', supportingSurfaceId: 'centre', localPosition: { x: 5, z: 5 }, rotationDeg: 20, scale: 1 },
+      { id: 'statue-1', type: 'statue', supportingSurfaceId: 'centre', localPosition: { x: -5, z: 5 }, rotationDeg: 200, scale: 1.1 },
+      { id: 'rock-1', type: 'rock', supportingSurfaceId: 'east', localPosition: { x: -1, z: 4 }, rotationDeg: 0, scale: 1 },
+      { id: 'crystal-1', type: 'crystal', supportingSurfaceId: 'temple', localPosition: { x: 3, z: 3 }, rotationDeg: 0, scale: 1 },
+      { id: 'ruin-2', type: 'ruin', supportingSurfaceId: 'temple', localPosition: { x: 0, z: 4 }, rotationDeg: 180, scale: 1 },
+      { id: 'rock-2', type: 'rock', supportingSurfaceId: 'south', localPosition: { x: 3, z: -3 }, rotationDeg: 0, scale: 1 },
+      { id: 'pillar-1', type: 'pillar', supportingSurfaceId: 'west', localPosition: { x: 2, z: 3.5 }, rotationDeg: 0, scale: 1 },
+    ],
+    mode: { kind: 'survival', timeLimitSec: 120 },
+  };
+}
+
+/** FIXTURE trial5: the garden5 layout as a 60 s time trial in the desert, with a faster 5.5 m/s walk. */
+function trial5(): WorldSpec {
+  const spec = garden5();
+  return {
+    ...spec,
+    ...base('trial5', 50555, 'Desert Dash (fixture)', 'desert'),
+    decorations: [
+      { id: 'statue-1', type: 'statue', supportingSurfaceId: 'centre', localPosition: { x: 5, z: 5 }, rotationDeg: 20, scale: 1 },
+      { id: 'rock-1', type: 'rock', supportingSurfaceId: 'centre', localPosition: { x: -5, z: 5 }, rotationDeg: 200, scale: 1.1 },
+      { id: 'rock-2', type: 'rock', supportingSurfaceId: 'east', localPosition: { x: -1, z: 4 }, rotationDeg: 0, scale: 1 },
+      { id: 'ruin-1', type: 'ruin', supportingSurfaceId: 'temple', localPosition: { x: 3, z: 3 }, rotationDeg: 0, scale: 1 },
+      { id: 'pillar-1', type: 'pillar', supportingSurfaceId: 'temple', localPosition: { x: 0, z: 4 }, rotationDeg: 180, scale: 1 },
+      { id: 'bush-1', type: 'bush', supportingSurfaceId: 'south', localPosition: { x: 3, z: -3 }, rotationDeg: 0, scale: 1 },
+      { id: 'pillar-2', type: 'pillar', supportingSurfaceId: 'west', localPosition: { x: 2, z: 3.5 }, rotationDeg: 0, scale: 1 },
+    ],
+    mode: { kind: 'time_trial', timeLimitSec: 60 },
+    movement: { speed: 5.5 },
+  };
+}
 
 /**
  * FIXTURE garden5: valid.
@@ -103,6 +249,14 @@ export function fixtureWorld(name: FixtureName = 'garden5'): WorldSpec {
       spec.bridges = spec.bridges.filter((b) => b.id !== 'bridge-north');
       return spec;
     }
+    case 'race5':
+      return race5();
+    case 'hill4':
+      return hill4();
+    case 'survival5':
+      return survival5();
+    case 'trial5':
+      return trial5();
     default: {
       const never: never = name;
       throw new Error(`unknown fixture ${String(never)}`);
@@ -110,4 +264,4 @@ export function fixtureWorld(name: FixtureName = 'garden5'): WorldSpec {
   }
 }
 
-export const FIXTURE_NAMES: FixtureName[] = ['garden5', 'garden5-gapped-bridge', 'garden5-gate-hides-relic', 'garden5-blocked-path', 'garden4-no-temple-bridge'];
+export const FIXTURE_NAMES: FixtureName[] = ['garden5', 'garden5-gapped-bridge', 'garden5-gate-hides-relic', 'garden5-blocked-path', 'garden4-no-temple-bridge', 'race5', 'hill4', 'survival5', 'trial5'];

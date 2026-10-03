@@ -1,0 +1,307 @@
+{
+  "schemaVersion": 1,
+  "worldId": "survival5",
+  "worldVersion": 0,
+  "seed": 55505,
+  "title": "Survive the Rising Lava (fixture)",
+  "biome": "volcanic",
+  "bounds": {
+    "halfExtent": 60
+  },
+  "movementRulesVersion": 1,
+  "islands": [
+    {
+      "id": "centre",
+      "name": "Hearth Island",
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "radius": 9,
+      "topElevation": 0
+    },
+    {
+      "id": "temple",
+      "name": "Temple Island",
+      "center": {
+        "x": 0,
+        "z": 28
+      },
+      "radius": 8,
+      "topElevation": 0
+    },
+    {
+      "id": "east",
+      "name": "Orchard Island",
+      "center": {
+        "x": 24,
+        "z": 0
+      },
+      "radius": 7,
+      "topElevation": 0
+    },
+    {
+      "id": "west",
+      "name": "Mossy Island",
+      "center": {
+        "x": -24,
+        "z": 0
+      },
+      "radius": 7,
+      "topElevation": 0
+    },
+    {
+      "id": "south",
+      "name": "Lantern Island",
+      "center": {
+        "x": 0,
+        "z": -26
+      },
+      "radius": 7,
+      "topElevation": 0
+    }
+  ],
+  "bridges": [
+    {
+      "id": "bridge-north",
+      "endpoints": [
+        {
+          "islandId": "centre",
+          "point": {
+            "x": 0,
+            "z": 9
+          }
+        },
+        {
+          "islandId": "temple",
+          "point": {
+            "x": 0,
+            "z": 20
+          }
+        }
+      ],
+      "width": 2.4
+    },
+    {
+      "id": "bridge-east",
+      "endpoints": [
+        {
+          "islandId": "centre",
+          "point": {
+            "x": 9,
+            "z": 0
+          }
+        },
+        {
+          "islandId": "east",
+          "point": {
+            "x": 17,
+            "z": 0
+          }
+        }
+      ],
+      "width": 2.4
+    },
+    {
+      "id": "bridge-west",
+      "endpoints": [
+        {
+          "islandId": "centre",
+          "point": {
+            "x": -9,
+            "z": 0
+          }
+        },
+        {
+          "islandId": "west",
+          "point": {
+            "x": -17,
+            "z": 0
+          }
+        }
+      ],
+      "width": 1.6
+    },
+    {
+      "id": "bridge-south",
+      "endpoints": [
+        {
+          "islandId": "centre",
+          "point": {
+            "x": 0,
+            "z": -9
+          }
+        },
+        {
+          "islandId": "south",
+          "point": {
+            "x": 0,
+            "z": -19
+          }
+        }
+      ],
+      "width": 2.4
+    }
+  ],
+  "spawns": [
+    {
+      "id": "spawn-0",
+      "supportingSurfaceId": "centre",
+      "localPosition": {
+        "x": -2,
+        "z": -2
+      },
+      "playerSlot": 0
+    },
+    {
+      "id": "spawn-1",
+      "supportingSurfaceId": "centre",
+      "localPosition": {
+        "x": 2,
+        "z": -2
+      },
+      "playerSlot": 1
+    }
+  ],
+  "relics": [
+    {
+      "id": "relic-east",
+      "name": "Sun Relic",
+      "supportingSurfaceId": "east",
+      "localPosition": {
+        "x": 2,
+        "z": 0
+      }
+    },
+    {
+      "id": "relic-west",
+      "name": "Moon Relic",
+      "supportingSurfaceId": "west",
+      "localPosition": {
+        "x": -2,
+        "z": 0
+      }
+    },
+    {
+      "id": "relic-south",
+      "name": "Star Relic",
+      "supportingSurfaceId": "south",
+      "localPosition": {
+        "x": 0,
+        "z": -2
+      }
+    }
+  ],
+  "gate": {
+    "id": "gate",
+    "supportingSurfaceId": "temple",
+    "localPosition": {
+      "x": 0,
+      "z": -7.5
+    },
+    "requiredRelicIds": [
+      "relic-east",
+      "relic-west",
+      "relic-south"
+    ]
+  },
+  "hazard": {
+    "kind": "lava",
+    "planeElevation": -2.5,
+    "policy": {
+      "onContact": "respawn",
+      "scorePenalty": 1
+    },
+    "rise": {
+      "afterSec": 20,
+      "metersPerSec": 0.05,
+      "maxElevation": -1.2
+    }
+  },
+  "decorations": [
+    {
+      "id": "ruin-1",
+      "type": "ruin",
+      "supportingSurfaceId": "centre",
+      "localPosition": {
+        "x": 5,
+        "z": 5
+      },
+      "rotationDeg": 20,
+      "scale": 1
+    },
+    {
+      "id": "statue-1",
+      "type": "statue",
+      "supportingSurfaceId": "centre",
+      "localPosition": {
+        "x": -5,
+        "z": 5
+      },
+      "rotationDeg": 200,
+      "scale": 1.1
+    },
+    {
+      "id": "rock-1",
+      "type": "rock",
+      "supportingSurfaceId": "east",
+      "localPosition": {
+        "x": -1,
+        "z": 4
+      },
+      "rotationDeg": 0,
+      "scale": 1
+    },
+    {
+      "id": "crystal-1",
+      "type": "crystal",
+      "supportingSurfaceId": "temple",
+      "localPosition": {
+        "x": 3,
+        "z": 3
+      },
+      "rotationDeg": 0,
+      "scale": 1
+    },
+    {
+      "id": "ruin-2",
+      "type": "ruin",
+      "supportingSurfaceId": "temple",
+      "localPosition": {
+        "x": 0,
+        "z": 4
+      },
+      "rotationDeg": 180,
+      "scale": 1
+    },
+    {
+      "id": "rock-2",
+      "type": "rock",
+      "supportingSurfaceId": "south",
+      "localPosition": {
+        "x": 3,
+        "z": -3
+      },
+      "rotationDeg": 0,
+      "scale": 1
+    },
+    {
+      "id": "pillar-1",
+      "type": "pillar",
+      "supportingSurfaceId": "west",
+      "localPosition": {
+        "x": 2,
+        "z": 3.5
+      },
+      "rotationDeg": 0,
+      "scale": 1
+    }
+  ],
+  "objectiveRules": [
+    "collect_all_relics_then_enter_gate"
+  ],
+  "mode": {
+    "kind": "survival",
+    "timeLimitSec": 120
+  }
+}

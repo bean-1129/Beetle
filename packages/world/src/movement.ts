@@ -1,11 +1,11 @@
 // Single source of truth for player movement: used by the server simulation and the headless playability walk.
 // Rules (docs/ARCHITECTURE.md):
-//   active: v = normalize(axes) * playerSpeed (zero when !active or axes inside the dead zone); candidate = pos + v*dt;
+//   active: v = normalize(axes) * effectiveSpeed(spec) (zero when !active or axes inside the dead zone); candidate = pos + v*dt;
 //     if blockedAt(candidate) try X-only then Z-only slide; if supportAt(final) is null -> 'falling', event 'fell'.
 //   falling: after GEOMETRY.fallDurationMs -> event 'hazard_contact', status 'respawning', position = spawn, velocity 0.
 //   respawning: after GEOMETRY.respawnDurationMs -> status 'active', event 'respawned'.
 //   disconnected: no movement. facingDeg follows non-zero velocity (0 = north/+Z, 90 = east/+X). supportId updated every step.
-import { GEOMETRY, type Vec2 } from '@beetle/contracts';
+import { GEOMETRY, effectiveSpeed, type Vec2 } from '@beetle/contracts';
 import type { CompiledWorld, MoveInput, Mover, StepEvent, StepResult } from './types.ts';
 
 export const DEAD_ZONE = 0.08;
@@ -72,8 +72,11 @@ export function stepMover(
   const mag = Math.hypot(ax, az);
   if (mag < DEAD_ZONE) { ax = 0; az = 0; }
   else if (mag > 1) { ax /= mag; az /= mag; }
-  let vx = ax * GEOMETRY.playerSpeed;
-  let vz = az * GEOMETRY.playerSpeed;
+  // Speed comes from the compiled spec (movement.speed, default MODE_LIMITS.movementSpeed.default) so set_movement
+  // patches change the walk speed without touching the stepMover signature.
+  const speed = effectiveSpeed(compiled.spec);
+  let vx = ax * speed;
+  let vz = az * speed;
 
   let nx = m.x;
   let nz = m.z;

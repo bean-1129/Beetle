@@ -1,4 +1,5 @@
 // expandDraft: model WorldDraft -> full WorldSpec. Derives ids, bridge sockets, hazard policy, cosmetic decoration params.
+// Carries biome (default garden), mode, movementSpeed -> movement.speed and hazardRise -> hazard.rise from the draft.
 import {
   GEOMETRY, MOVEMENT_RULES_VERSION, SCHEMA_VERSION, WORLD_LIMITS, WorldDraftSchema, WorldSpecSchema,
   type ValidationIssue, type WorldSpec,
@@ -75,7 +76,7 @@ export function expandDraft(
     worldVersion: opts.worldVersion ?? 0,
     seed: opts.seed,
     title: d.title,
-    biome: 'garden',
+    biome: d.biome ?? 'garden',
     bounds: { halfExtent: WORLD_LIMITS.bounds.halfExtent },
     movementRulesVersion: MOVEMENT_RULES_VERSION,
     islands: d.islands.map((is) => ({ id: is.id, name: is.name, center: { x: is.center.x, z: is.center.z }, radius: is.radius, topElevation: 0 })),
@@ -93,7 +94,10 @@ export function expandDraft(
       localPosition: { x: d.gate.localPosition.x, z: d.gate.localPosition.z },
       requiredRelicIds: d.relics.map((r) => r.id),
     },
-    hazard: { kind: d.hazard, planeElevation: GEOMETRY.hazardPlaneElevation, policy: hazardPolicyFor(d.hazard) },
+    hazard: {
+      kind: d.hazard, planeElevation: GEOMETRY.hazardPlaneElevation, policy: hazardPolicyFor(d.hazard),
+      ...(d.hazardRise ? { rise: { afterSec: d.hazardRise.afterSec, metersPerSec: d.hazardRise.metersPerSec, maxElevation: d.hazardRise.maxElevation } } : {}),
+    },
     decorations: d.decorations.map((dec) => ({
       id: dec.id,
       type: dec.type,
@@ -103,6 +107,8 @@ export function expandDraft(
       scale: round3(0.8 + rng() * 0.4),
     })),
     objectiveRules: ['collect_all_relics_then_enter_gate'],
+    ...(d.mode ? { mode: { ...d.mode } } : {}),
+    ...(d.movementSpeed !== undefined ? { movement: { speed: d.movementSpeed } } : {}),
   };
 
   const check = WorldSpecSchema.safeParse(spec);
