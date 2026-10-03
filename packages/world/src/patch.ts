@@ -28,7 +28,11 @@ export function applyPatch(
   patch: PatchDraft | WorldPatch,
   ctx: { collectedRelicIds?: string[] } = {},
 ): { ok: true; spec: WorldSpec; changedIds: string[] } | { ok: false; issues: ValidationIssue[] } {
-  // Validate the patch shape at the boundary; unknown ops are called out explicitly.
+  // Validate the patch shape at the boundary; unknown ops are called out explicitly. A non-object patch (null,
+  // undefined, a number) is INVALID_SCHEMA rather than a TypeError.
+  if (patch === null || typeof patch !== 'object') {
+    return { ok: false, issues: [issue('INVALID_SCHEMA', `(root): expected a patch object, got ${patch === null ? 'null' : typeof patch}`, [], { path: [] })] };
+  }
   const raw = patch as unknown as { ops?: unknown };
   const unknownOps: ValidationIssue[] = [];
   if (Array.isArray(raw?.ops)) {

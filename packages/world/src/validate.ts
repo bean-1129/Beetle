@@ -12,6 +12,10 @@ const PR = GEOMETRY.playerRadius;
 const ISLAND_MIN_GAP = 1.0;
 const SNAP_RADIUS = 1.0;
 const MIN_BRIDGE_WIDTH = 2 * PR + 0.2;
+// Derived endpoints are rounded to 3 decimals, so a bridge between islands exactly ISLAND_MIN_GAP apart can measure
+// 0.9996 m on a diagonal. Length limits are compared with this slack so rounding never flips a valid bridge.
+const LENGTH_EPS = 0.005;
+const H = WORLD_LIMITS.bounds.halfExtent;
 
 export function issue(code: ValidationIssue['code'], message: string, objectIds: string[] = [], evidence?: Record<string, unknown>): ValidationIssue {
   const out: ValidationIssue = { code, message: message.slice(0, 400), objectIds: objectIds.slice(0, 32).map((s) => s.slice(0, 64)) };
@@ -80,6 +84,28 @@ export function validateSpec(input: unknown, ctx: LiveContext = {}): ValidationO
 
   const islandById = new Map(spec.islands.map((i) => [i.id, i] as const));
 
+  // 3b. OUT_OF_BOUNDS: island discs and placed objects must lie inside the world bounds (the nav grid covers only ±H).
+  for (const is of spec.islands) {
+    const over = Math.max(Math.abs(is.center.x), Math.abs(is.center.z)) + is.radius - H;
+    if (over > 0) {
+      issues.push(issue('OUT_OF_BOUNDS', `island "${is.id}" extends ${round3(over)} m beyond the world bounds (±${H} m)`, [is.id], { overshoot: round3(over), halfExtent: H }));
+    }
+  }
+  const checkInBounds = (id: string, kind: string, surfaceId: string, local: Vec2, radius: number) => {
+    const island = islandById.get(surfaceId);
+    if (!island) return;
+    const x = island.center.x + local.x;
+    const z = island.center.z + local.z;
+    const over = Math.max(Math.abs(x), Math.abs(z)) + radius - H;
+    if (over > 0) {
+      issues.push(issue('OUT_OF_BOUNDS', `${kind} "${id}" extends ${round3(over)} m beyond the world bounds (±${H} m)`, [id, surfaceId], { overshoot: round3(over), position: { x: round3(x), z: round3(z) }, halfExtent: H }));
+    }
+  };
+  for (const s of spec.spawns) checkInBounds(s.id, 'spawn', s.supportingSurfaceId, s.localPosition, PR);
+  for (const r of spec.relics) checkInBounds(r.id, 'relic', r.supportingSurfaceId, r.localPosition, PR);
+  checkInBounds(spec.gate.id, 'gate', spec.gate.supportingSurfaceId, spec.gate.localPosition, PR);
+  for (const d of spec.decorations) checkInBounds(d.id, 'decoration', d.supportingSurfaceId, d.localPosition, DECORATION_RADIUS[d.type] * d.scale);
+
   // 4. ISLAND_OVERLAP
   for (let i = 0; i < spec.islands.length; i++) {
     for (let j = i + 1; j < spec.islands.length; j++) {
@@ -125,7 +151,7 @@ export function validateSpec(input: unknown, ctx: LiveContext = {}): ValidationO
       }
     }
     const length = dist(e0.point, e1.point);
-    if (length < WORLD_LIMITS.bridge.minLength || length > WORLD_LIMITS.bridge.maxLength) {
+    if (length < WORLD_LIMITS.bridge.minLength - LENGTH_EPS || length > WORLD_LIMITS.bridge.maxLength + LENGTH_EPS) {
       issues.push(issue('BRIDGE_LENGTH', `bridge "${b.id}" is ${round3(length)} m long; allowed ${WORLD_LIMITS.bridge.minLength} to ${WORLD_LIMITS.bridge.maxLength} m`, [b.id], { length: round3(length), min: WORLD_LIMITS.bridge.minLength, max: WORLD_LIMITS.bridge.maxLength }));
     }
     for (const island of spec.islands) {

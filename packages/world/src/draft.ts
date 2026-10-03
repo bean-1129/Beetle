@@ -18,6 +18,27 @@ export function expandDraft(
   const issues: ValidationIssue[] = [];
   const islandById = new Map(d.islands.map((is) => [is.id, is] as const));
 
+  // Ids must be unique across every object, including the ids this expansion derives (gate, spawn-0, spawn-1).
+  const idKinds = new Map<string, string[]>();
+  const noteId = (id: string, kind: string) => { const l = idKinds.get(id); if (l) l.push(kind); else idKinds.set(id, [kind]); };
+  for (const o of d.islands) noteId(o.id, 'island');
+  for (const o of d.bridges) noteId(o.id, 'bridge');
+  for (const o of d.relics) noteId(o.id, 'relic');
+  for (const o of d.decorations) noteId(o.id, 'decoration');
+  noteId('gate', 'gate (derived)');
+  d.spawns.forEach((_, i) => noteId(`spawn-${i}`, 'spawn (derived)'));
+  for (const [id, kinds] of idKinds) {
+    if (kinds.length > 1) issues.push(issue('DUPLICATE_ID', `id "${id}" is used ${kinds.length} times (${kinds.join(', ')})`, [id], { kinds }));
+  }
+  // Every object must sit on a known island.
+  const refIsland = (ownerId: string, kind: string, islandId: string, path: (string | number)[]) => {
+    if (!islandById.has(islandId)) issues.push(issue('INVALID_REFERENCE', `${kind} "${ownerId}" references unknown island "${islandId}"`, [ownerId, islandId], { path, islandId }));
+  };
+  d.spawns.forEach((s, i) => refIsland(`spawn-${i}`, 'spawn', s.islandId, ['spawns', i]));
+  d.relics.forEach((r, i) => refIsland(r.id, 'relic', r.islandId, ['relics', i]));
+  refIsland('gate', 'gate', d.gate.islandId, ['gate']);
+  d.decorations.forEach((dec, i) => refIsland(dec.id, 'decoration', dec.islandId, ['decorations', i]));
+
   const bridges: WorldSpec['bridges'] = [];
   d.bridges.forEach((b, i) => {
     const a = islandById.get(b.from);

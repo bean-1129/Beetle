@@ -9,6 +9,10 @@ import { GEOMETRY, type Vec2 } from '@beetle/contracts';
 import type { CompiledWorld, MoveInput, Mover, StepEvent, StepResult } from './types.ts';
 
 export const DEAD_ZONE = 0.08;
+/** Largest dt one stepMover call integrates (ms). Larger values are clamped; the server ticks at 33 ms. */
+export const MAX_STEP_MS = 250;
+/** Largest displacement per internal sub-step (m): well under the smallest blocking radius (lantern 0.3 + player 0.45). */
+export const MAX_SUBSTEP_M = 0.2;
 
 export function createMover(pos: Vec2, nowMs: number, compiled?: CompiledWorld): Mover {
   return {
@@ -28,7 +32,9 @@ export function stepMover(
 ): StepResult {
   const m: Mover = { ...mover };
   const events: StepEvent[] = [];
-  const dt = Math.max(0, dtMs) / 1000;
+  // Non-finite dt is treated as 0 (never produces NaN positions); dt is clamped to MAX_STEP_MS so a stalled caller cannot
+  // teleport a player with one enormous step.
+  const dt = Number.isFinite(dtMs) ? Math.min(Math.max(0, dtMs), MAX_STEP_MS) / 1000 : 0;
 
   if (m.status === 'disconnected') {
     m.vx = 0; m.vz = 0;
@@ -60,9 +66,9 @@ export function stepMover(
   }
 
   // active
-  let ax = input.active ? input.axes.x : 0;
-  let az = input.active ? input.axes.z : 0;
-  if (!Number.isFinite(ax) || !Number.isFinite(az)) { ax = 0; az = 0; }
+  let ax = input.active ? Number(input.axes?.x) : 0;
+  let az = input.active ? Number(input.axes?.z) : 0;
+  if (!Number.isFinite(ax) || !Number.isFinite(az)) { ax = 0; az = 0; } // NaN/Infinity axes are ignored, never propagated
   const mag = Math.hypot(ax, az);
   if (mag < DEAD_ZONE) { ax = 0; az = 0; }
   else if (mag > 1) { ax /= mag; az /= mag; }
@@ -71,24 +77,35 @@ export function stepMover(
 
   let nx = m.x;
   let nz = m.z;
+  let fell = false;
   if (vx !== 0 || vz !== 0) {
-    const cx = m.x + vx * dt;
-    const cz = m.z + vz * dt;
-    if (compiled.blockedAt(cx, cz, opts) === null) {
-      nx = cx; nz = cz;
-    } else if (vx !== 0 && compiled.blockedAt(cx, m.z, opts) === null) {
-      nx = cx; vz = 0; // slide along X
-    } else if (vz !== 0 && compiled.blockedAt(m.x, cz, opts) === null) {
-      nz = cz; vx = 0; // slide along Z
-    } else {
-      vx = 0; vz = 0; // fully blocked: stop
+    // Sub-step so one call never moves more than MAX_SUBSTEP_M: a huge or bunched dt cannot tunnel through a prop,
+    // the locked gate, or across the hazard between two surfaces. Support is checked after every sub-step.
+    const total = Math.hypot(vx, vz) * dt;
+    const n = Math.max(1, Math.ceil(total / MAX_SUBSTEP_M));
+    const sdt = dt / n;
+    for (let k = 0; k < n; k++) {
+      const cx = nx + vx * sdt;
+      const cz = nz + vz * sdt;
+      if (compiled.blockedAt(cx, cz, opts) === null) {
+        nx = cx; nz = cz;
+      } else if (vx !== 0 && compiled.blockedAt(cx, nz, opts) === null) {
+        nx = cx; vz = 0; // slide along X
+      } else if (vz !== 0 && compiled.blockedAt(nx, cz, opts) === null) {
+        nz = cz; vx = 0; // slide along Z
+      } else {
+        vx = 0; vz = 0; // fully blocked: stop
+        break;
+      }
+      if (compiled.supportAt(nx, nz) === null) { fell = true; break; }
     }
   }
   m.x = nx; m.z = nz; m.vx = vx; m.vz = vz;
   if (vx !== 0 || vz !== 0) m.facingDeg = facingFrom(vx, vz);
 
   m.supportId = compiled.supportAt(m.x, m.z);
-  if (m.supportId === null) {
+  if (fell || m.supportId === null) {
+    m.supportId = null;
     m.status = 'falling';
     m.statusSinceMs = nowMs;
     m.vx = 0; m.vz = 0;
