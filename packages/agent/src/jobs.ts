@@ -85,6 +85,8 @@ type Ctx = {
   validatedMs?: number;
   committedMs?: number;
   playability?: { ok: boolean; checks: number; failed: number };
+  /** Read back after a successful commit so the build report shows what the live session kept. */
+  preserved?: { players: number; collectedRelics: number; connections: number };
   baseWorldVersion: number;
   cancelled: boolean;
   summary: string;
@@ -130,6 +132,7 @@ export async function runJob(request: DirectorRequest, deps: JobDeps): Promise<J
       summary: (outcome === 'committed' ? `[${env.mode}] ${ctx.summary || 'committed'}` : `[${env.mode}] ${outcome}: ${error?.code ?? ''} ${error?.message ?? ''}`).slice(0, 600),
       validation: { attempts: ctx.validationAttempts, failedCodes: [...ctx.failedCodes].slice(0, 32) },
       playability: ctx.playability,
+      preserved: ctx.preserved,
       timings: {
         requestedAt: request.createdAt,
         firstModelResponseMs: ctx.firstModelResponseMs,
@@ -180,7 +183,10 @@ async function runBrief(ctx: Ctx): Promise<{ worldVersion: number }> {
     ctx.baseWorldVersion = res.baseWorldVersion;
     const islands = Array.isArray(draft.islands) ? draft.islands.length : 0;
     const bridges = Array.isArray(draft.bridges) ? draft.bridges.length : 0;
-    ctx.summary = `new world "${String(draft.title ?? '').slice(0, 60)}" with ${islands} islands and ${bridges} bridges`;
+    // The draft (including biome, mode, movementSpeed, hazardRise) went to the server unchanged; the server expands it.
+    const mode = draft.mode && typeof draft.mode === 'object' ? String((draft.mode as { kind?: unknown }).kind ?? '') : '';
+    const biome = typeof draft.biome === 'string' ? draft.biome : '';
+    ctx.summary = `new world "${String(draft.title ?? '').slice(0, 60)}" with ${islands} islands and ${bridges} bridges${mode ? `, mode ${mode}` : ''}${biome ? `, biome ${biome}` : ''}`;
     return { ok: true as const, candidateId: res.candidateId };
   };
   return runDraftValidateCommit(ctx, {
@@ -291,6 +297,7 @@ async function commitWithProof(ctx: Ctx, candidateIdIn: string, proofIdIn: strin
       ctx.committedMs = Date.now() - ctx.startedAt;
       emit(ctx, { name: 'commit.ok', requestId: ctx.request.id, worldVersion: res.worldVersion, outcome: 'ok', durationMs: res.deferredMs, data: { idempotentReplay: res.idempotentReplay, patchId: res.patchId } });
       await status(ctx, { phase: 'committed', message: `[${ctx.label}] committed v${res.worldVersion}${res.deferredMs > 0 ? ` after waiting ${res.deferredMs} ms for a safe tick` : ''}`, tool: 'commit_candidate' });
+      await capturePreserved(ctx);
       return { worldVersion: res.worldVersion };
     }
     ctx.failedCodes.add(res.code);
@@ -321,6 +328,18 @@ async function commitWithProof(ctx: Ctx, candidateIdIn: string, proofIdIn: strin
       throw new JobFailure(v.issues[0]?.code ?? 'VALIDATION_FAILED', `revalidation failed: ${summarizeIssues(v.issues)}`, v.issues.flatMap((i) => i.objectIds).slice(0, 16));
     }
     proofId = v.proofId;
+  }
+}
+
+/** Best effort after a commit: one read_world_state inside the tool budget, so the report's preserved field is filled in direct mode too. */
+async function capturePreserved(ctx: Ctx): Promise<void> {
+  if (ctx.toolCallsUsed >= ctx.deps.env.maxToolCalls || remainingMs(ctx) <= 0) return;
+  try {
+    const w = await tool(ctx, 'read_world_state', () => ctx.deps.client.read_world_state());
+    const connected = (w.summary?.players ?? []).filter((p) => p.connected).length;
+    ctx.preserved = { players: connected, collectedRelics: w.summary?.collectedRelicIds.length ?? 0, connections: connected };
+  } catch (err) {
+    log(ctx, `preserved read after commit skipped: ${(err as Error).message}`);
   }
 }
 

@@ -4,7 +4,7 @@ import { Type } from 'typebox';
 import { defineToolPlugin } from 'openclaw/plugin-sdk/tool-plugin';
 import { appendFileSync, readFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { DECORATION_TYPES, HAZARD_KINDS, PATCH_OP_NAMES, WORLD_LIMITS, type ValidationCode } from '@beetle/contracts';
+import { BIOMES, DECORATION_TYPES, GAME_MODES, HAZARD_KINDS, MODE_LIMITS, PATCH_OP_NAMES, WORLD_LIMITS, type ValidationCode } from '@beetle/contracts';
 import { createBeetleClient, type BeetleClient, type IssueList, type StatusBody } from '../../src/tools.ts';
 
 const PLUGIN_ID = 'beetle-tools';
@@ -214,7 +214,7 @@ export default defineToolPlugin({
     tool({
       name: 'propose_world',
       label: 'Propose world',
-      description: 'Stage a complete new world draft as a candidate and validate it (schema, geometry, reachability, playability). Nothing changes until commit_candidate succeeds. Returns candidateId plus proofId when accepted, else the issues to fix.',
+      description: `Stage a complete new world draft as a candidate and validate it (schema, geometry, reachability, playability). Beetle builds any requested game by mapping it onto the closest supported mode (${GAME_MODES.join(', ')}) and biome (${BIOMES.join(', ')}): always set mode and biome explicitly, add timeLimitSec, holdSeconds or relicsRequired when the brief implies them, movementSpeed (${MODE_LIMITS.movementSpeed.min} to ${MODE_LIMITS.movementSpeed.max}) and hazardRise for survival, and name the mapping in the title when the request is not an exact match. Decorations: ${DECORATION_TYPES.join(', ')}. Nothing changes until commit_candidate succeeds. Returns candidateId plus proofId when accepted, else the issues to fix.`,
       parameters: Type.Object({ requestId: Type.String({ description: 'the request id from the task' }), spec: worldDraftSchema }),
       async execute({ requestId, spec }, config) {
         budget('propose_world');
@@ -235,7 +235,7 @@ export default defineToolPlugin({
     tool({
       name: 'propose_patch',
       label: 'Propose patch',
-      description: `Stage a bounded edit to the current world as a candidate and validate it (schema, geometry, reachability, playability). ops: ${PATCH_OP_NAMES.join(', ')}. Nothing changes until commit_candidate succeeds. Returns candidateId plus proofId when accepted, else the issues to fix.`,
+      description: `Stage a bounded edit to the current world as a candidate and validate it (schema, geometry, reachability, playability). ops: ${PATCH_OP_NAMES.join(', ')}. set_mode takes mode {kind: ${GAME_MODES.join(' | ')}; optional timeLimitSec, holdSeconds, relicsRequired} ("make it a 60 second time trial" is set_mode {kind time_trial, timeLimitSec 60}); set_biome takes biome (${BIOMES.join(', ')}; "make it snowy" is set_biome frost); set_movement takes speed ${MODE_LIMITS.movementSpeed.min} to ${MODE_LIMITS.movementSpeed.max} ("faster players" is set_movement 6). Nothing changes until commit_candidate succeeds. Returns candidateId plus proofId when accepted, else the issues to fix.`,
       parameters: Type.Object({
         requestId: Type.Optional(Type.String({ description: 'the request id from the task (optional, the worker knows it)' })),
         summary: Type.String({ description: 'one short sentence describing the change', maxLength: L.summary.maxLength }),

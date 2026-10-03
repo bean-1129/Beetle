@@ -51,3 +51,33 @@ npx tsx scripts/run-prompts.ts --prompt "..." --kind edit --repeat 3
 The runner expects a running server (`BEETLE_SERVER_URL`, default `http://127.0.0.1:7700`) with a connected agent worker,
 and the director token from `BEETLE_DIRECTOR_TOKEN` or `data/secrets.json`. Every attempt, including failures and
 timeouts, is written to `data/prompt-runs/run-<unix ms>.json`.
+
+## Game modes from one prompt (added 2026-10-03, prompt change in packages/agent/src/prompts.ts)
+
+The brief prompt now says Beetle builds any requested game by mapping it onto the closest supported mode and biome,
+and lists what the model may set in a `WorldDraft`: `biome` (garden, volcanic, frost, desert, night), `mode`
+(`kind` relic_hunt, time_trial, king_of_the_hill, checkpoint_race, survival plus `timeLimitSec`, `holdSeconds`,
+`relicsRequired`, `orderedCheckpoints`), `movementSpeed` (3 to 7 m/s, default 4.5) and `hazardRise` (survival).
+One line per mode says what the players do and what wins; the rule is to always set mode and biome explicitly, to set
+the numbers whenever the request implies them, and to name the mapping in the title when the request is not an exact
+match (for example "tag" becomes king of the hill). The whole draft system prompt measures 693 prompt tokens on
+qwen3.5:4b (was 489), measured with `prompt_eval_count` from a one-token chat call. The edit prompt lists the three new
+ops with examples ("make it a 60 second time trial" -> `set_mode`, "make it snowy" -> `set_biome frost`, "faster players"
+-> `set_movement 6`), and the world description now carries `biome`, `mode` and `speed` on its first line. The repair
+hint for `MODE_INVALID` says to lower `relicsRequired` to the relic count or to add `hazardRise` for survival (a patch
+cannot add it, so pick time_trial instead). The OpenClaw instruction prompt and the `propose_world` / `propose_patch`
+tool descriptions carry the same vocabulary.
+
+Fresh prompts for the live measurement (direct mode, own server on port 7786 with no world):
+
+| Id | Kind | Prompt | Expected mode / biome |
+|---|---|---|---|
+| G1 | brief | A race across three floating islands with a 90 second limit, snowy | checkpoint_race (or time_trial), timeLimitSec 90, frost |
+| G2 | brief | King of the hill on a desert arena with four islands, hold the hill for ten seconds | king_of_the_hill, holdSeconds 10, desert |
+| G3 | brief | Survive the rising lava for two minutes on five islands at night | survival, timeLimitSec 120, hazardRise set, hazard lava, night |
+| G4 | brief | A relic hunt where only two of three relics are needed, fast players | relic_hunt, relicsRequired 2, movementSpeed about 6 |
+| G5 | edit (on G4) | make it a 60 second time trial | set_mode time_trial timeLimitSec 60 |
+| G6 | edit (on G5) | make it snowy and slow the players down | set_biome frost plus set_movement below 4.5 |
+
+Note that the brief for G1 asks for three islands while the contract needs at least four; the model has to add one.
+Results: docs/RESULTS.md, section "Game modes from one prompt"; raw records in `data/prompt-runs/`.

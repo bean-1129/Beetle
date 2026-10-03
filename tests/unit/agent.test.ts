@@ -94,10 +94,12 @@ describe('case 14: bounded retries and boundary validation', () => {
     expect(beetle.state.version).toBe(2);
     expect(beetle.state.finishes[0].body.outcome).toBe('committed');
     expect(beetle.state.finishes[0].body.worldVersion).toBe(2);
-    const report = beetle.state.reports[0] as { mode: string; outcome: string; toolCalls: { tool: string; ok: boolean }[] };
+    const report = beetle.state.reports[0] as { mode: string; outcome: string; toolCalls: { tool: string; ok: boolean }[]; preserved?: unknown };
     expect(report.mode).toBe('direct');
     expect(report.outcome).toBe('committed');
-    expect(report.toolCalls.map((t) => t.tool)).toEqual(['propose_world', 'validate_candidate', 'run_playability_checks', 'commit_candidate']);
+    // read_world_state after the commit fills the report's preserved field (direct mode).
+    expect(report.toolCalls.map((t) => t.tool)).toEqual(['propose_world', 'validate_candidate', 'run_playability_checks', 'commit_candidate', 'read_world_state']);
+    expect(report.preserved).toEqual({ players: expect.any(Number), collectedRelics: expect.any(Number), connections: expect.any(Number) });
     for (const s of beetle.state.statuses) expect(String(s.body.message)).toMatch(/^\[direct\]/);
     for (const r of beetle.requests) expect(r.tokenOk).toBe(true);
   });
@@ -125,7 +127,7 @@ describe('case 14: bounded retries and boundary validation', () => {
     expect(proposals[0].status).toBe(400);
     expect(proposals[1].status).toBe(200);
     expect((proposals[1].body as { patch: PatchDraft }).patch.ops[1]).toMatchObject({ op: 'add_bridge', width: 2.4 });
-    expect(beetle.calls('read_world_state')).toHaveLength(1);
+    expect(beetle.calls('read_world_state')).toHaveLength(2); // once to draft the patch, once after the commit for the preserved counts
     expect(beetle.calls('commit_candidate')).toHaveLength(1);
     expect(beetle.state.spec?.hazard.kind).toBe('lava');
     expect(beetle.state.spec?.bridges.some((b) => b.id === 'bridge-east-temple')).toBe(true);
@@ -331,5 +333,79 @@ describe('openclaw profile guards', () => {
     expect(out).toContain('Bearer [redacted]');
     expect(out).toContain('[hex-redacted]');
     expect(out).toContain('cand-103a77f5');
+  });
+});
+
+describe('game modes: draft fields pass through', () => {
+  let beetle: FakeBeetleServer;
+  let ollama: FakeOllama;
+  beforeEach(async () => {
+    beetle = await startFakeBeetleServer({ port: 0, claimLongPollMs: 50 });
+    ollama = await startFakeOllama();
+  });
+  afterEach(async () => {
+    await ollama.close();
+    await beetle.close();
+  });
+
+  it('a draft with mode, biome, movementSpeed and hazardRise reaches propose_world unchanged and is committed', async () => {
+    const draft: WorldDraft = {
+      ...validDraft(),
+      title: 'Frost Dash (time trial)',
+      biome: 'frost',
+      mode: { kind: 'time_trial', timeLimitSec: 90, relicsRequired: 2 },
+      movementSpeed: 6,
+      hazardRise: { afterSec: 30, metersPerSec: 0.05, maxElevation: -1 },
+    };
+    expect(WorldDraftSchema.safeParse(draft).success).toBe(true);
+    ollama.push(chatReply(JSON.stringify(draft)));
+    const request = beetle.enqueue({ kind: 'brief', prompt: 'A race across the islands with a 90 second limit, snowy, fast players' });
+    const client = createBeetleClient({ serverUrl: beetle.url, token: beetle.token });
+    const model = createOllamaClient({ baseUrl: ollama.url, model: MODEL });
+    const result = await runJob(request, { client, ollama: model, env: env() });
+
+    expect(result.outcome).toBe('committed');
+    expect(result.modelCalls).toBe(1);
+    // The agent does not touch the draft: the server receives exactly what the model produced, new fields included.
+    const proposed = beetle.calls('propose_world');
+    expect(proposed).toHaveLength(1);
+    expect((proposed[0].body as { spec: unknown }).spec).toEqual(draft);
+    expect((proposed[0].body as { requestId: string }).requestId).toBe(request.id);
+    // The system prompt carries the mode and biome vocabulary and the mapping rule; the draft schema sent as `format` allows the fields.
+    const sys = (ollama.requests[0].body.messages as { role: string; content: string }[])[0].content;
+    for (const word of ['relic_hunt', 'time_trial', 'king_of_the_hill', 'checkpoint_race', 'survival', 'garden', 'volcanic', 'frost', 'desert', 'night', 'movementSpeed', 'Always set mode and biome']) expect(sys).toContain(word);
+    const format = ollama.requests[0].body.format as { properties: Record<string, unknown> };
+    for (const key of ['biome', 'mode', 'movementSpeed', 'hazardRise']) expect(format.properties).toHaveProperty(key);
+    // The build report names the mode and biome.
+    const report = beetle.state.reports[0] as { summary: string; outcome: string };
+    expect(report.outcome).toBe('committed');
+    expect(report.summary).toContain('mode time_trial');
+    expect(report.summary).toContain('biome frost');
+  });
+
+  it('the edit prompt lists set_mode, set_biome and set_movement with examples, and MODE_INVALID has a repair hint', async () => {
+    const patch: PatchDraft = { summary: 'Sixty second time trial', ops: [{ op: 'set_mode', mode: { kind: 'time_trial', timeLimitSec: 60 } }] };
+    // The fake server's patch applier predates the mode ops and answers UNKNOWN_OPERATION; the job then repairs once with a set_title patch.
+    const fallback: PatchDraft = { summary: 'Retitle only', ops: [{ op: 'set_title', title: 'Sixty Second Trial' }] };
+    ollama.push(chatReply(JSON.stringify(patch)), chatReply(JSON.stringify(fallback)));
+    const request = beetle.enqueue({ kind: 'edit', prompt: 'make it a 60 second time trial' });
+    const client = createBeetleClient({ serverUrl: beetle.url, token: beetle.token });
+    const model = createOllamaClient({ baseUrl: ollama.url, model: MODEL });
+    const result = await runJob(request, { client, ollama: model, env: env() });
+    expect(result.outcome).toBe('committed');
+    const proposed = beetle.calls('propose_patch');
+    expect(proposed).toHaveLength(2);
+    // The set_mode patch reached the server exactly as the model produced it.
+    expect((proposed[0].body as { patch: unknown }).patch).toEqual(patch);
+    expect((proposed[1].body as { patch: unknown }).patch).toEqual(fallback);
+    const sys = (ollama.requests[0].body.messages as { role: string; content: string }[])[0].content;
+    expect(sys).toContain('"op":"set_mode","mode":{"kind":"time_trial","timeLimitSec":60}');
+    expect(sys).toContain('"op":"set_biome","biome":"frost"');
+    expect(sys).toContain('"op":"set_movement","speed":6');
+    expect(sys).toMatch(/biome \w+; mode relic_hunt \(default\); speed 4.5/);
+    const { validatorRepairPrompt } = await import('../../packages/agent/src/prompts.ts');
+    const hint = validatorRepairPrompt([{ code: 'MODE_INVALID', message: 'mode relic_hunt requires 4 relics but the world has 3', objectIds: ['mode'], evidence: { relicsRequired: 4, relics: 3 } }], null);
+    expect(hint).toContain('MODE_INVALID means relicsRequired exceeds the relics');
+    expect(hint).toContain('survival has no hazardRise');
   });
 });
