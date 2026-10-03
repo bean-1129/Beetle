@@ -25,6 +25,8 @@ import { buildAssets } from "../assets/pipeline.ts";
 import type { Pixels } from "../assets/pixels.ts";
 import { exportHtml, projectFiles, fileName } from "../export/export.ts";
 import { Studio2DPlayer } from "../runtime/player.ts";
+import { BIT } from "../engine/input.ts";
+import { PhonePlay, type PadKeys } from "./PhonePlay.tsx";
 import { checkScript } from "../runtime/script.ts";
 import "./studio2d.css";
 
@@ -116,6 +118,9 @@ export default function Studio2D({ notify }: { notify?: (m: string) => void }) {
   const [history, setHistory] = useState<Change[]>([]);
   const [library, setLibrary] = useState<{ id: string; title: string; genre?: string; savedAt: number; levels: number }[] | null>(null);
   const [toast, setToast] = useState("");
+  // Build clock: model design time plus approval to playable in the frame (time spent editing the design is not counted).
+  const designMs = useRef(0);
+  const [buildStart, setBuildStart] = useState<number | null>(null);
   const say = useCallback((m: string) => {
     setToast(m);
     notify?.(m);
@@ -138,11 +143,14 @@ export default function Studio2D({ notify }: { notify?: (m: string) => void }) {
     if (!text) return;
     // Templates play instantly and new kinds of games go straight to the model.
     const quick = readIdea(text);
+    designMs.current = 0;
     if (quick.route !== "genre") return void onBuild(quick);
     setDesigning(true);
     setDesignNote("");
+    const t0 = performance.now();
     try {
       const r = await makeDesign(text);
+      designMs.current = performance.now() - t0;
       setDesign(r.design);
       setDesignNote(r.source === "model" ? `Designed by ${r.model ?? "the local model"} in ${(r.ms / 1000).toFixed(1)} s. Change anything, then build.` : `Read straight from your idea${r.note ? ` (${r.note})` : ""}. Change anything, then build.`);
     } finally {
@@ -157,6 +165,7 @@ export default function Studio2D({ notify }: { notify?: (m: string) => void }) {
   // Play now: skip waiting for the design doc and build straight from the idea.
   function onPlayNow() {
     const text = idea.trim();
+    designMs.current = 0;
     if (text) void onBuild(readIdea(text));
   }
 
@@ -208,6 +217,8 @@ export default function Studio2D({ notify }: { notify?: (m: string) => void }) {
   }
 
   async function onBuild(d: DesignDoc) {
+    setBuildStart(performance.now() - designMs.current);
+    designMs.current = 0;
     if (d.route === "template" || d.route === "script") {
       setBuilding(true);
       setView("build");
@@ -334,6 +345,7 @@ export default function Studio2D({ notify }: { notify?: (m: string) => void }) {
     if (!r.text) return;
     try {
       const { spec: s, fixes } = repairSpec(JSON.parse(r.text));
+      setBuildStart(null);
       loadSpec(s);
       say(fixes.length ? `Opened, with ${fixes.length} small repairs.` : "Opened.");
     } catch (e) {
@@ -456,6 +468,7 @@ export default function Studio2D({ notify }: { notify?: (m: string) => void }) {
                   const j = await api()!.load(g.id);
                   const { spec: s } = repairSpec(j.spec);
                   setIdea(j.idea ?? "");
+                  setBuildStart(null);
                   loadSpec(s, j.design ?? null, g.id);
                   setLibrary(null);
                 }}
@@ -488,7 +501,10 @@ export default function Studio2D({ notify }: { notify?: (m: string) => void }) {
             aiArt={aiArt}
             setAiArt={setAiArt}
             imageReady={!!status?.image.ready}
-            onSample={(k) => loadSpec(SAMPLES[k]())}
+            onSample={(k) => {
+              setBuildStart(null);
+              loadSpec(SAMPLES[k]());
+            }}
           />
         )}
         {view === "build" && <BuildView stages={stages} reports={reports} spec={spec} onPlay={() => setView("play")} artState={artState} />}
@@ -505,6 +521,8 @@ export default function Studio2D({ notify }: { notify?: (m: string) => void }) {
             onStopArt={() => (artCancel.current.cancelled = true)}
             imageReady={!!status?.image.ready}
             check={checkInSandbox}
+            buildStart={buildStart}
+            onBuilt={() => setBuildStart(null)}
           />
         )}
       </div>
@@ -763,6 +781,7 @@ function PlayView(p: {
   spec: GameSpec; history: Change[]; onUndo: () => void; onCommit: (s: GameSpec, summary: string, via: string) => void; onPatch: (ops: PatchOp[], summary: string) => void;
   say: (m: string) => void; artState: { running: boolean; done: number; total: number; note?: string }; onArt: () => void; onStopArt: () => void; imageReady: boolean;
   check: (s: GameSpec) => Promise<{ ok: boolean; error?: string }>;
+  buildStart: number | null; onBuilt: () => void;
 }) {
   const { spec } = p;
   const frame = useRef<HTMLIFrameElement>(null);
@@ -779,12 +798,48 @@ function PlayView(p: {
   const first = useRef(spec);
   const lastSent = useRef(spec);
   const embedded = !!api();
+  // Build and change timing, shown in the Play view.
+  const [builtMs, setBuiltMs] = useState<number | null>(null);
+  const [changedMs, setChangedMs] = useState<number | null>(null);
+  const buildStartRef = useRef(p.buildStart);
+  buildStartRef.current = p.buildStart;
+  const onBuiltRef = useRef(p.onBuilt);
+  onBuiltRef.current = p.onBuilt;
+  const changeStart = useRef<number | null>(null);
+  const markPlayable = () => {
+    const t = performance.now();
+    if (buildStartRef.current != null) {
+      setBuiltMs(t - buildStartRef.current);
+      setChangedMs(null);
+      buildStartRef.current = null;
+      onBuiltRef.current();
+    }
+    if (changeStart.current != null) {
+      setChangedMs(t - changeStart.current);
+      changeStart.current = null;
+    }
+  };
+  const sendPad = (keys: PadKeys) => {
+    if (embedded) frame.current?.contentWindow?.postMessage({ type: "studio2d:pad", keys }, "*");
+    else {
+      let bits = 0;
+      for (const a of ["left", "right", "up", "down", "jump", "action"] as const) if (keys[a]) bits |= BIT[a];
+      local.current?.setPhoneInput(bits);
+    }
+  };
 
   // Start the player once per game (a new title means a new game).
+  const gameKey = useRef("");
   useEffect(() => {
     first.current = spec;
     lastSent.current = spec;
     setBug("");
+    const key = `${spec.meta.title}|${spec.meta.genre}`;
+    if (gameKey.current && gameKey.current !== key) {
+      setBuiltMs(null);
+      setChangedMs(null);
+    }
+    gameKey.current = key;
     let cancelled = false;
     if (embedded) {
       void runtime().then(async (code) => {
@@ -795,6 +850,7 @@ function PlayView(p: {
       local.current?.destroy();
       local.current = new Studio2DPlayer(canvas.current, spec, { streamer: makeStreamer(spec), skipTitle: true, onEvent: (e) => e.type === "stats" && setFps(e) });
       local.current.start();
+      markPlayable();
     }
     return () => {
       cancelled = true;
@@ -811,6 +867,7 @@ function PlayView(p: {
     if (spec.script) return; // a scripted game reloads with its new code instead
     if (embedded) frame.current?.contentWindow?.postMessage({ type: "studio2d:spec", spec, keep: true }, "*");
     else local.current?.setSpec(spec);
+    if (changeStart.current != null) requestAnimationFrame(() => markPlayable());
   }, [spec, embedded]);
 
   useEffect(() => {
@@ -822,6 +879,7 @@ function PlayView(p: {
       if (ev.type === "script-check") setBug(ev.ok ? "" : ev.error || "The game stopped with an error.");
       if (ev.type === "level-start") setLevel(ev.level);
       if (ev.type === "ready" && lastSent.current !== first.current) frame.current?.contentWindow?.postMessage({ type: "studio2d:spec", spec: lastSent.current, keep: false }, "*");
+      if (ev.type === "ready") markPlayable();
     };
     window.addEventListener("message", on);
     return () => window.removeEventListener("message", on);
@@ -842,9 +900,11 @@ function PlayView(p: {
     const req = t.trim();
     if (!req) return;
     setBusy(true);
+    const t0 = performance.now();
     try {
       const r = spec.script ? { ...(await changeScriptInWords(spec, req, p.check)), via: "model" } : await changeInWords(spec, req);
       if (r.ok) {
+        changeStart.current = t0;
         p.onCommit(r.spec, r.summary, r.via);
         p.say(r.summary);
         setText("");
@@ -883,6 +943,12 @@ function PlayView(p: {
         </div>
       </div>
       <aside className="bb-panel">
+        {(builtMs != null || changedMs != null) && (
+          <div className="bb-timing" aria-live="polite">
+            {builtMs != null && <span className="bb-timing-main">Built in {(builtMs / 1000).toFixed(1)} s</span>}
+            {changedMs != null && <span className="bb-timing-sub">Changed in {(changedMs / 1000).toFixed(1)} s</span>}
+          </div>
+        )}
         <nav className="bb-subtabs">
           {(scripted ? (["change", "code", "spec"] as const) : (["change", "tune", "level", "spec"] as const)).map((t) => (
             <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>
@@ -970,6 +1036,7 @@ function PlayView(p: {
         {tab === "level" && <LevelEditor spec={spec} level={level} onPatch={p.onPatch} say={p.say} />}
         {tab === "code" && scripted && <CodePanel spec={spec} onCommit={p.onCommit} say={p.say} check={p.check} />}
         {tab === "spec" && <SpecPanel spec={spec} onCommit={p.onCommit} say={p.say} />}
+        <PhonePlay genre={spec.meta.genre} onKeys={sendPad} />
       </aside>
     </div>
   );
@@ -1128,7 +1195,7 @@ function KeyRow({ action, keys, onChange }: { action: string; keys: string[]; on
   return (
     <div className="bb-keyrow">
       <span>{action}</span>
-      <span className="mono">{board.map((k) => k.replace(/^Key|^Arrow|^Digit/, "")).join(" ") || "—"}</span>
+      <span className="mono">{board.map((k) => k.replace(/^Key|^Arrow|^Digit/, "")).join(" ") || "none"}</span>
       <button
         className="secondary-button bb-small"
         onKeyDown={(e) => {

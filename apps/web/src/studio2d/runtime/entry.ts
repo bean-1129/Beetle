@@ -5,6 +5,17 @@ import type { GameSpec } from "../spec/types.ts";
 import { mount, type PlayerEvent } from "./player.ts";
 import { makeStreamer } from "../world/levels.ts";
 import { ScriptPlayer } from "./script-player.ts";
+import { BIT } from "../engine/input.ts";
+
+// Phone pad keys from the studio ({ left, right, up, down, jump, action }) as an action bitmask.
+// All false releases every key.
+function padBits(keys: unknown): number {
+  if (!keys || typeof keys !== "object") return 0;
+  const k = keys as Record<string, unknown>;
+  let m = 0;
+  for (const a of ["left", "right", "up", "down", "jump", "action"] as const) if (k[a] === true) m |= BIT[a];
+  return m;
+}
 
 const specEl = document.getElementById("studio2d-spec");
 const canvas = document.getElementById(
@@ -43,6 +54,7 @@ if (specEl && canvas) {
         else if (e.data?.type === "studio2d:mute")
           sp.mixer.setMuted(!!e.data.muted);
         else if (e.data?.type === "studio2d:focus") canvas.focus();
+        else if (e.data?.type === "studio2d:pad") sp.input.setTouch(padBits(e.data.keys));
       });
       tell({ type: "ready" });
     }
@@ -67,6 +79,7 @@ if (specEl && canvas) {
         else if (m.type === "studio2d:restart") player.restartLevel();
         else if (m.type === "studio2d:mute") player.mixer.setMuted(!!m.muted);
         else if (m.type === "studio2d:focus") canvas.focus();
+        else if (m.type === "studio2d:pad") player.setPhoneInput(padBits(m.keys));
       });
       tell({ type: "ready" });
     }
