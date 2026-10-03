@@ -15,7 +15,7 @@ import { createMaterials } from './materials.ts';
 import { PALETTE } from './palette.ts';
 import {
   buildBridge, buildDecoration, buildGate, buildIsland, buildPlayer, buildRelic,
-  type Built, type GateBuilt, type PlayerBuilt, type RelicBuilt,
+  type Built, type GateBuilt, type IslandBuilt, type PlayerBuilt, type RelicBuilt,
 } from './builders.ts';
 
 export type RendererStats = { fps: number; tickAgeMs: number | null; meshes: number; worldVersion: number };
@@ -49,7 +49,7 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: false, adaptToDeviceRatio: true, antialias: true });
   const scene = new Scene(engine);
   scene.clearColor = PALETTE.clear;
-  scene.ambientColor = new Color3(0.25, 0.3, 0.3);
+  scene.ambientColor = new Color3(0.22, 0.27, 0.28);
 
   const camera = new ArcRotateCamera('camera', CAMERA_ALPHA, CAMERA_BETA, 48, new Vector3(0, 0, 0), scene);
   camera.inputs.clear();
@@ -57,21 +57,23 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
   camera.maxZ = 600;
   camera.fov = 0.8;
 
+  // cool hemispheric fill (sky above, teal water bounce below) under a warm directional key
   const hemi = new HemisphericLight('hemi', new Vector3(0.1, 1, 0.1), scene);
-  hemi.intensity = 0.55;
-  hemi.diffuse = new Color3(0.9, 0.95, 1.0);
-  hemi.groundColor = new Color3(0.2, 0.3, 0.32);
+  hemi.intensity = 0.5;
+  hemi.diffuse = new Color3(0.78, 0.9, 1.0);
+  hemi.groundColor = new Color3(0.22, 0.36, 0.38);
   const sun = new DirectionalLight('sun', new Vector3(-0.45, -1, 0.35), scene);
-  sun.intensity = 0.95;
-  sun.diffuse = new Color3(1.0, 0.9, 0.75);
-  sun.specular = new Color3(0.6, 0.5, 0.4);
+  sun.intensity = 1.05;
+  sun.diffuse = new Color3(1.0, 0.92, 0.78);
+  sun.specular = new Color3(0.6, 0.52, 0.4);
   sun.position = new Vector3(30, 50, -25);
   sun.shadowMinZ = 1;
   sun.shadowMaxZ = 200;
   const shadows = new ShadowGenerator(1024, sun);
   shadows.useBlurExponentialShadowMap = true;
-  shadows.blurKernel = 12;
-  shadows.darkness = 0.45;
+  shadows.useKernelBlur = true;
+  shadows.blurKernel = 16;
+  shadows.darkness = 0.42;
   shadows.bias = 0.002;
 
   const mats = createMaterials(scene);
@@ -80,11 +82,13 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
   hazardPlane.material = mats.hazard;
   hazardPlane.position.y = GEOMETRY.hazardPlaneElevation;
   hazardPlane.isPickable = false;
+  hazardPlane.receiveShadows = true;
 
   // ---- world objects, diffed by id ----
   const entries = new Map<string, Entry>();
   let gateEntry: { json: string; built: GateBuilt } | null = null;
   const relicEntries = new Map<string, RelicBuilt>();
+  const islandEntries = new Map<string, IslandBuilt>();
   let spec: WorldSpec | null = null;
   let worldVersion = -1;
 
@@ -128,7 +132,13 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
     for (const island of s.islands) {
       const key = `island:${island.id}`;
       wanted.add(key);
-      sync(key, JSON.stringify(island), () => buildIsland(scene, mats, island));
+      sync(key, JSON.stringify(island), () => {
+        const built = buildIsland(scene, mats, island);
+        islandEntries.set(island.id, built);
+        return built;
+      });
+      // the under-shadow and crust sit on the hazard plane, which can move without the island changing
+      islandEntries.get(island.id)?.setHazardY(s.hazard.planeElevation);
     }
     for (const bridge of s.bridges) {
       const key = `bridge:${bridge.id}`;
@@ -166,6 +176,7 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
       removeBuilt(entry.built);
       entries.delete(key);
       if (key.startsWith('relic:')) relicEntries.delete(key.slice(6));
+      if (key.startsWith('island:')) islandEntries.delete(key.slice(7));
     }
 
     // gate: rebuilt only when its definition changes, state comes from ticks
@@ -285,6 +296,11 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
     const now = performance.now();
     const dt = engine.getDeltaTime();
     mats.animateHazard(now);
+    // lava crust rings only draw while the blend gives them any alpha
+    const crustOn = mats.crust.alpha > 0.01;
+    for (const island of islandEntries.values()) {
+      if (island.crust.isEnabled() !== crustOn) island.crust.setEnabled(crustOn);
+    }
 
     // camera glide toward the fitted framing
     const k = Math.min(1, dt / 350);
@@ -328,7 +344,7 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
       built.root.position.set(x, y, z);
       built.root.rotation.y = (facing * Math.PI) / 180;
       built.setVisibility(visibility);
-      built.label.position.set(x, y + 2.55, z);
+      built.label.position.set(x, y + 2.95, z);
     }
   });
 
