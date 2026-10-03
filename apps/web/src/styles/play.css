@@ -211,6 +211,12 @@ body.play[data-hazard="lava"] .hud-hazard-fill { background: var(--lava); }
 .hud-agent[data-phase="failed"] .hud-agent-bar,
 .hud-agent[data-phase="cancelled"] .hud-agent-bar { background: var(--lava); }
 @keyframes bar-sweep { 0% { left: -30%; } 100% { left: 100%; } }
+/* Automatic streaming extension: one quiet line, the same sweep, a slower fade out. */
+.hud-agent.auto { transition: background var(--ease), border-color var(--ease), color var(--ease), opacity 900ms ease; }
+.hud-agent.auto .hud-agent-phase,
+.hud-agent.auto .hud-agent-sep { display: none; }
+.hud-agent.auto .hud-agent-msg { color: var(--stone-2); }
+.hud-agent.auto[data-phase="committed"] .hud-agent-msg { color: var(--stone); }
 
 /* ---------- bottom-left: player chips and sound ---------- */
 .hud-players { position: absolute; left: var(--hud-margin); bottom: var(--hud-margin); display: flex; gap: var(--s1); }
@@ -318,4 +324,28 @@ body.play[data-hazard="lava"] .hud-hazard-fill { background: var(--lava); }
   .hud-timer-value { font-size: var(--fs-4); }
   .hud-outcome-title { font-size: var(--fs-4); }
   .hud-agent { max-width: calc(100vw - 32px); }
+}
+
+/* short viewports: brand and objective collapse into one compact top bar so the scene keeps its focal point */
+@media (max-height: 400px) {
+  body.play { --hud-margin: var(--s1); }
+  .hud-brand {
+    right: auto; max-width: 44vw;
+    padding: 2px var(--s1);
+    border-radius: var(--radius) 0 0 var(--radius);
+  }
+  .hud-glyph { width: 20px; height: 20px; }
+  .hud-wordmark, .hud-fixture { display: none; }
+  .hud-world-title { font-size: var(--fs-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hud-objective {
+    left: calc(var(--hud-margin) + 44vw); right: var(--hud-margin);
+    max-width: none;
+    grid-auto-flow: column; align-items: center; justify-content: end;
+    padding: 2px var(--s1);
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .hud-objective-text { font-size: var(--fs-1); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hud-timer-value { font-size: var(--fs-2); }
+  .hud-hold .ring { width: 28px; height: 28px; }
+  .hud-hazard { max-width: 120px; }
 }

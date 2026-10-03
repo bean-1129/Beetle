@@ -8,6 +8,7 @@ import { createRenderer } from '../renderer/index.ts';
 import { takeDirectorToken } from '../shared/token.ts';
 import { JoinPanel } from '../shared/JoinPanel.tsx';
 import { isFixtureTitle, stripFixture, elapsedSeconds } from '../shared/format.ts';
+import { getDirectorRequest } from '../shared/api.ts';
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
 const hud = document.getElementById('hud') as HTMLElement;
@@ -594,27 +595,128 @@ function activitySoundEvents(msg: ActivityMessage) {
     else if (e.phase === 'failed') audioEvent('request_failed');
   }
 }
-function onActivity(msg: ActivityMessage) {
-  activitySoundEvents(msg);
+// Automatic streaming extensions: Beetle asks its own agent for new ground ahead of a player near an island edge.
+// They get one quiet line instead of the phase readout, and never surface request or island ids.
+const directorToken = takeDirectorToken();
+const AUTO_PREFIX = 'extend the world';
+const AUTO_LINGER_MS = 3000;
+const AUTO_FADE_MS = 900;
+type AutoInfo = { direction: string | null };
+type AutoFields = { auto?: unknown; autoReason?: unknown; request?: unknown; requests?: unknown; requestId?: unknown; id?: unknown };
+const autoRequests = new Map<string, AutoInfo>();
+const autoChecked = new Map<string, 'pending' | 'done'>();
+const DIRECTIONS: Record<string, string> = {
+  n: 'north', north: 'north', s: 'south', south: 'south', e: 'east', east: 'east', w: 'west', west: 'west',
+  ne: 'northeast', northeast: 'northeast', nw: 'northwest', northwest: 'northwest',
+  se: 'southeast', southeast: 'southeast', sw: 'southwest', southwest: 'southwest',
+  up: 'north', down: 'south', left: 'west', right: 'east',
+  '+x': 'east', '-x': 'west', '+z': 'south', '-z': 'north', px: 'east', nx: 'west', pz: 'south', nz: 'north',
+};
+/** A compass word or nothing: the HUD never echoes free text or ids from the wire. */
+function directionWord(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const key = raw.trim().toLowerCase().replace(/([a-z])[\s_-]+(?=[a-z])/g, '$1');
+  return DIRECTIONS[key] ?? null;
+}
+function directionFromText(text: string): string | null {
+  const m = /\b(north[\s_-]?east|north[\s_-]?west|south[\s_-]?east|south[\s_-]?west|north|south|east|west)\b/i.exec(text);
+  return m ? directionWord(m[1]) : null;
+}
+function autoReasonDirection(reason: unknown): string | null {
+  return reason && typeof reason === 'object' ? directionWord((reason as { direction?: unknown }).direction) : null;
+}
+function markAuto(requestId: unknown, direction: string | null) {
+  if (typeof requestId !== 'string' || !requestId) return;
+  const known = autoRequests.get(requestId);
+  autoRequests.set(requestId, { direction: direction ?? known?.direction ?? null });
+  if (autoRequests.size > 200) autoRequests.delete(autoRequests.keys().next().value as string);
+}
+/** Request-shaped objects riding on the activity message or entry: { id, auto, autoReason }. */
+function noteRequestLike(r: unknown, fallbackId?: unknown) {
+  if (!r || typeof r !== 'object') return;
+  const f = r as AutoFields;
+  if (f.auto === true || (f.autoReason && typeof f.autoReason === 'object')) markAuto(typeof f.id === 'string' ? f.id : fallbackId, autoReasonDirection(f.autoReason));
+}
+function checkAutoByRequest(requestId: string) {
+  if (!directorToken || autoChecked.has(requestId)) return;
+  autoChecked.set(requestId, 'pending');
+  if (autoChecked.size > 400) autoChecked.delete(autoChecked.keys().next().value as string);
+  getDirectorRequest(directorToken, requestId).then((req) => {
+    autoChecked.set(requestId, 'done');
+    if (!req || req.auto !== true) return;
+    markAuto(requestId, autoReasonDirection(req.autoReason));
+    if (socket.activity[socket.activity.length - 1]?.requestId === requestId) renderAgent(false);
+  }).catch(() => { autoChecked.set(requestId, 'done'); });
+}
+function noteAutoActivity(msg: ActivityMessage) {
+  const m = msg as ActivityMessage & AutoFields;
+  // Message-level flag: every entry in this message belongs to the automatic request.
+  if (m.auto === true || (m.autoReason && typeof m.autoReason === 'object')) {
+    const dir = autoReasonDirection(m.autoReason);
+    for (const e of Array.isArray(msg.entries) ? msg.entries : []) if (e) markAuto(e.requestId, dir);
+  }
+  noteRequestLike(m.request);
+  if (Array.isArray(m.requests)) for (const r of m.requests) noteRequestLike(r);
+  for (const e of Array.isArray(msg.entries) ? msg.entries : []) {
+    if (!e || typeof e.requestId !== 'string') continue;
+    const f = e as AgentActivity & AutoFields;
+    if (f.auto === true || (f.autoReason && typeof f.autoReason === 'object')) { markAuto(e.requestId, autoReasonDirection(f.autoReason)); continue; }
+    noteRequestLike(f.request, e.requestId);
+    if (autoRequests.get(e.requestId)?.direction) continue;
+    // The server's own wording for an automatic request; with a director token the request record settles it.
+    if (typeof e.message === 'string' && e.message.trim().toLowerCase().startsWith(AUTO_PREFIX)) markAuto(e.requestId, directionFromText(e.message));
+    if (directorToken) checkAutoByRequest(e.requestId);
+  }
+}
+function autoLine(info: AutoInfo, committed: boolean): string {
+  if (committed) return info.direction ? `New ground to the ${info.direction}` : 'New ground ahead';
+  return info.direction ? `Beetle is building ahead to the ${info.direction}` : 'Beetle is building ahead';
+}
+function hideAgentSoon(lingerMs: number, fadeMs: number) {
+  agentTimer = window.setTimeout(() => {
+    agentEl.classList.add('fade');
+    agentTimer = window.setTimeout(() => { agentEl.hidden = true; agentEl.classList.remove('fade'); agentTimer = null; }, fadeMs);
+  }, lingerMs);
+}
+function renderAgent(fresh: boolean) {
   const entries = socket.activity;
   if (entries.length === 0) return;
   const latest: AgentActivity = entries[entries.length - 1];
   const inFlight = IN_FLIGHT.has(latest.phase);
+  const auto = autoRequests.get(latest.requestId) ?? null;
+  // A late lookup only matters while that request is still the one on screen.
+  if (!fresh && agentEl.hidden && !inFlight) return;
   clearAgentTimer();
   // Replayed history: do not resurface an old result on reconnect.
   if (!inFlight && agentEl.hidden && Date.now() - latest.at > STALE_TERMINAL_MS) return;
+  if (auto && (latest.phase === 'failed' || latest.phase === 'cancelled')) {
+    // Background work that did not land stays quiet: the line simply fades.
+    if (agentEl.hidden) return;
+    agentEl.classList.remove('busy');
+    hideAgentSoon(0, AUTO_FADE_MS);
+    return;
+  }
   agentEl.hidden = false;
   agentEl.classList.remove('fade');
   agentEl.classList.toggle('busy', inFlight);
+  agentEl.classList.toggle('auto', !!auto);
   agentEl.dataset.phase = latest.phase;
-  agentPhase.textContent = agentPhaseLabel(latest);
-  agentMsg.textContent = latest.message;
-  if (!inFlight) {
-    agentTimer = window.setTimeout(() => {
-      agentEl.classList.add('fade');
-      agentTimer = window.setTimeout(() => { agentEl.hidden = true; agentEl.classList.remove('fade'); agentTimer = null; }, 700);
-    }, LINGER_MS);
+  if (auto) {
+    agentPhase.textContent = '';
+    agentMsg.textContent = autoLine(auto, latest.phase === 'committed');
+  } else {
+    agentPhase.textContent = agentPhaseLabel(latest);
+    agentMsg.textContent = latest.message;
   }
+  if (!inFlight) {
+    if (auto) hideAgentSoon(AUTO_LINGER_MS, AUTO_FADE_MS);
+    else hideAgentSoon(LINGER_MS, 700);
+  }
+}
+function onActivity(msg: ActivityMessage) {
+  activitySoundEvents(msg);
+  noteAutoActivity(msg);
+  renderAgent(true);
 }
 
 // ---------- markers: forwarded to the renderer, with a quiet "<player> pinged" toast ----------
@@ -695,7 +797,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 // ---------- optional join drawer (same component as the director) ----------
-const token = takeDirectorToken();
+const token = directorToken;
 if (token) {
   const drawer = document.getElementById('join-drawer') as HTMLElement;
   const tab = document.getElementById('join-tab') as HTMLButtonElement;
