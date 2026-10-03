@@ -320,9 +320,13 @@ export default function Studio2D({ notify }: { notify?: (m: string) => void }) {
   }
   async function onSave() {
     if (!spec) return;
-    await api()?.save({ id: gameId, idea, design, spec });
-    say("Saved to your library.");
-    if (library) setLibrary(await api()!.library());
+    try {
+      await api()?.save({ id: gameId, idea, design, spec });
+      say("Saved to your library.");
+      if (library) setLibrary(await api()!.library());
+    } catch (err) {
+      say(`Could not save: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
   async function onExport(kind: "html" | "project") {
     if (!spec) return;
@@ -651,7 +655,7 @@ function IdeaView(p: {
             ))}
           </div>
           <div className="bb-row bb-build-row">
-            <label className="bb-field check" title={p.imageReady ? "Characters and items are painted by the image model after the game is playable." : "Install an image model in Studio → Image to use this."}>
+            <label className="bb-field check" title={p.imageReady ? "Characters and items are painted by the image model after the game is playable." : "Generated art is not available here; procedural art is used."}>
               <input type="checkbox" checked={p.aiArt} disabled={!p.imageReady} onChange={(e) => p.setAiArt(e.target.checked)} />
               <span>
                 <ImageIcon size={13} /> Generate art with the image model {p.imageReady ? "(slower, off by default)" : "(no image model installed)"}
@@ -930,7 +934,7 @@ function PlayView(p: {
                 </>
               ) : (
                 <>
-                  <span className="bb-muted">{p.imageReady ? "Procedural pixel art now. Generated art is optional and runs one image at a time." : "Procedural art. Install an image model in Studio to paint characters."}</span>
+                  <span className="bb-muted">{p.imageReady ? "Procedural pixel art now. Generated art is optional and runs one image at a time." : "Procedural pixel art, generated on this machine."}</span>
                   <button className="secondary-button bb-small" disabled={!p.imageReady} onClick={p.onArt}>
                     Generate art
                   </button>
