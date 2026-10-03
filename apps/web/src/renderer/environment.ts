@@ -222,7 +222,7 @@ export function createEnvironment(scene: Scene, mats: Materials, sun: Directiona
     scene.ambientColor.copyFrom(live.ambient);
     scene.fogMode = Scene.FOGMODE_EXP2;
     scene.fogColor.copyFrom(live.fogColor);
-    scene.fogDensity = live.fogDensity * (ground ? 1.5 : 1);
+    scene.fogDensity = live.fogDensity * (ground ? 1.15 : 1);
     scene.environmentIntensity = live.envIntensity;
     // lights
     sunDirV.set(live.sunDir.x, live.sunDir.y, live.sunDir.z);
