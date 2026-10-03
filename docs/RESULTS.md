@@ -259,3 +259,20 @@ This is the validator-refusal case the storyboard needs: the invalid patch never
 ## Undo on the live stack (13:32 CDT)
 
 `POST /api/director/undo` on v7 produced v8 with the v6 bridge set restored through the normal validated commit path (`patchId undo-c468fb97`, deferred 0 ms).
+
+## All rehearsal attempts today (integration owner's log, honest, including failures)
+
+| Time (CDT) | Request | Mode | GPU state | Outcome |
+|---|---|---|---|---|
+| 12:49 | edit: lava + bridge to the northern island (fixture) | direct | quiet | committed v2 in 7.0 s |
+| 12:53 | brief: five islands, temple north (no world) | direct | contended (corpus + benchmark) | failed: schema repairs then MODEL_TIMEOUT at 120 s |
+| 12:58 | same brief | direct | contended | failed: MODEL_TIMEOUT at 180 s |
+| 13:08 | edit: lava + bridge (fixture, keyboard player connected) | direct | contended | committed v2 in 61 s, player preserved |
+| 13:14 | brief (after normalization) | direct | contended | failed: MODEL_TIMEOUT at 90 s per call |
+| 13:20 | brief | direct | quiet | failed after 2 repairs: BRIDGE_LENGTH, BRIDGE_CROSSES_ISLAND, GATE_HIDES_RELIC |
+| 13:22 | brief (after bridge contraction and relic-off-gate normalization) | direct | quiet | committed v1 in 14.0 s (4 islands, 4 bridges) |
+| 13:24 | edit: lava + bridge | openclaw | quiet | failed: OPENCLAW_TIMEOUT, no model call reached the daemon |
+| 13:28 | six fresh edits (run 3) | direct | quiet | 5 of 6 committed, 2.0 / 8.0 / 14.0 s |
+| 13:32 | edit: remove the only temple bridge (model world, two temple bridges) | direct | quiet | committed v7 in 6.4 s, valid alternative on the first attempt |
+| 13:32 | undo | server | quiet | v8, previous structure restored |
+| 13:32 | edit: remove the only temple bridge (fixture, one temple bridge) | direct | quiet | DISCONNECTED_GOAL refused, repair added a crossing, committed v2 in 3.0 s |
