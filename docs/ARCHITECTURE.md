@@ -126,3 +126,24 @@ Vite multi-page app: `index.html` (landing with links), `director.html` (`/direc
 | 12, 13 controllers and auth | tests/integration/server.test.ts |
 | 14, 15 model failure handling | tests/unit/agent.test.ts with a fake Ollama server |
 | 17, 18 live OpenClaw and local-only | tests/integration/live-agent.test.ts, run only with `BEETLE_LIVE_MODEL=1`; results recorded in BUILD_STATUS.md honestly |
+
+## Model-output normalization (added 13:05 CDT after live runs)
+
+Live runs with qwen3.5:4b showed three mechanical failure modes: island references by display name or compass word instead of id, world coordinates or over-radius offsets written into `localPosition`, and numeric limits the JSON-schema grammar does not enforce (bridge width 10, overlapping islands). `packages/world/src/normalize.ts` fixes these deterministically before schema validation:
+
+- `resolveIslandRef`: exact id, then slug of the display name, then stripped id ("temple-island" to "temple"), then a unique compass octant ("northern island" to the one island whose `compassName` is north), then a unique substring. Ambiguous or unknown references are left untouched so the validator reports `INVALID_REFERENCE`.
+- `normalizeLocalPosition`: a world coordinate that lies on the island becomes an offset; an over-long offset is scaled back to `radius - 1.2` along the same direction.
+- `separateIslands`: overlapping discs are pushed apart along their centre line until every pair keeps a 1.0 m gap (plus 0.25 m margin), clamped to bounds, at most 60 iterations.
+- Widths, radii and centres are clamped to `WORLD_LIMITS`; a missing bridge id is generated.
+
+`expandDraft` and `applyPatch` (for `PatchDraft` input only, never for a full `WorldPatch`) apply this and return a `normalizations` array that records every change with its path, old value, new value and reason. Strict schemas and the full validator still run afterwards; normalization never bypasses reachability, gate or occupancy checks. On the corpus of real model drafts, validity after normalization rose from 1 of 3 to 3 of 3 for briefs; patches that fail on semantics (an unreachable relic) still fail.
+
+The direct-mode agent therefore sends parsed JSON to `propose_world` / `propose_patch` without a local schema check (JSON syntax and truncation only) and repairs from the server's issues.
+
+## Security changes from the review (docs/SECURITY_REVIEW.md)
+
+- Agent routes refuse candidates and reports for a request that is cancelled or finished (409); a report only produces an activity entry for a request that exists and is open.
+- The director URL with its token is printed at startup only when the token was just generated into `data/secrets.json`, or when `BEETLE_PRINT_DIRECTOR_URL=1`.
+- `SafeText` rejects control, bidi and zero-width characters.
+- The isolated OpenClaw profile disables update checks and telemetry (`update.checkOnStart=false`, `update.auto.enabled=false`, `telemetry.enabled=false`, `DO_NOT_TRACK=1`) and the runner refuses to start if the on-disk config no longer pins one loopback provider, no fallbacks, a loopback gateway and only the Beetle tools.
+- The Ollama daemon is started with `OLLAMA_HOST=127.0.0.1:11434 OLLAMA_NUM_PARALLEL=4 OLLAMA_FLASH_ATTENTION=1 OLLAMA_KEEP_ALIVE=1h` (project-local binary, loopback only).
