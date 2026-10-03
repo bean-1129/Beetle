@@ -1,0 +1,186 @@
+{
+  "startedAt": "2026-10-03T19:28:58.371Z",
+  "serverUrl": "http://127.0.0.1:7786",
+  "timeoutMs": 200000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 4,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7786",
+    "uptimeMs": 190282
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "Generate a game like Red Ball 5"
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "Generate a game like Red Ball 5",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-10f2fedf",
+      "status": "failed",
+      "worldVersionBefore": 4,
+      "worldVersionAfter": 4,
+      "elapsedMs": 39121,
+      "activity": [
+        {
+          "id": "act-1r-mussccgc",
+          "requestId": "req-10f2fedf",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791055738380,
+          "elapsedMs": 0,
+          "worldVersion": 4
+        },
+        {
+          "id": "act-1s-mussccgc",
+          "requestId": "req-10f2fedf",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791055738380,
+          "elapsedMs": 0,
+          "worldVersion": 4
+        },
+        {
+          "id": "act-1t-mussccgk",
+          "requestId": "req-10f2fedf",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791055738388,
+          "elapsedMs": 8,
+          "worldVersion": 4
+        },
+        {
+          "id": "act-1u-musscmg1",
+          "requestId": "req-10f2fedf",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: DUPLICATE_ID[gate]",
+          "at": 1791055751329,
+          "elapsedMs": 12949,
+          "worldVersion": 4,
+          "codes": [
+            "DUPLICATE_ID"
+          ],
+          "objectIds": [
+            "gate"
+          ]
+        },
+        {
+          "id": "act-1v-musscw29",
+          "requestId": "req-10f2fedf",
+          "phase": "repairing",
+          "message": "[direct] repair 2 of 2: DUPLICATE_ID[gate]",
+          "at": 1791055763793,
+          "elapsedMs": 25413,
+          "worldVersion": 4,
+          "codes": [
+            "DUPLICATE_ID"
+          ],
+          "objectIds": [
+            "gate"
+          ]
+        },
+        {
+          "id": "act-1w-mussd5w8",
+          "requestId": "req-10f2fedf",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791055776536,
+          "elapsedMs": 38156,
+          "worldVersion": 4,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-1x-mussd5wi",
+          "requestId": "req-10f2fedf",
+          "phase": "failed",
+          "message": "direct / qwen3.5:4b: [direct] failed: VALIDATION_FAILED rejected after 2 repairs: BRIDGE_LENGTH[b4], BRIDGE_CROSSES_ISLAND[b4,hub], BRIDGE_CROSSES_ISLAND[b4,rel1]",
+          "at": 1791055776546,
+          "elapsedMs": 38166,
+          "worldVersion": 4,
+          "codes": [
+            "DUPLICATE_ID",
+            "BRIDGE_LENGTH",
+            "BRIDGE_CROSSES_ISLAND"
+          ]
+        },
+        {
+          "id": "act-1y-mussd5wo",
+          "requestId": "req-10f2fedf",
+          "phase": "failed",
+          "message": "Failed: rejected after 2 repairs: BRIDGE_LENGTH[b4], BRIDGE_CROSSES_ISLAND[b4,hub], BRIDGE_CROSSES_ISLAND[b4,rel1]",
+          "at": 1791055776552,
+          "elapsedMs": 38172,
+          "worldVersion": 4,
+          "codes": [
+            "VALIDATION_FAILED"
+          ]
+        }
+      ],
+      "report": {
+        "reportId": "rep-5364c9c2",
+        "requestId": "req-10f2fedf",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "failed",
+        "worldVersion": 4,
+        "baseWorldVersion": 4,
+        "summary": "[direct] failed: VALIDATION_FAILED rejected after 2 repairs: BRIDGE_LENGTH[b4], BRIDGE_CROSSES_ISLAND[b4,hub], BRIDGE_CROSSES_ISLAND[b4,rel1]",
+        "validation": {
+          "attempts": 3,
+          "failedCodes": [
+            "DUPLICATE_ID",
+            "BRIDGE_LENGTH",
+            "BRIDGE_CROSSES_ISLAND"
+          ]
+        },
+        "timings": {
+          "requestedAt": 1791055738380,
+          "firstModelResponseMs": 12940,
+          "totalMs": 38159
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": false,
+            "ms": 2
+          },
+          {
+            "tool": "propose_world",
+            "ok": false,
+            "ms": 2
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 5
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 8
+          }
+        ],
+        "createdAt": 1791055776546
+      },
+      "startedAt": "2026-10-03T19:28:58.372Z",
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "message": "rejected after 2 repairs: BRIDGE_LENGTH[b4], BRIDGE_CROSSES_ISLAND[b4,hub], BRIDGE_CROSSES_ISLAND[b4,rel1]"
+      }
+    }
+  ],
+  "finishedAt": "2026-10-03T19:29:37.495Z"
+}

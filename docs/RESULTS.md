@@ -313,3 +313,84 @@ Before: v1, 2 controllers connected, relics [], score 0. After: v2, hazard lava,
 ## OpenClaw mode: fresh brief (14:08 CDT, port 7783, no world, quiet GPU)
 
 Prompt: the five-island temple brief. OpenClaw agent exec with the Beetle plugin: `propose_world` staged the candidate at 30.9 s, validation and connectivity checks passed, committed v1 at 33.4 s ("Five Garden Islands", 5 islands, 4 bridges), report published at 35.1 s. Both halves of the demo (brief and live edits) are therefore verified on the submission path.
+
+## Game modes from one prompt (14:25 to 14:42 CDT, port 7786, no world at start, direct mode, qwen3.5:4b)
+
+Own stack: server on 7786 (`BEETLE_START_WORLD=none`, scratch data dir), one direct worker (deadline 120 s for the first
+batch, 180 s afterwards, at most 2 repairs), a loopback logging proxy in front of Ollama so the model's raw draft could be
+compared with what the server's normalizer and validator did to it. Prompts sent with `scripts/run-prompts.ts`; every
+attempt is in `data/prompt-runs/run-1791055557360.json` through `run-1791056478561.json` (26 files). The prompt was
+revised once between batches (docs/PROMPTS.md, "Game modes from one prompt"); both batches are reported.
+
+Legend: "raw" is the model's first draft before the server touched it; "normalizer" lists only its interventions on the
+mode, biome, speed and hazardRise fields (geometry fixes such as island separation and offset scaling happened on nearly
+every brief and are not the point here); "validator" lists the codes that forced a repair. `MODE_INVALID` never fired.
+
+### Batch 1, first prompt version (693 tokens; fields named in prose only), 14:25 to 14:28
+
+| Id | Request | Outcome | Elapsed | Mode (raw) | Biome (raw -> committed) | Title | Validator / repairs | Normalizer (mode fields) |
+|---|---|---|---|---|---|---|---|---|
+| G1 | race, 3 islands, 90 s, snowy | failed | 58.1 s | checkpoint_race, timeLimitSec 90 (+ unused holdSeconds 30, relicsRequired 1) | none -> (not committed) | "Checkpoint Race (time_trial)" | BRIDGE_CROSSES_ISLAND x2 repairs, still rejected | hazardRise 2 m/s, +15 clamped to 0.5, -0.6 |
+| G2 | king of the hill, desert, 4 islands, hold 10 s | committed v1 | 31.1 s | king_of_the_hill, holdSeconds 10 | none -> volcanic | "King of the Hill (Desert)" | playability INTERNAL (relic_c), 1 repair | biome inferred from lava hazard; hazardRise clamped |
+| G3 | survive rising lava, 2 min, 5 islands, night | committed v2 | 16.1 s | survival, timeLimitSec 120 (+ unused holdSeconds, relicsRequired, orderedCheckpoints) | none -> volcanic | "Survival Night" | none, 0 repairs | biome inferred from lava; hazardRise 0.8 m/s, +15 clamped |
+| G4 | relic hunt, 2 of 3 relics, fast players | failed | 46.1 s | relic_hunt, relicsRequired 2, movementSpeed 6 | none -> (default garden) | "Relic Hunt (garden)" | BRIDGE_CROSSES_ISLAND, UNREACHABLE_RELIC, INTERNAL; 2 repairs | hazardRise clamped (not survival) |
+| G5 | edit on v2: make it a 60 second time trial | committed v3 | 3.0 s | `set_mode {kind time_trial, timeLimitSec 60}` | - | summary "Changed the game mode to a 60-second time trial." | none | none |
+| G6 | edit on v3: make it snowy and slow the players down | committed v4 | 3.0 s | `set_biome frost` + `set_movement 3.5` | volcanic -> frost | summary "Set the biome to frost and reduce player speed to 3.5." | none | none |
+
+Finding: the mode was right in 4 of 4 briefs and the numbers followed the request, but the model never wrote `biome`
+(0 of 4) and added an out-of-range `hazardRise` to every mode, so the normalizer decided the biome (volcanic from the
+lava hazard, garden by default) and clamped the rise. The two edits were exact and took 3.0 s each. The prompt was
+revised to quote the fields as JSON and to say that `hazardRise` is for survival only.
+
+### Batch 2, final prompt (704 tokens), fresh server with no world, 14:33 to 14:37, plus one repeat of the failed briefs at 14:41
+
+| Id | Request | Outcome | Elapsed | Mode (raw) | Biome (raw -> committed) | Title | Validator / repairs | Normalizer (mode fields) |
+|---|---|---|---|---|---|---|---|---|
+| G1 | race, 3 islands, 90 s, snowy | committed v1 | 38.1 s | checkpoint_race, relicsRequired 3, speed 4.5 (timeLimitSec 90 missed) | frost -> frost | "Checkpoint Race in Frost" | DUPLICATE_ID, 1 repair | none (hazardRise present but in range) |
+| G2 | king of the hill, desert, 4 islands, hold 10 s | failed | 42.1 s | king_of_the_hill, holdSeconds 10, speed 5.2 | none | "King of the Hill (Desert)" | BRIDGE_CROSSES_ISLAND, UNREACHABLE_SPAWN; 2 repairs | none |
+| G2 repeat | same | committed v9 | 15.0 s | king_of_the_hill, holdSeconds 10, speed 6.5 | none -> volcanic | "King of the Hill (Desert)" | none, 0 repairs | biome inferred from lava hazard (desert was asked) |
+| G3 | survive rising lava, 2 min, 5 islands, night | failed | 53.1 s | survival, timeLimitSec 120, hazardRise {30 s, 0.05 m/s, -1.5} | none | "Survival Lava Rise" | OBJECT_NOT_ON_SURFACE, BRIDGE_CROSSES_ISLAND; 2 repairs | biome inferred volcanic (night was asked) |
+| G3 repeat | same | failed | 45.1 s | survival, timeLimitSec 120, hazardRise {60 s, 0.05, -1}; second repair drifted to time_trial 90 | night (not committed) | "Survival Night" | UNREACHABLE_RELIC, OBJECT_NOT_ON_SURFACE; 2 repairs | none |
+| G4 | relic hunt, 2 of 3 relics, fast players | failed | 40.1 s | relic_hunt, relicsRequired 2, speed 6.5 | frost (unrequested) | "Relic Hunt Fast" | BRIDGE_CROSSES_ISLAND; 2 repairs | none |
+| G4 repeat | same | committed v10 | 13.0 s | time_trial, relicsRequired 2, speed 6.5 (relic_hunt was the exact match) | volcanic (unrequested) | "Relic Hunt (two of three)" | none, 0 repairs | none |
+| G5 | edit on v1: make it a 60 second time trial | committed v2 | 3.0 s | `set_mode {kind time_trial, timeLimitSec 60}` | - | summary "Changed the world mode to a 60-second time trial." | none | none |
+| G6 | edit on v2: make it snowy and slow the players down | committed v3 | 3.0 s | `set_biome frost` + `set_movement 3.5` | frost -> frost | summary "Setting the biome to frost and reducing player speed as requested." | none | none |
+
+Direct-mode build reports now carry `preserved` (read back after the commit): `{players 0, collectedRelics 0,
+connections 0}` on this stack, which had no controllers connected.
+
+### Out-of-library requests (final prompt, 14:36 to 14:40, one attempt each, 180 s deadline)
+
+| Id | Request | Outcome | Elapsed | Mode chosen (raw) | Biome (raw -> committed) | Title stating the mapping | Validator / repairs |
+|---|---|---|---|---|---|---|---|
+| O1 | Generate a game like Red Ball 5 | committed v4 | 31.1 s | time_trial, timeLimitSec 120, speed 4.5 | frost -> frost | "Red Ball 5 Style Relic Hunt (Fixed)" (says relic hunt, mode is time trial) | BRIDGE_CROSSES_ISLAND, 1 repair |
+| O2 | A game like Clash Royale | failed | 43.1 s | king_of_the_hill, holdSeconds 60, speed 5.5 | frost | "Clash Royale Style Tower Defense" (mapping not named) | BRIDGE_CROSSES_ISLAND, UNREACHABLE_SPAWN, UNREACHABLE_RELIC; 2 repairs |
+| O3 | A stickman fight game | committed v5 | 44.1 s | king_of_the_hill, holdSeconds 45, speed 6 | none -> garden (default) | "Stickman Fight Arena (King of the Hill)" | DISCONNECTED_GOAL, 2 repairs |
+| O4 | A Mario style platformer with lava | committed v6 | 33.1 s | survival first, switched to time_trial 90 s on the repair; speed 5.2 | volcanic -> volcanic | "Mario Platformer (Time Trial)" | BRIDGE_CROSSES_ISLAND, 1 repair |
+| O5 | A zombie survival night map | committed v7 | 17.0 s | survival, timeLimitSec 300, hazardRise {60 s, 0.05, -1} | night -> night | "Zombie Survival Night" | none, 0 repairs |
+| O6 | Capture the flag on four islands | committed v8 | 20.1 s | king_of_the_hill, holdSeconds 45, speed 5 | frost (unrequested) -> frost | "Capture Flag Tag Arena" (mapping not named) | none, 0 repairs |
+| O7 | A racing game across the clouds | failed | 39.1 s | checkpoint_race, speed 5.5 | frost | "Checkpoint Race on Floating Clouds" | BRIDGE_CROSSES_ISLAND, UNREACHABLE_SPAWN; 2 repairs |
+
+With the first prompt version (14:28 to 14:31, before the revision) the same requests gave: Red Ball 5 -> time_trial 60 s
+"Red Ball 5 Clone (time_trial)", failed on geometry (39.1 s); Clash Royale -> king_of_the_hill hold 45 s "Clash Royale
+Map (King of the Hill)", failed on geometry (39.1 s); stickman fight -> king_of_the_hill hold 45 s "Stickman Fight
+Arena", committed v5 in 15.1 s with no biome (default garden); Mario with lava -> failed on geometry (43.1 s).
+
+### What the numbers say
+
+- Mode: sensible on every brief (18 of 18 across both prompt versions): races became checkpoint races, fights, tag and
+  capture the flag became king of the hill, zombies and rising lava became survival, Red Ball and Mario became time trials.
+  Twice the exact mode was available and the model picked a neighbour (G4 repeat chose time_trial for a plain relic hunt;
+  O4 moved from survival to time_trial on its repair). Titles named the mapping in 10 of 14 final-prompt briefs.
+- Numbers: holdSeconds 10, relicsRequired 2, timeLimitSec 120 and a fast speed were taken from the request every time
+  they were asked; the 90 s limit of G1 was missed once (batch 2).
+- Biome: 0 of 4 with the first prompt, 10 of 14 with the final one. Desert was never written in three attempts (the
+  normalizer then set volcanic from the lava hazard), night was written in 2 of 3. The example value in the prompt
+  (`"biome":"frost"`) was copied four times when no biome was requested (G4, O1, O2, O6); a neutral example is the next
+  tweak. hazardRise is now in range every time; it is still added to some non-survival briefs (harmless, in range).
+- Normalizer: on the mode fields it only inferred a missing biome and (first prompt) clamped hazardRise; it never had to
+  change a mode kind. Validator: every failure was geometry (BRIDGE_CROSSES_ISLAND in 9 of 10 failed briefs), never
+  MODE_INVALID; brief success rate 8 of 14 attempts on the final prompt, which is the known geometry rate of the 4B model.
+- Time: committed briefs 13.0 to 44.1 s (first model answer 13 to 22 s, one repair adds about 15 s); both edits 3.0 s.
+
+Stack stopped at 14:43 (server, worker and proxy; ports 7786 and 11435 free; the 7781 rehearsal was never touched).

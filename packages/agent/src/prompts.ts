@@ -29,21 +29,21 @@ export const CONVENTION = [
 export const MODE_LINES = [
   `relic_hunt: collect relicsRequired relics (default all ${L.relics}) then enter the gate.`,
   'time_trial: relic hunt against the clock; enter the gate before timeLimitSec runs out.',
-  'king_of_the_hill: reach the gate island (the hill) and stand on it for holdSeconds in total; tag or capture maps here.',
-  'checkpoint_race: run through the relics as checkpoints in order (orderedCheckpoints true), then the gate; a race maps here.',
-  'survival: the hazard rises after hazardRise.afterSec at metersPerSec up to maxElevation; stay out of it until timeLimitSec. survival requires hazardRise.',
+  'king_of_the_hill: stand on the gate island (the hill) for holdSeconds in total; tag or capture maps here.',
+  'checkpoint_race: pass the relics as checkpoints in order, then the gate; a race maps here.',
+  'survival: the hazard rises after hazardRise.afterSec; stay out of it until timeLimitSec.',
 ].join(' ');
 
-export const BIOME_LINE = `Biomes: ${BIOMES.join(', ')} (snow is frost, dark is night, sand is desert, lava is volcanic). movementSpeed is player speed in m/s, ${M.movementSpeed.min} to ${M.movementSpeed.max}, default ${M.movementSpeed.default} (fast 6, slow 3.5). timeLimitSec ${M.timeLimitSec.min} to ${M.timeLimitSec.max}, holdSeconds ${M.holdSeconds.min} to ${M.holdSeconds.max}, relicsRequired 1 to ${L.relics}.`;
+export const BIOME_LINE = `"biome" is one of ${BIOMES.join(', ')} (snow is frost, dark is night, sand is desert). "movementSpeed" is player speed in m/s, ${M.movementSpeed.min} to ${M.movementSpeed.max}, default ${M.movementSpeed.default}. timeLimitSec ${M.timeLimitSec.min} to ${M.timeLimitSec.max}, holdSeconds ${M.holdSeconds.min} to ${M.holdSeconds.max}, relicsRequired 1 to ${L.relics}.`;
 
-export const MODE_RULE = 'Always set mode and biome explicitly. Set timeLimitSec, holdSeconds or relicsRequired whenever the request implies them (a 90 second limit is timeLimitSec 90). When the requested game is not an exact match, name the mapping in the title, e.g. "Tag Arena (king of the hill)".';
+export const MODE_RULE = 'Always set "biome" and "mode" explicitly as top-level fields, e.g. "biome":"frost","mode":{"kind":"time_trial","timeLimitSec":90},"movementSpeed":5. Set timeLimitSec, holdSeconds or relicsRequired only when the mode uses them. Add "hazardRise" only for survival, e.g. {"afterSec":30,"metersPerSec":0.05,"maxElevation":-1}. When the requested game is not an exact match, name the mapping in the title, e.g. "Tag Arena (king of the hill)".';
 
 export function worldDraftSystemPrompt(): string {
   return [
-    'You compose a small floating-island world for a two-player game. Beetle builds any requested game by mapping it onto the closest supported mode and biome.',
+    'You compose a small floating-island world for a two-player game, mapping any requested game onto the closest supported mode and biome.',
     CONVENTION,
     `Exactly ${L.spawns} spawns, ${L.relics} relics and 1 gate. ${L.islands.min} to ${L.islands.max} islands, at most ${L.bridges.max} bridges, 4 to 8 decorations (types: ${DECORATION_TYPES.join(', ')}). Hazard: ${HAZARD_KINDS.join(' or ')}.`,
-    'Both spawns go on the same central island. Every relic and the gate must be reachable from the spawns over bridges. The gate sits on its own island with exactly one bridge and no relic (the locked gate would hide it). Give a wide safe route plus one optional narrow risky bridge; keep bridged islands within 30 m rim to rim, bridges clear of other islands, never two bridges between the same pair, decorations away from bridge mouths.',
+    'Both spawns on the same central island. Every relic and the gate reachable from the spawns over bridges. The gate on its own island with exactly one bridge and no relic. One wide safe route plus one optional narrow risky bridge; bridged islands within 30 m rim to rim, bridges clear of other islands, one bridge per island pair, decorations away from bridge mouths.',
     `Modes: ${MODE_LINES}`,
     BIOME_LINE,
     MODE_RULE,

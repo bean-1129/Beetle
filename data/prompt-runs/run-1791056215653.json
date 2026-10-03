@@ -1,0 +1,228 @@
+{
+  "startedAt": "2026-10-03T19:36:55.653Z",
+  "serverUrl": "http://127.0.0.1:7786",
+  "timeoutMs": 200000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 3,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7786",
+    "uptimeMs": 182101
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "Generate a game like Red Ball 5"
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "Generate a game like Red Ball 5",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-97eaafee",
+      "status": "committed",
+      "worldVersionBefore": 3,
+      "worldVersionAfter": 4,
+      "elapsedMs": 31092,
+      "activity": [
+        {
+          "id": "act-1p-mussmkq1",
+          "requestId": "req-97eaafee",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791056215657,
+          "elapsedMs": 0,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1q-mussmkq1",
+          "requestId": "req-97eaafee",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791056215657,
+          "elapsedMs": 0,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1r-mussmkq2",
+          "requestId": "req-97eaafee",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791056215658,
+          "elapsedMs": 1,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1s-mussmwn2",
+          "requestId": "req-97eaafee",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791056231102,
+          "elapsedMs": 15445,
+          "worldVersion": 3,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-1t-mussmwnc",
+          "requestId": "req-97eaafee",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: BRIDGE_CROSSES_ISLAND[b4,spawn_01]",
+          "at": 1791056231112,
+          "elapsedMs": 15455,
+          "worldVersion": 3,
+          "codes": [
+            "BRIDGE_CROSSES_ISLAND"
+          ],
+          "objectIds": [
+            "b4",
+            "spawn_01"
+          ]
+        },
+        {
+          "id": "act-1u-mussn814",
+          "requestId": "req-97eaafee",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791056245864,
+          "elapsedMs": 30207,
+          "worldVersion": 3,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-1v-mussn81g",
+          "requestId": "req-97eaafee",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791056245876,
+          "elapsedMs": 30219,
+          "worldVersion": 3,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-1w-mussn81n",
+          "requestId": "req-97eaafee",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791056245883,
+          "elapsedMs": 30226,
+          "worldVersion": 3,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-1x-mussn827",
+          "requestId": "req-97eaafee",
+          "phase": "committed",
+          "message": "[direct] committed v4",
+          "at": 1791056245903,
+          "elapsedMs": 30246,
+          "worldVersion": 4,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-1y-mussn829",
+          "requestId": "req-97eaafee",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] new world \"Red Ball 5 Style Relic Hunt (Fixed)\" with 4 islands and 3 bridges, mode time_trial, biome frost",
+          "at": 1791056245905,
+          "elapsedMs": 30248,
+          "worldVersion": 4,
+          "codes": [
+            "BRIDGE_CROSSES_ISLAND"
+          ]
+        },
+        {
+          "id": "act-1z-mussn82a",
+          "requestId": "req-97eaafee",
+          "phase": "committed",
+          "message": "Committed world version 4",
+          "at": 1791056245906,
+          "elapsedMs": 30249,
+          "worldVersion": 4
+        }
+      ],
+      "report": {
+        "reportId": "rep-1b4ee33d",
+        "requestId": "req-97eaafee",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 4,
+        "baseWorldVersion": 3,
+        "summary": "[direct] new world \"Red Ball 5 Style Relic Hunt (Fixed)\" with 4 islands and 3 bridges, mode time_trial, biome frost",
+        "validation": {
+          "attempts": 2,
+          "failedCodes": [
+            "BRIDGE_CROSSES_ISLAND"
+          ]
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791056215657,
+          "firstModelResponseMs": 15441,
+          "validatedMs": 30218,
+          "committedMs": 30246,
+          "totalMs": 30248
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 3
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 8
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 3
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 8
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 6
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 19
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791056245905
+      },
+      "startedAt": "2026-10-03T19:36:55.654Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T19:37:26.748Z"
+}

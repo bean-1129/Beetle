@@ -1,0 +1,44 @@
+{
+  "startedAt": "2026-10-03T19:32:12.703Z",
+  "serverUrl": "http://127.0.0.1:7786",
+  "timeoutMs": 200000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 5,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7786",
+    "uptimeMs": 384616
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "A race across three floating islands with a 90 second limit, snowy"
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "A race across three floating islands with a 90 second limit, snowy",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-7add1649",
+      "status": "error(planning)",
+      "worldVersionBefore": 5,
+      "worldVersionAfter": null,
+      "elapsedMs": 5015,
+      "activity": [],
+      "report": null,
+      "startedAt": "2026-10-03T19:32:12.704Z",
+      "error": "fetch failed"
+    }
+  ],
+  "finishedAt": "2026-10-03T19:32:17.720Z"
+}

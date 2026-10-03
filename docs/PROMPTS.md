@@ -60,8 +60,12 @@ and lists what the model may set in a `WorldDraft`: `biome` (garden, volcanic, f
 `relicsRequired`, `orderedCheckpoints`), `movementSpeed` (3 to 7 m/s, default 4.5) and `hazardRise` (survival).
 One line per mode says what the players do and what wins; the rule is to always set mode and biome explicitly, to set
 the numbers whenever the request implies them, and to name the mapping in the title when the request is not an exact
-match (for example "tag" becomes king of the hill). The whole draft system prompt measures 693 prompt tokens on
-qwen3.5:4b (was 489), measured with `prompt_eval_count` from a one-token chat call. The edit prompt lists the three new
+match (for example "tag" becomes king of the hill). The whole draft system prompt measures 704 prompt tokens on
+qwen3.5:4b (was 489), measured with `prompt_eval_count` from a one-token chat call. A first version (693 tokens) named
+the fields in prose only and the model never emitted `biome` in four briefs (the server's normalizer then inferred
+volcanic from a lava hazard or left the default garden) and added an out-of-range `hazardRise` to every mode; the
+second version quotes the fields as JSON (`"biome":"frost","mode":{...}`), says to add `hazardRise` only for survival
+with an in-range example, and to set the mode numbers only when the mode uses them. The edit prompt lists the three new
 ops with examples ("make it a 60 second time trial" -> `set_mode`, "make it snowy" -> `set_biome frost`, "faster players"
 -> `set_movement 6`), and the world description now carries `biome`, `mode` and `speed` on its first line. The repair
 hint for `MODE_INVALID` says to lower `relicsRequired` to the relic count or to add `hazardRise` for survival (a patch

@@ -1,0 +1,202 @@
+{
+  "startedAt": "2026-10-03T19:36:49.101Z",
+  "serverUrl": "http://127.0.0.1:7786",
+  "timeoutMs": 200000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 1,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7786",
+    "uptimeMs": 175549
+  },
+  "args": {
+    "kind": "edit",
+    "repeat": 1,
+    "prompt": "make it a 60 second time trial"
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "edit",
+      "prompt": "make it a 60 second time trial",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-a452906d",
+      "status": "committed",
+      "worldVersionBefore": 1,
+      "worldVersionAfter": 2,
+      "elapsedMs": 3016,
+      "activity": [
+        {
+          "id": "act-15-mussmfo2",
+          "requestId": "req-a452906d",
+          "phase": "queued",
+          "message": "Edit queued for the agent",
+          "at": 1791056209106,
+          "elapsedMs": 0,
+          "worldVersion": 1
+        },
+        {
+          "id": "act-16-mussmfo2",
+          "requestId": "req-a452906d",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791056209106,
+          "elapsedMs": 0,
+          "worldVersion": 1
+        },
+        {
+          "id": "act-17-mussmfo3",
+          "requestId": "req-a452906d",
+          "phase": "planning",
+          "message": "[direct] reading the current world",
+          "at": 1791056209107,
+          "elapsedMs": 1,
+          "worldVersion": 1,
+          "tool": "read_world_state"
+        },
+        {
+          "id": "act-18-mussmfo5",
+          "requestId": "req-a452906d",
+          "phase": "planning",
+          "message": "[direct] drafting a patch for v1 with qwen3.5:4b",
+          "at": 1791056209109,
+          "elapsedMs": 3,
+          "worldVersion": 1
+        },
+        {
+          "id": "act-19-mussmhez",
+          "requestId": "req-a452906d",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791056211371,
+          "elapsedMs": 2265,
+          "worldVersion": 1,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-1a-mussmhf9",
+          "requestId": "req-a452906d",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791056211381,
+          "elapsedMs": 2275,
+          "worldVersion": 1,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-1b-mussmhfk",
+          "requestId": "req-a452906d",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791056211392,
+          "elapsedMs": 2286,
+          "worldVersion": 1,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-1c-mussmhgc",
+          "requestId": "req-a452906d",
+          "phase": "committed",
+          "message": "[direct] committed v2",
+          "at": 1791056211420,
+          "elapsedMs": 2314,
+          "worldVersion": 2,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-1d-mussmhge",
+          "requestId": "req-a452906d",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] Changed the world mode to a 60-second time trial.",
+          "at": 1791056211422,
+          "elapsedMs": 2316,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-1e-mussmhgf",
+          "requestId": "req-a452906d",
+          "phase": "committed",
+          "message": "Committed world version 2",
+          "at": 1791056211423,
+          "elapsedMs": 2317,
+          "worldVersion": 2
+        }
+      ],
+      "report": {
+        "reportId": "rep-036e6b23",
+        "requestId": "req-a452906d",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 2,
+        "baseWorldVersion": 1,
+        "summary": "[direct] Changed the world mode to a 60-second time trial.",
+        "validation": {
+          "attempts": 1,
+          "failedCodes": []
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791056209106,
+          "firstModelResponseMs": 2260,
+          "validatedMs": 2274,
+          "committedMs": 2313,
+          "totalMs": 2315
+        },
+        "toolCalls": [
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          },
+          {
+            "tool": "propose_patch",
+            "ok": true,
+            "ms": 4
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 8
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 7
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 27
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791056211422
+      },
+      "startedAt": "2026-10-03T19:36:49.102Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T19:36:52.120Z"
+}

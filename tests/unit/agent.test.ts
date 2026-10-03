@@ -373,7 +373,7 @@ describe('game modes: draft fields pass through', () => {
     expect((proposed[0].body as { requestId: string }).requestId).toBe(request.id);
     // The system prompt carries the mode and biome vocabulary and the mapping rule; the draft schema sent as `format` allows the fields.
     const sys = (ollama.requests[0].body.messages as { role: string; content: string }[])[0].content;
-    for (const word of ['relic_hunt', 'time_trial', 'king_of_the_hill', 'checkpoint_race', 'survival', 'garden', 'volcanic', 'frost', 'desert', 'night', 'movementSpeed', 'Always set mode and biome']) expect(sys).toContain(word);
+    for (const word of ['relic_hunt', 'time_trial', 'king_of_the_hill', 'checkpoint_race', 'survival', 'garden', 'volcanic', 'frost', 'desert', 'night', 'movementSpeed', 'Always set "biome" and "mode"', '"hazardRise" only for survival']) expect(sys).toContain(word);
     const format = ollama.requests[0].body.format as { properties: Record<string, unknown> };
     for (const key of ['biome', 'mode', 'movementSpeed', 'hazardRise']) expect(format.properties).toHaveProperty(key);
     // The build report names the mode and biome.
