@@ -26,7 +26,7 @@ import type { Pixels } from "../assets/pixels.ts";
 import { exportHtml, projectFiles, fileName } from "../export/export.ts";
 import { Studio2DPlayer } from "../runtime/player.ts";
 import { BIT } from "../engine/input.ts";
-import { PhonePlay, type PadKeys } from "./PhonePlay.tsx";
+import type { PadKeys } from "./PhonePlay.tsx";
 import { checkScript } from "../runtime/script.ts";
 import "./studio2d.css";
 
@@ -1036,7 +1036,7 @@ function PlayView(p: {
         {tab === "level" && <LevelEditor spec={spec} level={level} onPatch={p.onPatch} say={p.say} />}
         {tab === "code" && scripted && <CodePanel spec={spec} onCommit={p.onCommit} say={p.say} check={p.check} />}
         {tab === "spec" && <SpecPanel spec={spec} onCommit={p.onCommit} say={p.say} />}
-        <PhonePlay genre={spec.meta.genre} onKeys={sendPad} />
+        {/* Phones join 3D worlds only; the 2D studio is played on this screen. */}
       </aside>
     </div>
   );
