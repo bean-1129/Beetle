@@ -1,8 +1,6 @@
 # Beetle
 
-[![Watch the Beetle demo (1:56, with voiceover)](docs/media/beetle-demo-poster.jpg)](docs/media/beetle-demo.mp4)
-
-**[Watch the demo video (1:56, with voiceover)](docs/media/beetle-demo.mp4)**
+https://github.com/user-attachments/assets/dd7035bd-4caf-45eb-a4fc-e4b83a7d97ad
 
 One prompt becomes a playable 2D game in seconds, on a local model, on this machine.
 
