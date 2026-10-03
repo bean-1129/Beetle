@@ -1,6 +1,6 @@
 # BUILD_STATUS
 
-Last updated: 2026-10-03 14:10 CDT. Submission deadline set by the user: 15:32 CDT.
+Last updated: 2026-10-03 14:36 CDT. Submission deadline set by the user: 16:10 CDT.
 
 Legend: implemented = code exists; tested = an automated or recorded manual test ran and passed; untested = exists, no test run; blocked = cannot proceed without something external; omitted = deliberately cut.
 
@@ -35,6 +35,22 @@ Legend: implemented = code exists; tested = an automated or recorded manual test
 | Pitch deck | implemented (six slides, placeholders for measured numbers) | docs/pitch |
 | Security review | done; high and medium findings fixed or assigned | docs/SECURITY_REVIEW.md |
 | Docs: environment, architecture, local-only checklist, runbook, storyboard, pitch outline, submission checklist | implemented | docs/ |
+
+## Game generator expansion (14:10 to 14:35 CDT)
+
+Beetle now maps any requested game onto a mode library and a biome, then builds it; the model states the mapping. Everything below is backward compatible with the morning's worlds and tests.
+
+| Area | Status | Evidence |
+|---|---|---|
+| Contract: modes (relic_hunt, time_trial, king_of_the_hill, checkpoint_race, survival), biomes (garden, volcanic, frost, desert, night), movement speed, rising hazard, five new decoration types, patch ops set_mode, set_biome, set_movement; controller buttons (sprint, walk, ping, wave), ping markers, emotes | implemented, typechecked | packages/contracts |
+| World: mode validation (MODE_INVALID), mode and biome normalization from plain words, fixtures race5, hill4, survival5, trial5, speed scale in movement | implemented, tested (29 mode tests; 148 unit tests total) | packages/world, tests/unit/modes.test.ts |
+| Server: mode rules in the 30 Hz simulation (timers, hill holding, ordered checkpoints, rising lava that submerges bridges), buttons, markers, emotes, fixture selection | implemented, tested (50 in-process tests; adversarial review in progress) | apps/server |
+| Integration: five modes on a real server with real controllers | tested (5 of 5) | tests/integration/modes.test.ts |
+| Renderer: biome presets with lava overlays, new decorations, rigged players with run cycle, mode visuals, ping beacons | implemented, verified in the browser (frost hill fixture at 32 fps in the software pane) | apps/web/src/renderer |
+| HUD and pages: mode-aware objective, won and lost overlays, one-prompt landing, director hints and prefill, restraint pass | implemented, built | apps/web |
+| Phone: console-style pad (stick, D-pad, L2 walk, R2 sprint, triangle ping, square wave, circle sprint, cross interact), objective strip, cues | implemented, verified against the live server under phone emulation | apps/web/src/controller |
+| Agent: prompts map any game onto a mode and biome; out-of-library requests measured | implemented (16 agent tests); live measurement in progress | packages/agent, docs/RESULTS.md |
+| Movement acceleration | deliberately omitted: an exponential acceleration model broke the validator's headless traversal timing and three tests; instant velocity kept (best measured input latency), weight comes from client interpolation and character animation | |
 
 ## Required test cases (section 14)
 
