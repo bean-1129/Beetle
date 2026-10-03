@@ -1,6 +1,6 @@
 # BUILD_STATUS
 
-Last updated: 2026-10-03 13:35 CDT. Submission deadline set by the user: 15:32 CDT. Integration and packaging reserve starts 14:45 CDT.
+Last updated: 2026-10-03 14:05 CDT. Submission deadline set by the user: 15:32 CDT. Integration and packaging reserve starts 14:45 CDT.
 
 Legend: implemented = code exists; tested = an automated or recorded manual test ran and passed; untested = exists, no test run; blocked = cannot proceed without something external; omitted = deliberately cut.
 
@@ -25,7 +25,7 @@ Legend: implemented = code exists; tested = an automated or recorded manual test
 | Observability (JSONL events, sanitizer, stopwatch) | implemented, used by server and agent | packages/observability |
 | World compiler, WalkField, nav grid, validators, playability, patches, fixtures | implemented, tested (73 unit tests incl. 23 adversarial) | packages/world; deterministic normalization of model output added (names and compass words to ids, offsets, limits, island separation) |
 | Server: HTTP, WebSocket, simulation, transactions, persistence, auth | implemented, tested (38 in-process tests, 23 integration tests on a real server with real sockets) | apps/server; loop body avg 0.04 ms per tick with 2 players and a 16-bridge world |
-| Web: director, play, controller, Babylon renderer | implemented, typechecked, built; verified in the browser against the live server (fixture world renders, keyboard player joins, live edit swaps water to lava and adds a bridge without reset, controller page joins and moves) | apps/web |
+| Web: director, play, controller, Babylon renderer | implemented, built; cinematic pass done (terrain islands, PBR materials with runtime textures, image-based lighting from a procedural sky, post pipeline with bloom, ACES, FXAA, SSAO, god rays, glow, shadows, particles, cinematic follow camera with C debug toggle, commit transitions and movement effects, premium HUD, procedural audio); hero transformation serene to volcanic verified in the browser with two connected moving players (v2 in 3.2 s, inventory and score unchanged) | apps/web |
 | Agent: Ollama client, jobs, worker, direct harness | implemented, tested (14 unit tests); live briefs and edits verified (docs/RESULTS.md) | packages/agent; direct mode is labelled in every report |
 | OpenClaw tool plugin and isolated profile | implemented, tested live against the real server (v2 committed in 20 s) and against a fake server | packages/agent/openclaw-plugin, .openclaw-home, packages/agent/SMOKE.md |
 | Benchmark script | implemented, run for qwen3.5:4b | scripts/benchmark-local.ts, data/benchmarks |

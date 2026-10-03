@@ -297,3 +297,15 @@ Daemon log shows the chat requests from OpenClaw. This is the submission path, v
 |---|---|---|---|
 | 18 | direct | committed: lava, new bridge to the northern island, players preserved | 14.3 s wall |
 | 17 | openclaw | committed v2 through the real OpenClaw tools; report: 7 tool calls, validation attempts 3 (INVALID_SCHEMA, DUPLICATE_ID rejected at the boundary), first model response 8.2 s, validated 32.2 s, committed 34.3 s | 38.9 s wall |
+
+## Hero transformation on the cinematic renderer (14:02 CDT, port 7781, fixture world, two scripted controllers walking the whole time)
+
+Prompt: "Turn the environment volcanic: the water becomes lava. Also add one new bridge from the east island to the temple island as an alternative route. Keep our players and collected relics." Direct worker, quiet GPU.
+
+| Elapsed | Phase |
+|---|---|
+| 3.1 s | validating (first candidate) |
+| 3.1 s | connectivity and supported-movement checks |
+| 3.2 s | committed v2 |
+
+Before: v1, 2 controllers connected, relics [], score 0. After: v2, hazard lava, bridges + `bridge-east-temple` (east to temple, a genuinely different route under the new BRIDGE_DUPLICATE rule), 2 controllers still connected, both players on `centre`, relics [] and score 0 unchanged. Visually the renderer blended from the serene theme (teal sky, water shimmer, green islands) to volcanic (ash sky, lava with glowing crust rings, scorched islands, embers) in about 2 s without a reset. The unattended version of this test (scripts/acceptance-volcanic.ts) passed 15 of 15 checks at 13:48 with a relic collected beforehand (docs/ACCEPTANCE.md).
