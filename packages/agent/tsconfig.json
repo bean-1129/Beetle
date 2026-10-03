@@ -1,4 +1,0 @@
-{
-  "extends": "../../tsconfig.json",
-  "include": ["src", "test-support", "../../tests/unit/agent.test.ts", "../../scripts/benchmark-local.ts"]
-}

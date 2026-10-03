@@ -3,19 +3,6 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export type StartWorld = 'none' | 'fixture';
-
-/** BEETLE_START_WORLD: 'none', 'fixture' (garden5) or 'fixture:<name>' (any @beetle/world fixture, e.g. fixture:hill4). */
-export function parseStartWorld(raw: string | undefined): { startWorld: StartWorld; fixtureName: string | null } {
-  const value = (raw ?? '').trim().toLowerCase();
-  if (value === 'fixture') return { startWorld: 'fixture', fixtureName: null };
-  if (value.startsWith('fixture:')) {
-    const name = value.slice('fixture:'.length).trim();
-    return { startWorld: 'fixture', fixtureName: name === '' ? null : name };
-  }
-  return { startWorld: 'none', fixtureName: null };
-}
-
 export type ServerConfig = {
   host: string;
   port: number;
@@ -23,12 +10,8 @@ export type ServerConfig = {
   publicUrl: string | null;
   dataDir: string;
   directorToken: string | null;
-  agentToken: string | null;
   ollamaBaseUrl: string;
   modelName: string;
-  startWorld: StartWorld;
-  /** Fixture to load when startWorld is 'fixture' (BEETLE_START_WORLD=fixture:<name>); null means garden5. */
-  fixtureName: string | null;
   /** Directory with the built web client, or null to skip static serving. */
   webDistDir: string | null;
   logRequests: boolean;
@@ -52,29 +35,24 @@ function readOptional(value: string | undefined): string | null {
 }
 
 export function configFromEnv(env: NodeJS.ProcessEnv = process.env): ServerConfig {
-  const start = parseStartWorld(env.BEETLE_START_WORLD);
   return {
     host: readOptional(env.BEETLE_HOST) ?? '0.0.0.0',
     port: readInt(env.BEETLE_PORT, 7700),
     publicUrl: readOptional(env.BEETLE_PUBLIC_URL),
     dataDir: readOptional(env.BEETLE_DATA_DIR) ?? DEFAULT_DATA_DIR,
     directorToken: readOptional(env.BEETLE_DIRECTOR_TOKEN),
-    agentToken: readOptional(env.BEETLE_AGENT_TOKEN),
     ollamaBaseUrl: readOptional(env.OLLAMA_BASE_URL) ?? 'http://127.0.0.1:11434',
     modelName: readOptional(env.BEETLE_MODEL) ?? 'qwen3.5:4b',
-    startWorld: start.startWorld,
-    fixtureName: start.fixtureName,
     webDistDir: readOptional(env.BEETLE_WEB_DIST) ?? DEFAULT_WEB_DIST,
     logRequests: (env.BEETLE_LOG_REQUESTS ?? '1') !== '0',
   };
 }
 
-/** First non-internal IPv4 address, preferring interfaces that look like a LAN link. */
+/** First non-internal IPv4 address. */
 export function firstLanIPv4(): string | null {
   const ifaces = os.networkInterfaces();
   for (const name of Object.keys(ifaces)) {
-    const list = ifaces[name] ?? [];
-    for (const info of list) {
+    for (const info of ifaces[name] ?? []) {
       if (info.family !== 'IPv4' || info.internal) continue;
       if (info.address.startsWith('127.')) continue;
       return info.address;

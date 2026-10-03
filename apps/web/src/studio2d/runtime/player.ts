@@ -54,11 +54,6 @@ export class Studio2DPlayer {
   private stats = { frames: 0, t: 0, stepMs: 0, fps: 60 };
   private cleanup: (() => void)[] = [];
   private prevMenuInput = 0;
-  // Phone controller input relayed by the studio (an action bitmask, merged with keyboard and pads).
-  private phoneBits = 0;
-  setPhoneInput(bits: number) {
-    this.phoneBits = bits;
-  }
   private running = false;
 
   constructor(canvas: HTMLCanvasElement, spec: GameSpec, opts: PlayerOptions = {}) {
@@ -238,7 +233,7 @@ export class Studio2DPlayer {
 
   tick(dt: number) {
     const pads = typeof navigator !== "undefined" && navigator.getGamepads ? [...navigator.getGamepads()].find(Boolean) ?? null : null;
-    const inp = this.input.read(padNames(pads as any)) | this.phoneBits;
+    const inp = this.input.read(padNames(pads as any));
     const pressed = inp & ~this.prevMenuInput;
     this.prevMenuInput = inp;
     if (this.toastT > 0) this.toastT -= dt;

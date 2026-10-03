@@ -1,14 +1,13 @@
-// Entry point: loads .env (tiny parser, no dotenv package), starts the Beetle server, prints the director URL.
+// Entry point: loads .env (tiny parser, no dotenv package), starts the Beetle 2D server and prints its URL.
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { REPO_ROOT, parseDotEnv } from './config.ts';
 import { createBeetleServer } from './index.ts';
 
 async function loadDotEnv(): Promise<void> {
-  const file = path.join(REPO_ROOT, '.env');
   let text: string;
   try {
-    text = await readFile(file, 'utf8');
+    text = await readFile(path.join(REPO_ROOT, '.env'), 'utf8');
   } catch {
     return;
   }
@@ -21,19 +20,11 @@ async function main(): Promise<void> {
   await loadDotEnv();
   const server = await createBeetleServer();
   const info = await server.start();
-  for (const note of server.startupNotes()) console.log(`[beetle] ${note}`);
-  const secretsPath = server.secrets.filePath;
-  const relative = secretsPath ? path.relative(REPO_ROOT, secretsPath) : '';
-  const secretsNote = secretsPath
-    ? `agent token: ${relative && !relative.startsWith('..') ? relative : secretsPath}`
-    : 'agent token: from environment';
-  console.log(`[beetle] listening on ${server.config.host}:${info.port} (${info.url}); ${secretsNote}`);
-  // The director URL carries the token: print it only when the token was just generated into the secrets file,
-  // or when explicitly asked, so screen recordings and redirected logs do not capture a long-lived secret.
-  if (server.secrets.sources.director === 'file' || process.env.BEETLE_PRINT_DIRECTOR_URL === '1') {
-    console.log(`[beetle] director: ${info.publicUrl}/director?token=${server.tokens.director}`);
-  } else {
-    console.log(`[beetle] director: ${info.publicUrl}/director?token=<BEETLE_DIRECTOR_TOKEN from environment>`);
+  console.log(`[beetle] listening on ${server.config.host}:${info.port}; model ${server.config.modelName}`);
+  console.log(`[beetle] open ${info.url}/ (pages on this machine fetch the token automatically)`);
+  // The token link is printed only when the token was just generated, so logs and recordings do not keep a long-lived secret.
+  if (server.secrets.source === 'generated') {
+    console.log(`[beetle] other devices: ${info.publicUrl}/?token=${server.tokens.director}`);
   }
 
   let stopping = false;

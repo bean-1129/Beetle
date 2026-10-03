@@ -2,11 +2,9 @@ import { defineConfig, type Plugin, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 import { studio2dRuntimePlugin } from './src/studio2d/build/runtime-plugin.mjs';
 
-// Clean routes in dev. In production the server maps these paths to the html files itself.
+// Clean routes in dev. In production the server maps these paths to studio2d.html itself.
 const PAGES: Record<string, string> = {
-  '/director': '/director.html',
-  '/play': '/play.html',
-  '/controller': '/controller.html',
+  '/': '/studio2d.html',
   '/2d': '/studio2d.html',
 };
 
@@ -36,7 +34,6 @@ export default defineConfig({
     strictPort: false,
     proxy: {
       '/api': { target: 'http://127.0.0.1:7700', changeOrigin: false },
-      '/ws': { target: 'ws://127.0.0.1:7700', ws: true, changeOrigin: false },
     },
   },
   build: {
@@ -47,19 +44,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 4000,
     rollupOptions: {
       input: {
-        index: 'index.html',
-        director: 'director.html',
-        play: 'play.html',
-        controller: 'controller.html',
         studio2d: 'studio2d.html',
       },
       output: {
         manualChunks(id) {
-          // keep Babylon's lazily imported shader modules as their own small chunks
-          if (id.includes('node_modules/@babylonjs/') && !id.includes('/Shaders/') && !id.includes('/ShadersWGSL/')) return 'babylon';
           if (id.includes('node_modules/react') || id.includes('node_modules/scheduler')) return 'react';
-          if (id.includes('node_modules/zod')) return 'zod';
-          if (id.includes('node_modules/qrcode')) return 'qrcode';
           return undefined;
         },
       },

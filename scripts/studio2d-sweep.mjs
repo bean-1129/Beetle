@@ -1,7 +1,7 @@
 // Studio2D level sweep: generate worlds across many seeds for every genre and report how many
 // levels the playtest bot finishes on the first or second try.
 //   node scripts/studio2d-sweep.mjs [seeds=40] [genre]
-import { buildWorld } from "../src/studio2d/world/levels.ts";
+import { buildWorld } from "../apps/web/src/studio2d/world/levels.ts";
 
 const seeds = Number(process.argv[2] || 40);
 const only = process.argv[3];

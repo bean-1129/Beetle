@@ -15,5 +15,5 @@
     "allowImportingTsExtensions": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["packages/*/src", "apps/*/src", "tests", "scripts/*.ts", "vitest.config.ts", "vitest.integration.config.ts"]
+  "include": ["apps/*/src", "apps/web/*.ts", "tests", "scripts/*.ts", "vitest.config.ts"]
 }

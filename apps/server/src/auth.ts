@@ -1,5 +1,6 @@
 // Token comparison, Bearer parsing and loopback detection. Tokens are never logged.
 import { createHash, timingSafeEqual } from 'node:crypto';
+import { networkInterfaces } from 'node:os';
 
 export function bearerToken(headers: Record<string, unknown>): string | null {
   const raw = headers['authorization'];
@@ -38,9 +39,7 @@ export function isLoopbackUrl(url: string): boolean {
   }
 }
 
-import { networkInterfaces } from 'node:os';
-
-/** True when the address is loopback or one of this machine's own interface addresses (a page opened on the GB10 itself). */
+/** True when the address is loopback or one of this machine's own interface addresses (a page opened on this machine itself). */
 export function isSameMachine(address: string | undefined | null): boolean {
   if (!address) return false;
   if (isLoopback(address)) return true;

@@ -9,7 +9,7 @@ import { createBeetleServer, type BeetleServer } from './index.ts';
 import { parseModelJson } from './studio2d.ts';
 
 const DIRECTOR = 'd1rector-token-for-studio2d-0123456789';
-const AGENT = 'agent-token-for-studio2d-0123456789abcd';
+const OTHER = 'not-the-director-token-0123456789abcd';
 const MODEL = 'test-model:1b';
 
 type FakeModel = {
@@ -78,10 +78,6 @@ async function makeServer(ollamaBaseUrl?: string): Promise<Harness> {
     dataDir,
     publicUrl: 'http://127.0.0.1:7700',
     directorToken: DIRECTOR,
-    agentToken: AGENT,
-    startWorld: 'none',
-    loadSnapshot: false,
-    tickMode: 'manual',
     ollamaBaseUrl: ollamaBaseUrl ?? fake!.url,
     modelName: MODEL,
     webDistDir: null,
@@ -164,7 +160,7 @@ describe('2d studio routes', () => {
   it('rejects non-director tokens, missing tokens and invalid bodies', async () => {
     const { server, fake } = await makeServer();
     for (const route of ['/api/2d/llm', '/api/2d/warm', '/api/2d/cancel']) {
-      expect((await api(server, 'POST', route, { token: AGENT, body: { system: 's', prompt: 'p', id: 'x' } })).status).toBe(403);
+      expect((await api(server, 'POST', route, { token: OTHER, body: { system: 's', prompt: 'p', id: 'x' } })).status).toBe(403);
       expect((await api(server, 'POST', route, { body: { system: 's', prompt: 'p', id: 'x' } })).status).toBe(401);
     }
     const extra = await api(server, 'POST', '/api/2d/llm', { token: DIRECTOR, body: { system: 's', prompt: 'p', host: 'http://evil' } });

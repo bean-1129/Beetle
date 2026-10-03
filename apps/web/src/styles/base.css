@@ -136,37 +136,4 @@ textarea { resize: vertical; min-height: 88px; }
 .phase.failed, .phase.cancelled { color: var(--lava); }
 .phase.repairing, .phase.awaiting_safe_commit { color: var(--amber-2); }
 
-.wordmark {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s1);
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  font-size: var(--fs-2);
-  color: var(--stone);
-}
-.wordmark svg { width: 32px; height: 32px; }
 
-.qr-panel {
-  display: grid;
-  gap: var(--s1);
-  justify-items: center;
-  padding: var(--s2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--well);
-}
-.qr-panel img {
-  width: 200px; height: 200px;
-  border-radius: 8px;
-  background: var(--stone);
-  image-rendering: pixelated;
-}
-.qr-panel .url {
-  font-size: var(--fs-1);
-  word-break: break-all;
-  text-align: center;
-  color: var(--stone-2);
-  user-select: all;
-}
-.qr-panel .expires { font-size: var(--fs-1); color: var(--muted); }

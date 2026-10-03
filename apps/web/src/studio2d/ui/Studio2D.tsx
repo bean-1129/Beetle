@@ -4,9 +4,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Gamepad2, Sparkles, Hammer, Play, Download, FolderOpen, Save, Library, Check, X, LoaderCircle, Undo2, Wand2,
-  RotateCcw, Image as ImageIcon, FileJson, Trash2, Pencil, Circle, ChevronRight, Cpu, WifiOff, Package, Box,
+  RotateCcw, Image as ImageIcon, FileJson, Trash2, Pencil, Circle, ChevronRight, Cpu, WifiOff, Package,
 } from "lucide-react";
-import { takeDirectorToken } from "../../shared/token.ts";
 import type { GameSpec, Genre, Weather, ArtStyle } from "../spec/types.ts";
 import { GENRES, WEATHERS, ART_STYLES } from "../spec/types.ts";
 import { PALETTES } from "../spec/defaults.ts";
@@ -25,8 +24,6 @@ import { buildAssets } from "../assets/pipeline.ts";
 import type { Pixels } from "../assets/pixels.ts";
 import { exportHtml, projectFiles, fileName } from "../export/export.ts";
 import { Studio2DPlayer } from "../runtime/player.ts";
-import { BIT } from "../engine/input.ts";
-import type { PadKeys } from "./PhonePlay.tsx";
 import { checkScript } from "../runtime/script.ts";
 import "./studio2d.css";
 
@@ -405,20 +402,12 @@ export default function Studio2D({ notify }: { notify?: (m: string) => void }) {
   }
 
   const online = status?.online;
-  const home = useMemo(() => {
-    const token = takeDirectorToken();
-    return token ? `/director?token=${encodeURIComponent(token)}` : "/director";
-  }, []);
   return (
     <div className="studio2d-studio">
       <header className="bb-top">
         <div className="bb-brand">
-          <a className="bb-home" href={home} title="Back to Beetle 3D worlds">
-            <Box size={14} />
-            3D worlds
-          </a>
           <Gamepad2 size={18} />
-          <strong>Beetle 2D</strong>
+          <strong>BEETLE</strong>
           {spec && <span className="bb-title">{spec.meta.title}</span>}
         </div>
         <nav className="bb-tabs" role="tablist">
@@ -819,14 +808,6 @@ function PlayView(p: {
       changeStart.current = null;
     }
   };
-  const sendPad = (keys: PadKeys) => {
-    if (embedded) frame.current?.contentWindow?.postMessage({ type: "studio2d:pad", keys }, "*");
-    else {
-      let bits = 0;
-      for (const a of ["left", "right", "up", "down", "jump", "action"] as const) if (keys[a]) bits |= BIT[a];
-      local.current?.setPhoneInput(bits);
-    }
-  };
 
   // Start the player once per game (a new title means a new game).
   const gameKey = useRef("");
@@ -1036,7 +1017,6 @@ function PlayView(p: {
         {tab === "level" && <LevelEditor spec={spec} level={level} onPatch={p.onPatch} say={p.say} />}
         {tab === "code" && scripted && <CodePanel spec={spec} onCommit={p.onCommit} say={p.say} check={p.check} />}
         {tab === "spec" && <SpecPanel spec={spec} onCommit={p.onCommit} say={p.say} />}
-        {/* Phones join 3D worlds only; the 2D studio is played on this screen. */}
       </aside>
     </div>
   );

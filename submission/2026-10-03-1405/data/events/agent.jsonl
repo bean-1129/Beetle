@@ -1,6 +1,0 @@
-{"name":"worker.start","data":{"mode":"openclaw","workerId":"agent-promaxgb10-5ca9-166415","model":"qwen3.5:4b"},"ts":1791050021857,"mono":103.392892,"source":"agent"}
-{"name":"request.claimed","requestId":"req-smoke-2","worldVersion":1,"data":{"kind":"edit","mode":"openclaw"},"ts":1791050021886,"mono":131.759756,"source":"agent"}
-{"name":"job.start","requestId":"req-smoke-2","model":"qwen3.5:4b","data":{"mode":"openclaw","kind":"edit","deadlineMs":240000},"ts":1791050021886,"mono":132.387293,"source":"agent"}
-{"name":"openclaw.exec","requestId":"req-smoke-2","model":"qwen3.5:4b","outcome":"fail","durationMs":245971,"data":{"mode":"openclaw","exitCode":2,"timedOut":false,"status":"timeout","assistantTurns":1,"error":"Request timed out before a response was generated. Please try again, or increase `agents.defaults.timeoutSeconds` in your config."},"ts":1791050267862,"mono":246107.781443,"source":"agent"}
-{"name":"job.finish","requestId":"req-smoke-2","model":"qwen3.5:4b","outcome":"fail","durationMs":245985,"codes":["OPENCLAW_TIMEOUT"],"data":{"mode":"openclaw","reportId":"report-03901aa8","toolCalls":0,"assistantTurns":1},"ts":1791050267871,"mono":246116.862656,"source":"agent"}
-{"name":"worker.stop","data":{"processed":1},"ts":1791050267871,"mono":246117.089856,"source":"agent"}

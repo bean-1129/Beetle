@@ -48,7 +48,7 @@ function bootstrapSync(): string | null {
 
 /**
  * Make sure a director token is available before a page renders. On this machine the server hands it out
- * (GET /api/director/bootstrap answers only to same-machine requests), so opening /director, /2d or /play
+ * (GET /api/director/bootstrap answers only to same-machine requests), so opening / or /2d
  * without the link works. A stale stored token is replaced when the server issues a different one.
  */
 export async function ensureDirectorToken(): Promise<string | null> {
