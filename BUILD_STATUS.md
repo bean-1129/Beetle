@@ -1,6 +1,6 @@
 # BUILD_STATUS
 
-Last updated: 2026-10-03 14:36 CDT. Submission deadline set by the user: 16:30 CDT. Final checkpoint at 16:05, export and push by 16:20.
+Last updated: 2026-10-03 15:30 CDT. Submission deadline set by the user: 16:30 CDT. Final checkpoint at 16:05, export and push by 16:20.
 
 Legend: implemented = code exists; tested = an automated or recorded manual test ran and passed; untested = exists, no test run; blocked = cannot proceed without something external; omitted = deliberately cut.
 
@@ -62,6 +62,19 @@ Beetle now maps any requested game onto a mode library and a biome, then builds 
 | Agent: expansion prompt for automatic requests; briefs start small when streaming is on | implemented (measurement in progress) | packages/agent |
 | Director toggle, HUD "building ahead" line, docs | implemented | apps/web, docs/ARCHITECTURE.md |
 | Live runs | verified: extension committed 9.5 s after the trigger with the player preserved (docs/RESULTS.md); real-server integration tests 4 of 4 (tests/integration/streaming.test.ts); unattended acceptance 21 of 21 on run 3 with two extensions at 56.0 s and 10.6 s on a GPU shared with nine other workers, two of six automatic requests across three runs failed cleanly on the model side with the world untouched (docs/ACCEPTANCE.md) | |
+
+## Ralph loop (14:50 to 15:27 CDT, stopped by the integration owner before round 2 fixers could collide with the final window)
+
+Eight Opus 5.5 genre testers (adventure, racing, arena, race, survival, heist, puzzle, rush) built a game each through the real pipeline, then three fixers (latency, graphics, build time) applied their proposals, twice.
+
+| Goal | Result | Evidence |
+|---|---|---|
+| Controller to game latency under 5 ms | met: input to server tick p50 0.55 to 0.60 ms idle, p95 under 0.8 ms; under two 30 Hz input streams p50 0.5 ms, p95 16 ms (the early step contends with the fixed tick); WebSocket RTT p50 0.5 ms. Not input to photon. | docs/LATENCY.md, data/latency/latency-1791059336054.json; mechanism: an early simulation step on input arrival (apps/server/src/simulation.ts requestEarlyStep) |
+| Build time per game as low as possible | floor is model generation: 13 to 24 s on a quiet GPU for a brief; the loop's own builds read 24 to 164 s because eight briefs shared one model slot at once and several testers' servers were killed by other agents' broad process kills, forcing retries | docs/RESULTS.md, data/prompt-runs |
+| High quality graphics across genres | testers scored 4 to 5 of 10 from the tiny software-rendered browser pane, which cannot judge the real GPU output; the renderer fixer applied resize and polish changes; the neuroaesthetics pass and the asset-variation pass landed in parallel | apps/web/src/renderer |
+| Eight different genres | seven of eight genres built at least once across the two rounds (puzzle never committed: the model placed objects off its island twice); mode mapping was right in most and biome was missed twice | data/prompt-runs/run-17910570*.json and run-17910586*.json |
+
+Left for a next round: a quiet-GPU build-time measurement per genre, a frame-rate measurement on the real display, the puzzle genre's placement failures (the clearance normalization added at 14:43 addresses one cause), and the biome omission (prompt wording).
 
 ## Required test cases (section 14)
 
