@@ -133,9 +133,6 @@ export function DirectorApp() {
           <span className="title-text">{world ? stripFixture(title) : 'Waiting for a world'}</span>
           {isFixtureTitle(title) && <span className="tag">fixture</span>}
         </div>
-        <div className="scene-readout mono">
-          {connLabel} | WebSocket RTT {rttMs === null ? 'n/a' : `${Math.round(rttMs)} ms`} | tick age {stats.tickAgeMs === null ? 'no ticks' : `${Math.round(stats.tickAgeMs)} ms`} | {Math.round(stats.fps)} fps
-        </div>
       </div>
 
       <button
@@ -290,6 +287,10 @@ export function DirectorApp() {
           </div>
           {undoState.result && <div className="note">{undoState.result}</div>}
         </section>
+
+        <footer className="panel-footer mono">
+          {connLabel} | WebSocket RTT {rttMs === null ? 'n/a' : `${Math.round(rttMs)} ms`} | tick age {stats.tickAgeMs === null ? 'no ticks' : `${Math.round(stats.tickAgeMs)} ms`} | {Math.round(stats.fps)} fps
+        </footer>
       </aside>
     </div>
   );

@@ -11,7 +11,10 @@
   <body class="play">
     <canvas id="scene" aria-label="Beetle world"></canvas>
     <div id="hud"></div>
-    <div id="join-root"></div>
+    <aside id="join-drawer" class="join-drawer" aria-label="Join players" hidden>
+      <button type="button" class="join-tab" id="join-tab" aria-expanded="false" aria-controls="join-root">Join</button>
+      <div id="join-root" class="join-drawer-body"></div>
+    </aside>
     <script type="module" src="/src/play/main.ts"></script>
   </body>
 </html>
