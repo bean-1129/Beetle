@@ -4,7 +4,7 @@ html, body { height: 100%; overflow: hidden; }
 
 .director-layout {
   position: fixed; inset: 0;
-  --glass-bg: rgba(10, 32, 37, 0.4);
+  --glass-bg: rgba(10, 32, 37, 0.55);
   --panel-w: min(440px, 92vw);
 }
 #scene {
@@ -84,7 +84,7 @@ html, body { height: 100%; overflow: hidden; }
   padding: 0 0 var(--s2);
   border-bottom: 1px solid var(--border);
 }
-.panel-header .wordmark { color: var(--amber-2); }
+.panel-header .wordmark { color: var(--stone); }
 .panel-header .muted { font-size: var(--fs-1); text-transform: uppercase; letter-spacing: 0.06em; }
 
 .panel-section { padding: var(--s3) 0; border-bottom: 1px solid var(--border); display: grid; gap: var(--s1); }
@@ -102,7 +102,7 @@ html, body { height: 100%; overflow: hidden; }
   font-size: var(--fs-1);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--amber-2);
+  color: var(--stone-2); /* amber is kept for interactive and selected states */
   font-weight: 600;
 }
 .small { font-size: var(--fs-1); }
@@ -166,7 +166,7 @@ html, body { height: 100%; overflow: hidden; }
 .hints-lead { margin: var(--s2) 0 0; font-size: var(--fs-1); color: var(--stone); font-weight: 600; }
 .hints .hint-list { list-style: none; padding-left: 0; display: grid; gap: var(--s1); }
 .hints .hint-list li { margin: 0; display: grid; gap: 4px; }
-.hints .hint-list strong { color: var(--amber-2); font-weight: 600; }
+.hints .hint-list strong { color: var(--stone); font-weight: 600; }
 .panel .hint-example {
   justify-self: start;
   min-height: 0;
@@ -196,7 +196,7 @@ html, body { height: 100%; overflow: hidden; }
   gap: var(--s1);
   align-items: start;
   padding: var(--s1);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--well);
   border: 1px solid var(--border);
 }
@@ -210,7 +210,7 @@ html, body { height: 100%; overflow: hidden; }
 .status-grid dd { margin: 0; word-break: break-all; font-variant-numeric: tabular-nums; }
 
 .panel .join-panel { display: grid; gap: var(--s1); }
-.panel .join-panel h3 { margin: 0; font-size: var(--fs-1); text-transform: uppercase; letter-spacing: 0.06em; color: var(--amber-2); font-weight: 600; }
+.panel .join-panel h3 { margin: 0; font-size: var(--fs-1); text-transform: uppercase; letter-spacing: 0.06em; color: var(--stone-2); font-weight: 600; }
 .panel .join-panel .row { display: flex; gap: var(--s1); }
 .panel .join-panel .row button { flex: 1; }
 .panel .join-panel .error { color: var(--lava); font-size: var(--fs-1); }

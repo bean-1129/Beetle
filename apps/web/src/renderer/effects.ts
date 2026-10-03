@@ -43,8 +43,8 @@ export type Effects = {
 
 const RING_MS = 750;
 const PULSE_MS = 550;
-const PULSE_OVERLAY_PEAK = 0.26;
-const PULSE_EMISSIVE_PEAK = 1.1;
+const PULSE_OVERLAY_PEAK = 0.2;
+const PULSE_EMISSIVE_PEAK = 0.7;
 const ASSEMBLE_MS = 600;
 const ASSEMBLE_DROP = 1.5;
 const ASSEMBLE_SCALE = 0.9;
@@ -81,8 +81,11 @@ const THEME = {
 
 const easeOutCubic = (k: number) => 1 - (1 - k) * (1 - k) * (1 - k);
 const easeOutQuad = (k: number) => 1 - (1 - k) * (1 - k);
-/** Fast attack, long decay: a flash of light. */
-const flash = (k: number) => (k < 0.15 ? k / 0.15 : (1 - (k - 0.15) / 0.85) ** 2);
+/** Short smoothstep attack (12 %), then a cubic ease-out decay: peaks once, never overshoots. */
+const flash = (k: number) => {
+  if (k < 0.12) { const a = k / 0.12; return a * a * (3 - 2 * a); }
+  return (1 - (k - 0.12) / 0.88) ** 3;
+};
 const clamp01 = (k: number) => (k < 0 ? 0 : k > 1 ? 1 : k);
 const rand = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
 

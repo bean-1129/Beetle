@@ -3,14 +3,14 @@
   --bg: #0e2a2f;
   --bg-2: #123a40;
   --bg-3: #174951;
-  --panel: rgba(10, 32, 37, 0.4);
+  --panel: rgba(10, 32, 37, 0.55);
   --panel-border: rgba(255, 255, 255, 0.12);
   --border: rgba(255, 255, 255, 0.12);
   --well: rgba(0, 0, 0, 0.2);
   --stone: #e9e3d3;
   --stone-2: #cfc6b0;
   --text: #eef3f1;
-  --muted: #9fb7b3;
+  --muted: #a9c0bc; /* 7.8:1 on --bg, ~4.6:1 on glass over a bright sky */
   --amber: #f0b45a;
   --amber-2: #ffd27f;
   --lava: #ff5a36;
@@ -32,7 +32,7 @@
   --s2: 16px;
   --s3: 24px;
   --s4: 32px;
-  --ease: 180ms ease-out;
+  --ease: 180ms ease-out; /* nothing in the UI moves faster than this except the agent progress sweep */
   --blur: blur(12px);
 }
 
@@ -64,7 +64,7 @@ button {
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: var(--s1) var(--s2);
   min-height: 40px;
   min-width: 40px;
@@ -90,7 +90,7 @@ textarea, input[type="text"] {
   width: 100%;
   background: var(--well);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: var(--s1) 12px;
   color: var(--text);
   transition: border-color var(--ease);

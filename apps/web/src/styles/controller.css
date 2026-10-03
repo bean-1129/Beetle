@@ -1,4 +1,4 @@
-/* Phone controller: a console pad. Matte dark body with an inner bevel, soft glass panels, amber only on active states. */
+/* Phone controller: a console pad. Matte dark body (flat faces, shallow bevel), calm glass panels, amber only on active states. */
 html, body {
   height: 100%;
   overflow: hidden;
@@ -19,9 +19,9 @@ body.controller {
   --accent-2: var(--amber-2);
   --accent-soft: rgba(240, 180, 90, 0.22);
   --player: var(--stone);
-  --pad-face: linear-gradient(180deg, #1b3036, #0f1f24);
+  --pad-face: #15282e; /* flat, matte */
   --pad-face-border: rgba(233, 227, 211, 0.14);
-  --pad-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -2px 3px rgba(0, 0, 0, 0.35), 0 3px 8px rgba(0, 0, 0, 0.45);
+  --pad-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -2px 3px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.35);
   --pad-bevel-down: inset 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
@@ -52,9 +52,9 @@ body.controller {
   background: linear-gradient(var(--glass-tint), var(--glass-tint)), var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: 14px;
-  backdrop-filter: blur(14px) saturate(1.25);
-  -webkit-backdrop-filter: blur(14px) saturate(1.25);
-  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 /* ---------- generic pad button ---------- */
@@ -70,12 +70,12 @@ body.controller {
   border: 1px solid var(--pad-face-border);
   box-shadow: var(--pad-bevel);
   touch-action: none;
-  transition: background 90ms ease, box-shadow 90ms ease, transform 90ms ease, color 90ms ease;
+  transition: background 180ms ease-out, box-shadow 180ms ease-out, transform 180ms ease-out, color 180ms ease-out;
 }
 .pad-btn:hover { background: var(--pad-face); }
 .pad-btn.active {
   color: #221a0c;
-  background: radial-gradient(circle at 35% 30%, var(--amber-2), var(--amber) 60%, #d99a3e);
+  background: var(--amber); /* flat amber: the only amber on the pad is an active control */
   border-color: transparent;
   box-shadow: var(--pad-bevel-down), 0 0 0 3px var(--accent-soft);
   transform: scale(0.96);
@@ -189,7 +189,7 @@ body.controller {
 .ctl-obj-tag {
   font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
   padding: 2px 7px; border-radius: 6px;
-  background: var(--accent); color: #221a0c;
+  border: 1px solid var(--glass-border); color: var(--stone-2);
 }
 .ctl-obj-clock {
   font-size: 20px; font-weight: 700; letter-spacing: 0.03em; line-height: 1;
@@ -203,7 +203,7 @@ body.controller {
 .ctl-objective.lost .ctl-obj-clock { color: var(--muted); font-size: 15px; letter-spacing: 0.01em; }
 @keyframes clock-tick {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+  50% { transform: scale(1.03); }
 }
 .ctl-ring { transform: rotate(-90deg); flex: none; }
 .ctl-ring-track { fill: none; stroke: rgba(233, 227, 211, 0.18); stroke-width: 3.5; }
@@ -270,7 +270,7 @@ body.controller {
 .joystick-knob {
   width: 72px; height: 72px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #24404a, #15292e 60%, #0f1f24);
+  background: #1b3038;
   border: 1px solid rgba(233, 227, 211, 0.18);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -3px 6px rgba(0, 0, 0, 0.4);
   will-change: transform;
@@ -310,7 +310,7 @@ body.controller {
   -webkit-mask: radial-gradient(circle, transparent 30px, #000 31px);
   mask: radial-gradient(circle, transparent 30px, #000 31px);
   opacity: 0;
-  transition: opacity 220ms ease;
+  transition: opacity 220ms ease-out;
 }
 .face.holding .interact-fill { opacity: 1; }
 .face.holding { box-shadow: var(--pad-bevel), 0 0 0 3px var(--accent-soft); }
@@ -333,7 +333,7 @@ body.controller {
   background: linear-gradient(var(--glass-tint), var(--glass-tint)), var(--glass-bg-strong);
 }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; }
-.sheet-title { font-size: 11px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent-2); }
+.sheet-title { font-size: 11px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--stone-2); }
 .sheet-close { min-height: 36px; padding: 6px 14px; border-radius: 999px; font-size: 14px; font-weight: 700; }
 .sheet-toggle {
   display: flex; align-items: center; justify-content: space-between; gap: 14px;
@@ -355,7 +355,7 @@ body.controller {
   border-radius: 999px;
   background: rgba(233, 227, 211, 0.16);
   position: relative;
-  transition: background 160ms ease;
+  transition: background 180ms ease-out;
 }
 .sheet-toggle-knob::after {
   content: '';
@@ -364,7 +364,7 @@ body.controller {
   width: 20px; height: 20px;
   border-radius: 50%;
   background: var(--stone);
-  transition: transform 160ms ease;
+  transition: transform 180ms ease-out;
 }
 .sheet-toggle.on .sheet-toggle-knob { background: var(--accent); }
 .sheet-toggle.on .sheet-toggle-knob::after { transform: translateX(18px); background: #221a0c; }
@@ -387,7 +387,7 @@ body.controller {
 .controller-app.cue-relic .touchpad { border-color: var(--accent); box-shadow: 0 0 0 6px var(--accent-soft), var(--glass-shadow); }
 .controller-app.cue-relic .ctl-obj-relics .ctl-obj-value { animation: relic-pop 650ms ease-out; color: var(--accent-2); }
 @keyframes relic-wash {
-  0% { background-color: rgba(240, 180, 90, 0.55); }
+  0% { background-color: rgba(240, 180, 90, 0.35); }
   100% { background-color: rgba(240, 180, 90, 0); }
 }
 @keyframes relic-pop {

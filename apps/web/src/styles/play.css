@@ -3,10 +3,10 @@ html, body { overflow: hidden; height: 100%; }
 
 body.play {
   --hud-margin: var(--s3);
-  --glass-bg: rgba(10, 32, 37, 0.4);
+  --glass-bg: rgba(10, 32, 37, 0.55); /* panel text stays above 4.5:1 even over the frost or desert sky */
 }
-body.play[data-hazard="lava"] { --glass-bg: rgba(40, 22, 14, 0.4); }
-body.play[data-biome="night"] { --glass-bg: rgba(6, 12, 24, 0.4); }
+body.play[data-hazard="lava"] { --glass-bg: rgba(40, 22, 14, 0.55); }
+body.play[data-biome="night"] { --glass-bg: rgba(6, 12, 24, 0.55); }
 
 #scene {
   position: fixed;
@@ -44,7 +44,7 @@ body.play[data-biome="night"] { --glass-bg: rgba(6, 12, 24, 0.4); }
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--amber-2);
+  color: var(--stone-2); /* the world title is the panel's one focal element */
 }
 .hud-title-row { display: flex; align-items: baseline; gap: var(--s1); min-width: 0; flex-wrap: wrap; }
 .hud-world-title {
@@ -192,7 +192,7 @@ body.play[data-hazard="lava"] .hud-hazard-fill { background: var(--lava); }
   position: absolute;
   left: 50%; bottom: var(--hud-margin);
   transform: translateX(-50%);
-  max-width: min(820px, 64vw);
+  max-width: min(640px, 64vw); /* ~70 characters at 15 px */
   padding: var(--s1) var(--s2) 12px;
   opacity: 1;
 }
@@ -236,7 +236,7 @@ body.play[data-hazard="lava"] .hud-hazard-fill { background: var(--lava); }
   right: var(--hud-margin); top: 136px;
   margin: 0;
   padding: var(--s1) 12px;
-  border-radius: 8px;
+  border-radius: 12px;
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid var(--border);
   font-family: var(--mono);
@@ -278,7 +278,7 @@ body.play[data-hazard="lava"] .hud-hazard-fill { background: var(--lava); }
   writing-mode: vertical-rl;
   min-width: 0; min-height: 0;
   padding: var(--s2) var(--s1);
-  border-radius: 10px 0 0 10px;
+  border-radius: 12px 0 0 12px;
   border: 1px solid var(--border);
   border-right: none;
   background: var(--glass-bg);

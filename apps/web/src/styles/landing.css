@@ -1,6 +1,6 @@
 /* Landing: a one prompt front door. One vignette, quiet panels, the same language as the play HUD. */
 body.landing {
-  --glass-bg: rgba(10, 32, 37, 0.4);
+  --glass-bg: rgba(10, 32, 37, 0.55);
   position: relative;
   overflow-x: hidden;
 }
@@ -34,7 +34,7 @@ body.landing::before {
 
 /* ---------- header ---------- */
 .landing-header { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; }
-.landing-header .wordmark { color: var(--amber-2); }
+.landing-header .wordmark { color: var(--stone); }
 .landing-header .wordmark svg { width: 40px; height: 40px; }
 .landing-nav { display: flex; gap: var(--s1); flex-wrap: wrap; }
 .landing-nav a {
@@ -65,7 +65,7 @@ body.landing::before {
 
 /* ---------- prompt box ---------- */
 .prompt-box { display: grid; gap: var(--s2); padding: var(--s3); }
-.prompt-label { font-size: var(--fs-1); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--amber-2); }
+.prompt-label { font-size: var(--fs-1); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--stone-2); }
 .prompt-box textarea { font-size: var(--fs-3); line-height: 1.4; min-height: 88px; padding: var(--s2); }
 .prompt-box textarea::placeholder { color: rgba(159, 183, 179, 0.6); }
 .chip-group { display: flex; align-items: center; gap: var(--s1); flex-wrap: wrap; }
@@ -85,7 +85,7 @@ body.landing::before {
 .chip:hover { color: var(--amber-2); border-color: rgba(240, 180, 90, 0.5); background: transparent; }
 .prompt-actions { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
 .start { min-width: 120px; min-height: 44px; padding: var(--s1) var(--s3); font-size: var(--fs-2); font-weight: 600; }
-.prompt-note { margin: 0; flex: 1 1 280px; font-size: var(--fs-1); color: var(--amber-2); line-height: 1.5; }
+.prompt-note { margin: 0; flex: 1 1 280px; font-size: var(--fs-1); color: var(--stone-2); line-height: 1.5; max-width: 60ch; }
 
 /* ---------- value cards ---------- */
 .values { display: grid; gap: var(--s2); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
@@ -95,7 +95,7 @@ body.landing::before {
 
 /* ---------- server status ---------- */
 .landing-status { padding: var(--s3); display: grid; gap: var(--s2); }
-.landing-status h2 { margin: 0; font-size: var(--fs-1); color: var(--amber-2); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.landing-status h2 { margin: 0; font-size: var(--fs-1); color: var(--stone-2); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
 .landing-status dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--s1) var(--s2); margin: 0; font-size: var(--fs-2); }
 .landing-status dt { color: var(--muted); }
 .landing-status dd { margin: 0; word-break: break-all; font-variant-numeric: tabular-nums; }

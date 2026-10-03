@@ -54,7 +54,7 @@ export function createParticles(scene: Scene) {
   }
 
   // --- serene: fireflies (additive, blinking) and pollen (soft, slow) ---
-  const fireflies = make('fx:fireflies', 110, ParticleSystem.BLENDMODE_ADD, 16);
+  const fireflies = make('fx:fireflies', 80, ParticleSystem.BLENDMODE_ADD, 14); // ~80 alive (14/s x 5.75 s)
   {
     const ps = fireflies.ps;
     ps.minSize = 0.09; ps.maxSize = 0.2;
@@ -65,7 +65,7 @@ export function createParticles(scene: Scene) {
     ps.gravity = new Vector3(0, 0, 0);
     ps.addColorGradient(0, new Color4(0, 0, 0, 0));
     ps.addColorGradient(0.2, new Color4(1, 0.85, 0.35, 1));
-    ps.addColorGradient(0.45, new Color4(0.2, 0.25, 0.05, 1));
+    ps.addColorGradient(0.45, new Color4(0.45, 0.5, 0.2, 1)); // soft blink: never off, no flicker
     ps.addColorGradient(0.65, new Color4(0.9, 1, 0.45, 1));
     ps.addColorGradient(1, new Color4(0, 0, 0, 0));
     ps.minAngularSpeed = 0; ps.maxAngularSpeed = 0;
@@ -85,7 +85,7 @@ export function createParticles(scene: Scene) {
   }
 
   // --- volcanic: embers rising from the lava plane, sparse ash falling ---
-  const embers = make('fx:embers', 260, ParticleSystem.BLENDMODE_ADD, 70);
+  const embers = make('fx:embers', 160, ParticleSystem.BLENDMODE_ADD, 48); // ~155 alive (48/s x 3.2 s)
   {
     const ps = embers.ps;
     ps.minSize = 0.07; ps.maxSize = 0.17;
@@ -114,7 +114,7 @@ export function createParticles(scene: Scene) {
   }
 
   // --- frost: snow drifting down over the islands ---
-  const snow = make('fx:snow', 420, ParticleSystem.BLENDMODE_STANDARD, 70);
+  const snow = make('fx:snow', 140, ParticleSystem.BLENDMODE_STANDARD, 12); // ~130 alive (12/s x 11 s)
   {
     const ps = snow.ps;
     ps.minSize = 0.06; ps.maxSize = 0.14;

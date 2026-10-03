@@ -19,7 +19,7 @@ import type { Materials } from './materials.ts';
 export { themeForHazard, themeFor, lavaOf, biomeOf, THEME_NAMES };
 export type { ThemeName, ThemeParams, BiomeName };
 
-export const THEME_BLEND_MS = 2000;
+export const THEME_BLEND_MS = 2200; // smoothstep-eased (see update): 2 to 2.5 s reads as a scene change, not a cut
 
 const COLOR_KEYS = [
   'skyZenith', 'skyHorizon', 'skyGround', 'sunColor', 'cloudColor', 'cloudUnderGlow', 'hemiColor', 'hemiGround', 'ambient', 'clearColor',
@@ -180,7 +180,8 @@ export function createEnvironment(scene: Scene, mats: Materials, sun: Directiona
   let dirty = true;
   // short sun/hemi pulse (world commit)
   let pulseStart = -1;
-  const PULSE_MS = 320;
+  const PULSE_MS = 400;
+  const PULSE_AMPLITUDE = 0.1; // key light pulse capped at +10 % (half-sine, no overshoot)
 
   const sunDirV = new Vector3();
   const sunPos = new Vector3();
@@ -231,7 +232,7 @@ export function createEnvironment(scene: Scene, mats: Materials, sun: Directiona
     let pulse = 0;
     if (pulseStart >= 0) {
       const f = (performance.now() - pulseStart) / PULSE_MS;
-      if (f >= 1) pulseStart = -1; else pulse = Math.sin(f * Math.PI) * 0.35;
+      if (f >= 1) pulseStart = -1; else pulse = Math.sin(f * Math.PI) * PULSE_AMPLITUDE;
     }
     sun.intensity = live.sunIntensity * (1 + pulse);
     sun.diffuse.copyFrom(live.sunColor);
