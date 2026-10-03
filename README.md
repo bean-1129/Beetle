@@ -2,7 +2,7 @@
 
 Any game, one prompt, then keep changing it while they play.
 
-Beetle turns any game request into a playable 3D game inside a growing library of engine mechanics, then lets the designer change it live while people play. A designer types a brief ("king of the hill on a frozen arena, hold ten seconds", "a relic hunt across lava islands against a two-minute clock"); a local model maps the request onto the closest supported game mode and biome, says which it chose, and composes a playable world; two people join from their phones; the designer keeps editing the mode, the biome, the bridges, the hazard and the pace while they play. Every change is validated by deterministic game code, repaired by the agent when it fails, and committed as a new world version without disconnecting anyone or resetting progress.
+Beetle generates 2D games and 3D worlds from one prompt. A 3D request becomes a playable 3D game inside a growing library of engine mechanics, and the designer changes it live while people play; a 2D request opens the Beetle 2D studio (below), which builds a complete 2D game in the browser. A designer types a brief ("king of the hill on a frozen arena, hold ten seconds", "a relic hunt across lava islands against a two-minute clock"); a local model maps the request onto the closest supported game mode and biome, says which it chose, and composes a playable world; two people join from their phones; the designer keeps editing the mode, the biome, the bridges, the hazard and the pace while they play. Every change is validated by deterministic game code, repaired by the agent when it fails, and committed as a new world version without disconnecting anyone or resetting progress.
 
 Everything runs on one machine. Model inference is Ollama on loopback. The agent runtime is OpenClaw with Beetle-specific tools, verified live against the real server; a clearly labelled in-process direct harness is the fallback and is named `[direct]` in every report it produces. There is no cloud fallback. For how Beetle relates to one-prompt game generators, see docs/COMPETITIVE.md.
 
@@ -113,6 +113,21 @@ A brief now builds only the zone around the spawn, 2 to 4 islands, and Beetle gr
 To turn it off, untick "Grow the world as players explore" in the director panel (it posts `{ autoExpand: false }` to `POST /api/director/settings` with the director token), or send that request yourself. The setting defaults to on.
 
 Status (2026-10-03 15:20 CDT): the contract, the `add_island` / `remove_island` ops and their applier, the raised limits (24 islands, 48 bridges), the director toggle and the trail tagging are implemented today; the server-side frontier trigger and settings route are being landed by their owners. Measured numbers (time from frontier to committed extension, failure rate): not yet measured; docs/RESULTS.md has no streaming run at the time of writing. See docs/ARCHITECTURE.md "Streaming generation" for the trigger, cooldown and validator checks.
+
+## Beetle 2D
+
+Beetle 2D is the 2D game studio inside Beetle. Open `/2d` on the running server (for example `http://127.0.0.1:<port>/2d`), or pick "2D game" next to the prompt on the landing page, type a sentence and press "Make the 2D game"; the landing page opens `/2d?prompt=...` and carries `?token=` when its link had one (the model routes need the director token; without it the studio reads the sentence directly and still builds a game). The director panel has a quiet "2D studio" link to the same page.
+
+What it does, from code in `apps/web/src/studio2d` (page `apps/web/studio2d.html`):
+
+- Reads the sentence into a game spec: genre, title, setting, palette, entities, rules, controls, HUD and levels. Genres: platformer, runner, top-down adventure, arena shooter, puzzle (crates, switches, keys and doors), physics builder and lane defense (`GENRES` in spec/types.ts, standard entities per genre in spec/kit.ts).
+- Builds levels with code and checks them: chunk-stitched platformer and runner layouts, rooms and corridors for top-down, puzzle rooms generated backwards from their solution, builder levels proven solvable by simulation, defense lawns with waves per lane; then a playtest bot plays each level with the player's real inputs, and failing levels are rerolled easier (world/*.ts).
+- Draws procedural pixel sprites, tiles and parallax backgrounds, and synthesises sound effects and music, so a game is complete with no downloaded art.
+- Validates and repairs every spec (spec/validate.ts) and applies changes as small patches; "make the jumps higher" or "add a boss" becomes a natural-language patch that is checked before it is applied (gen/nlpatch.ts).
+- Uses the same local model as the 3D side through the server routes under `/api/2d/`; with no model reachable the sentence is read directly and the procedural art stays.
+- Exports a game as one self-contained HTML file with the player, spec and art inlined and a content security policy that blocks the network (export/export.ts).
+
+Status (2026-10-03): implemented today in the browser studio, with unit tests in tests/unit/studio2d-*.test.ts. Generation time, level pass rate and model success rate for 2D are not yet measured; docs/RESULTS.md has no 2D run at the time of writing. Layout and routes: docs/ARCHITECTURE.md "Beetle 2D"; genres: docs/CAPABILITIES.md; how to run it: docs/RUNBOOK.md.
 
 ## What works today (2026-10-03, measured on the GB10)
 

@@ -258,3 +258,54 @@ A world is either floating islands over a hazard or one continuous landmass. The
 ### Validator unchanged
 
 The validator (packages/world/src/validate.ts) needs no terrain branch, because zones and crossings keep their geometry: island discs still carry centre and radius, bridges still join two rims, and the walk field is compiled from the same shapes. Every existing check applies unchanged on ground (`ISLAND_OVERLAP`, `OUT_OF_BOUNDS`, the bridge geometry codes, reachability of spawns, relics and the gate, `OBJECT_NOT_ON_SURFACE`, the live `PLAYER_CUT_OFF` and `OCCUPIED_SUPPORT` checks). Reachability means the same thing on both: a relic off the walk field is unreachable whether the gap below it is water or the side of a plateau.
+
+## Beetle 2D (added 16:05 CDT)
+
+Beetle builds 2D games as well as 3D worlds. The 2D studio is a separate page with its own engine; it shares the server, the local model, the director token and the visual language with the 3D side, and nothing in the 3D contract, world package or simulation changes.
+
+### Page and entry points
+
+- `apps/web/studio2d.html`, served at `/2d` (clean route in apps/web/vite.config.ts, built as the `studio2d` input). Entry `src/studio2d/page/main.tsx` installs the browser bridge, then mounts `ui/Studio2D.tsx` full page.
+- The landing page offers "3D world" or "2D game" next to the prompt: 3D goes to `/director?prompt=...`, 2D goes to `/2d?prompt=...`; both carry `?token=` when the landing link had one. The director panel header has a quiet "2D studio" link to `/2d`. The token lives in sessionStorage under `beetle.directorToken` (`shared/token.ts`), so it follows the user between pages in the same tab.
+
+### Module layout (apps/web/src/studio2d)
+
+| Folder | Contents |
+|---|---|
+| spec | `GameSpec` types and the seven genres (`GENRES` in types.ts), per-genre defaults (rules, controls, HUD, palettes), the standard entity kit per genre (kit.ts), behaviours, the patch format (patch.ts) and the validator with repair (validate.ts) |
+| engine | fixed-step game loop, input, physics, behaviours, seeded RNG; runs headless for checks and the playtest bot |
+| world | level generators per genre: platformer and runner chunk stitching, top-down rooms and arena, puzzle rooms built backwards from their solution with an exact solver, physics-builder levels proven by simulation, lane defense; `levels.ts` runs outline, layout, populate, validate, decorate; `bot.ts` is the playtest bot |
+| assets | procedural pixel sprites, character rigs, tiles, parallax backgrounds, sprite sheets and asset checks |
+| audio | synthesised sound effects, music and the mixer |
+| render | the 2D canvas renderer |
+| gen | the model side: idea to design document (design.ts), natural-language patches (nlpatch.ts), Studio2D Script for games outside the genres (script.ts), the build pipeline and a worker |
+| runtime | the player (`player.ts`, `script-player.ts`), the Studio2D Script runtime and checker, and `entry.ts`, the entry of the sandboxed play frame and of exported games |
+| samples | hand-written sample games and script templates |
+| export | single-file HTML export and project files |
+| build | `runtime-plugin.mjs`, a Vite plugin that bundles `runtime/entry.ts` with esbuild into one self-contained script for the play frame and for exports |
+| ui | `Studio2D.tsx` and its stylesheet |
+| page, bridge.ts | the page entry and the browser bridge |
+
+### Server routes (apps/server/src/studio2d.ts)
+
+- `GET /api/2d/status` (public): whether the configured loopback Ollama answers and which models it has.
+- `POST /api/2d/warm`, `POST /api/2d/llm`, `POST /api/2d/cancel` (director token as `Authorization: Bearer`): load the model, make one JSON-schema-constrained call with a system prompt and a prompt, cancel an in-flight call by id.
+- The server uses its own configured model and Ollama endpoint; a request cannot choose the host. Limits are in `STUDIO2D_LIMITS`: at most 2 calls in flight (429 beyond), 120 s per call, 1.5 s for the status probe, default context 8192. Each call emits a `studio2d.*` event to the JSONL log.
+- Tests: apps/server/src/studio2d.test.ts.
+
+### Browser bridge (apps/web/src/studio2d/bridge.ts)
+
+The studio talks to its host only through `window.studio2d` (`Studio2DApi` in gen/ai.ts). The bridge implements it in the page:
+
+- Model calls go to `/api/2d/*` with the director token. With no model or no token, the idea is read directly by code and generation still produces a playable game; generated (image-model) art is not available and procedural art is always used.
+- Library: saved games and generated assets live in `localStorage` under the `beetle2d:` prefix (`beetle2d:library` index, `beetle2d:game:<id>` per game, `beetle2d:assets`), with size caps per game and for assets; the index is rebuilt from saved games when it is missing. Nothing is stored on the server.
+- Sandboxed staging frame: a game runs in `<iframe sandbox="allow-scripts">` loaded from a `blob:` URL, so it has an opaque origin, no access to the page, its storage or the token, and talks to the studio only through `postMessage` (live spec patches in, game events out). The newest 8 staged URLs are kept alive. Studio2D Script written by the model is statically checked and smoke-tested in a hidden frame of the same kind before it is shown.
+- Downloads and files: export and project download as browser downloads (a project is a stored zip); opening a project uses a file picker.
+
+### Export
+
+`export/export.ts` writes one HTML file containing the bundled player, the spec as JSON (escaped so it cannot close its script tag) and all art inlined, under a strict content security policy so the exported game cannot reach the network. It runs from a file with no server.
+
+### Status
+
+Implemented today: the studio, engine, generators, bridge, routes and export, with unit tests in tests/unit/studio2d-*.test.ts and route tests in apps/server/src/studio2d.test.ts. Generation time and level pass rates for 2D are not yet measured; docs/RESULTS.md has no 2D run at the time of writing.

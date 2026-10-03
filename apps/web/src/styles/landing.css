@@ -108,3 +108,9 @@ body.landing::before {
   .landing-status dl { grid-template-columns: 1fr; gap: 2px 0; }
   .landing-status dt { margin-top: var(--s1); }
 }
+
+/* ---------- 2D / 3D choice: the same chips, the chosen one holds the amber edge ---------- */
+.kind-choice .chip.on,
+.kind-choice .chip[aria-checked='true'] { color: var(--amber-2); border-color: rgba(240, 180, 90, 0.5); }
+.kind-choice .chip:focus-visible { outline: 2px solid rgba(240, 180, 90, 0.6); outline-offset: 2px; }
+.chip-group[hidden] { display: none; }

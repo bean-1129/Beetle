@@ -254,6 +254,7 @@ export function DirectorApp() {
         <header className="panel-header">
           <Wordmark />
           <span className="muted small">director</span>
+          <a href="/2d" className="muted small" style={{ marginLeft: 'auto', color: 'inherit', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '0.06em' }} title="Open the Beetle 2D studio">2D studio</a>
         </header>
 
         {!token && (

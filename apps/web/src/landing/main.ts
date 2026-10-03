@@ -72,14 +72,56 @@ for (const c of biomeChips) {
   }, `Add: ${c.phrase}`));
 }
 
-function directorUrl(prompt: string): string {
+// ---------- what to build: a 3D world (director) or a 2D game (Beetle 2D studio) ----------
+type Kind = '3d' | '2d';
+let kind: Kind = '3d';
+try { if (sessionStorage.getItem('beetle.landingKind') === '2d') kind = '2d'; } catch { /* ignore */ }
+const kindButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('#kind-choice .kind'));
+const modeGroup = el('mode-group');
+const biomeGroup = el('biome-group');
+const nav2d = el('nav-2d') as HTMLAnchorElement;
+
+function pageUrl(path: '/director' | '/2d', prompt: string): string {
   const params = new URLSearchParams();
   if (token) params.set('token', token);
   if (prompt) params.set('prompt', prompt);
   const q = params.toString();
-  return `/director${q ? `?${q}` : ''}`;
+  return `${path}${q ? `?${q}` : ''}`;
 }
+function directorUrl(prompt: string): string { return pageUrl('/director', prompt); }
+function studio2dUrl(prompt: string): string { return pageUrl('/2d', prompt); }
+
+function setKind(next: Kind) {
+  kind = next;
+  try { sessionStorage.setItem('beetle.landingKind', next); } catch { /* ignore */ }
+  for (const b of kindButtons) {
+    const on = b.dataset.kind === next;
+    b.setAttribute('aria-checked', on ? 'true' : 'false');
+    b.classList.toggle('on', on);
+  }
+  // Mode and biome chips describe 3D worlds; the 2D studio reads the genre from the sentence.
+  modeGroup.hidden = next === '2d';
+  biomeGroup.hidden = next === '2d';
+  promptEl.placeholder = next === '2d' ? 'Describe a 2D game, for example a cave platformer with bats and a lantern' : 'Describe a game';
+  updateNote();
+}
+for (const b of kindButtons) {
+  b.addEventListener('click', () => { setKind(b.dataset.kind === '2d' ? '2d' : '3d'); promptEl.focus(); });
+  b.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    setKind(kind === '3d' ? '2d' : '3d');
+    kindButtons.find((x) => x.dataset.kind === kind)?.focus();
+  });
+}
+
 function updateNote() {
+  if (kind === '2d') {
+    noteEl.textContent = token ? '' : 'No director token on this link. The 2D studio still opens and reads the sentence directly; the local model needs the director link printed by the server at startup.';
+    noteEl.hidden = !!token;
+    startBtn.textContent = 'Make the 2D game';
+    return;
+  }
   if (!token) {
     noteEl.textContent = 'No director token on this link. The server prints the director link with its token at startup; open this page from that link.';
     noteEl.hidden = false;
@@ -94,6 +136,10 @@ promptEl.addEventListener('input', updateNote);
 form.addEventListener('submit', (e) => {
   e.preventDefault();
   const text = promptEl.value.trim().slice(0, 1000);
+  if (kind === '2d') {
+    location.assign(studio2dUrl(text));
+    return;
+  }
   if (!token) {
     noteEl.textContent = 'No director token on this link. Open the director link printed by the server at startup; it carries the token.';
     noteEl.hidden = false;
@@ -102,7 +148,8 @@ form.addEventListener('submit', (e) => {
   location.assign(directorUrl(text));
 });
 navDirector.href = directorUrl('');
-updateNote();
+nav2d.href = studio2dUrl('');
+setKind(kind);
 
 // ---------- server status ----------
 async function refresh() {

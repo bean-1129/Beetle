@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
     <title>Beetle</title>
-    <meta name="description" content="Describe a game. Play it in seconds. Change it while you play." />
+    <meta name="description" content="Describe a game. Build a 3D world or a 2D game in seconds. Change it while you play." />
     <link rel="stylesheet" href="/src/styles/base.css" />
     <link rel="stylesheet" href="/src/styles/landing.css" />
   </head>
@@ -17,6 +17,7 @@
           <a href="/play">Play screen</a>
           <a href="/controller">Controller</a>
           <a href="/director" id="nav-director">Director</a>
+          <a href="/2d" id="nav-2d">2D studio</a>
         </nav>
       </header>
 
@@ -27,11 +28,18 @@
       <form class="prompt-box glass" id="prompt-form" aria-label="Describe a game">
         <label for="prompt" class="prompt-label">One prompt</label>
         <textarea id="prompt" name="prompt" rows="3" maxlength="1000" placeholder="Describe a game" autocomplete="off" spellcheck="false"></textarea>
-        <div class="chip-group" aria-label="Game modes">
+        <div class="chip-group" role="radiogroup" aria-label="What to build">
+          <span class="chip-group-label">Build</span>
+          <div class="chips kind-choice" id="kind-choice">
+            <button type="button" class="chip kind" role="radio" aria-checked="true" data-kind="3d" id="kind-3d" title="A 3D world for phones and the shared screen, in the director">3D world</button>
+            <button type="button" class="chip kind" role="radio" aria-checked="false" data-kind="2d" id="kind-2d" title="A 2D game in the Beetle 2D studio">2D game</button>
+          </div>
+        </div>
+        <div class="chip-group" aria-label="Game modes" id="mode-group">
           <span class="chip-group-label">Mode</span>
           <div class="chips" id="mode-chips"></div>
         </div>
-        <div class="chip-group" aria-label="Biomes">
+        <div class="chip-group" aria-label="Biomes" id="biome-group">
           <span class="chip-group-label">Biome</span>
           <div class="chips" id="biome-chips"></div>
         </div>
