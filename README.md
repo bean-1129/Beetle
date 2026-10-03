@@ -1,5 +1,9 @@
 # Beetle
 
+[![Watch the Beetle demo (1:56, with voiceover)](docs/media/beetle-demo-poster.jpg)](docs/media/beetle-demo.mp4)
+
+**[Watch the demo video (1:56, with voiceover)](docs/media/beetle-demo.mp4)**
+
 One prompt becomes a playable 2D game in seconds, on a local model, on this machine.
 
 Type an idea ("a platformer where a fox collects acorns across floating cliffs", "a tower defense where bees protect a hive"). Beetle reads it, asks the local model for a short design document, builds the levels, playtests every level with a bot, validates the result and starts the game in the page. Then change it in plain words ("make the jumps higher", "more rain", "slower enemies") and keep playing. Export the finished game as one HTML file that runs offline.
