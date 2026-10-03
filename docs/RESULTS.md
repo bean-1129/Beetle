@@ -221,3 +221,19 @@ Prompt: A chain of six small islands running from the south-west corner to the n
 - 69569 ms, failed: Failed: model output failed schema validation 3 times: relics.2.localPosition.z: Number must be less than or equal to 20; gate.localPosition.z: Number must be less than or equal to 20; decorations.0.localPosition.x: Number must be greater than or equal to -20; decorations.0.local
 - report: outcome failed, attempts 0, failedCodes [], playability none, firstModelResponse 22681 ms, validated - ms, committed - ms, total 69566 ms, tool calls 0 (); summary: [direct] failed: MODEL_OUTPUT_INVALID model output failed schema validation 3 times: relics.2.localPosition.z: Number must be
 
+
+
+## Run 3 (13:28 CDT): six fresh edits after model-output normalization
+
+Stack: real server on port 7781 with the world produced by a fresh brief (4 islands, 4 bridges, committed in 14 s), direct-mode worker, qwen3.5:4b, quiet GPU. Raw record: `run-1791052136845.json`.
+
+| Id | Kind | Status | Version | Codes seen | Elapsed |
+|---|---|---|---|---|---|
+| E1 | edit | failed | vNone -> vNone | - | 8.0 s |
+| E2 | edit | committed | vNone -> vNone | - | 2.0 s |
+| E3 | edit | committed | vNone -> vNone | - | 3.0 s |
+| E4 | edit | committed | vNone -> vNone | - | 14.0 s |
+| E5 | edit | committed | vNone -> vNone | - | 3.0 s |
+| E6 | edit | committed | vNone -> vNone | - | 8.0 s |
+
+Committed: 5 of 6 (run 2 before normalization: 2 of 6). Elapsed min/p50/max: 2.0 / 8.0 / 14.0 s. Repairs still happen (INVALID_REFERENCE and BRIDGE_CROSSES_ISLAND were reported by the validator and repaired within the two-attempt budget in E6; E1 exhausted its budget and left the world untouched). No invalid world was ever committed. Note: this run used a model-generated world, not the garden5 fixture, so the "expected failure" annotations in PROMPTS.md (written for garden5) do not apply one to one.
