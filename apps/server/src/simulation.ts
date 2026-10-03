@@ -622,7 +622,9 @@ export class Simulation {
       for (const player of state.players) {
         player.supportId = newCompiled.supportAt(player.x, player.z);
       }
-      if (JSON.stringify(spec.mode ?? null) !== previousMode || !this.modeRt) {
+      // A set_mode op resets the runtime even when it restates the current mode (an agent "restart the clock" is the
+      // same mode again): applyPatch notes 'mode' in changedIds for every set_mode op.
+      if (cand.changedIds.includes('mode') || JSON.stringify(spec.mode ?? null) !== previousMode || !this.modeRt) {
         // set_mode: timer and hold counters start over; players, relics, score and connections stay.
         this.resetMode(spec, newCompiled, now);
       } else {
