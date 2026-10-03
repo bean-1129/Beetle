@@ -3,7 +3,7 @@
 // (b) writes world coordinates or over-radius offsets into localPosition, (c) exceeds numeric limits the
 // JSON-schema grammar does not enforce. These are mechanical, unambiguous corrections; anything ambiguous is
 // left untouched so the validator reports it. Every change is recorded so the agent and the UI can show it.
-import { BIOMES, GAME_MODES, MODE_LIMITS, WORLD_LIMITS, compassName, type Biome, type GameMode, type Vec2 } from '@beetle/contracts';
+import { BIOMES, DECORATION_RADIUS, GAME_MODES, MODE_LIMITS, WORLD_LIMITS, compassName, type Biome, type GameMode, type Vec2 } from '@beetle/contracts';
 
 export type Normalization = { path: string; from: unknown; to: unknown; reason: string };
 
@@ -298,6 +298,12 @@ export function contractLongBridges(islands: IslandLike[], bridges: { from: stri
 }
 
 const OBJECT_CLEARANCE = 1.2;
+/** Decorations keep their collision radius plus a margin inside the island; relics, spawns and the gate use OBJECT_CLEARANCE. */
+function clearanceFor(obj: Record<string, unknown>): number {
+  const t = obj.type;
+  if (typeof t === 'string' && t in DECORATION_RADIUS) return Math.max(OBJECT_CLEARANCE, (DECORATION_RADIUS as Record<string, number>)[t] + 0.4);
+  return OBJECT_CLEARANCE;
+}
 
 /** Normalize a raw model WorldDraft. Returns a new object; never throws on odd shapes. */
 export function normalizeDraft(draft: unknown): { draft: unknown; normalizations: Normalization[] } {
@@ -371,7 +377,7 @@ export function normalizeDraft(draft: unknown): { draft: unknown; normalizations
     fixRef(obj, 'islandId', `${path}.islandId`);
     const island = islands.find((i) => i.id === obj.islandId);
     if (island) {
-      const lp = normalizeLocalPosition(island, obj.localPosition, OBJECT_CLEARANCE, log, `${path}.localPosition`);
+      const lp = normalizeLocalPosition(island, obj.localPosition, clearanceFor(obj), log, `${path}.localPosition`);
       if (lp) obj.localPosition = lp;
     }
   };
@@ -477,7 +483,7 @@ export function normalizePatchDraft(
         }
         const island = spec.islands.find((is) => is.id === op.islandId);
         if (island) {
-          const lp = normalizeLocalPosition(island, op.localPosition, OBJECT_CLEARANCE, log, `${path}.localPosition`);
+          const lp = normalizeLocalPosition(island, op.localPosition, clearanceFor(op), log, `${path}.localPosition`);
           if (lp) op.localPosition = lp;
         }
         break;
