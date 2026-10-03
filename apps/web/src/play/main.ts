@@ -68,6 +68,7 @@ hud.innerHTML = `
         <span class="hud-version" id="version" hidden>v0</span>
         <span class="hud-mode-chip" id="mode-chip" hidden></span>
         <span class="hud-fixture" id="fixture" hidden>fixture world</span>
+        <span class="hud-built" id="built" hidden aria-live="polite"></span>
       </div>
     </div>
   </div>
@@ -101,9 +102,9 @@ hud.innerHTML = `
     </button>
   </div>
   <pre class="hud-debug mono" id="debug" hidden></pre>
-  <div class="hud-empty glass" id="empty">
-    <h2>No world yet</h2>
-    <p>Describe one in the director.</p>
+  <div class="hud-empty" id="empty" role="status">
+    <h2>Waiting for a game</h2>
+    <p>Describe a game on the director screen</p>
   </div>
   <div class="hud-toast glass" id="toast" hidden role="status" aria-live="polite"></div>
   <div class="hud-outcome glass" id="outcome" data-result="won" hidden role="status" aria-live="polite">
@@ -118,6 +119,7 @@ const titleEl = $('title');
 const versionEl = $('version');
 const modeChipEl = $('mode-chip');
 const fixtureEl = $('fixture');
+const builtEl = $('built');
 const objectivePanel = $('objective-panel');
 const objectiveEl = $('objective');
 const timerEl = $('timer');
@@ -254,10 +256,53 @@ function readWorldInfo(spec: WorldSpec): WorldInfo {
 }
 let shownVersion = -1;
 let shownBiome: string | null = null;
+// Before the first world the canvas stays mounted but hidden (play.css, body.has-world) so no ocean or sky shows.
+let hasWorld = false;
+let autoOpenJoin: (() => void) | null = null; // set by the join drawer when a director token is present
+// "Built in X.X s" / "Changed in X.X s": elapsedMs of the committed activity entry for the shown world version.
+const CHANGED_MS = 6000;
+let builtText = '';
+let timedVersion = -1;
+let firstTimedVersion = -1;
+let builtTimer: number | null = null;
+function updateBuildTiming() {
+  if (shownVersion < 0 || timedVersion === shownVersion) return;
+  const entries = socket.activity;
+  let hit: AgentActivity | null = null;
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const e = entries[i];
+    if (e && e.phase === 'committed' && e.worldVersion === shownVersion && typeof e.elapsedMs === 'number' && Number.isFinite(e.elapsedMs)) { hit = e; break; }
+  }
+  if (!hit) return;
+  timedVersion = shownVersion;
+  const secs = elapsedSeconds(hit.elapsedMs);
+  if (builtTimer !== null) { clearTimeout(builtTimer); builtTimer = null; }
+  builtEl.hidden = false;
+  if (firstTimedVersion < 0) {
+    firstTimedVersion = shownVersion;
+    builtText = `Built in ${secs}`;
+    builtEl.textContent = builtText;
+    builtEl.classList.remove('changed');
+    return;
+  }
+  builtEl.textContent = `Changed in ${secs}`;
+  builtEl.classList.add('changed');
+  builtTimer = window.setTimeout(() => {
+    builtTimer = null;
+    builtEl.classList.remove('changed');
+    builtEl.textContent = builtText;
+    builtEl.hidden = !builtText;
+  }, CHANGED_MS);
+}
 function onWorld(msg: WorldMessage) {
   // The renderer is owned elsewhere; a failure there must not take the HUD down with it.
   try { renderer.applyWorld(msg); } catch (err) { console.error('[beetle renderer] world failed', err); }
   emptyEl.hidden = true;
+  if (!hasWorld && msg.spec) {
+    hasWorld = true;
+    document.body.classList.add('has-world'); // fades the canvas in
+    autoOpenJoin?.();
+  }
   const title = msg.spec.title || 'Untitled world';
   titleEl.textContent = stripFixture(title);
   fixtureEl.hidden = !isFixtureTitle(title);
@@ -285,6 +330,7 @@ function onWorld(msg: WorldMessage) {
       versionEl.classList.add('pulse');
     }
   }
+  updateBuildTiming();
 }
 
 // ---------- tick: objective, relic gems, score, player chips ----------
@@ -721,6 +767,7 @@ function onActivity(msg: ActivityMessage) {
   activitySoundEvents(msg);
   noteAutoActivity(msg);
   renderAgent(true);
+  updateBuildTiming();
 }
 
 // ---------- markers: forwarded to the renderer, with a quiet "<player> pinged" toast ----------
@@ -810,6 +857,15 @@ if (token) {
     const open = drawer.classList.toggle('open');
     tab.setAttribute('aria-expanded', String(open));
   });
+  // Open once, the first time a world appears, so the join QR codes are visible; the tab still toggles it after.
+  let autoOpened = false;
+  autoOpenJoin = () => {
+    if (autoOpened) return;
+    autoOpened = true;
+    drawer.classList.add('open');
+    tab.setAttribute('aria-expanded', 'true');
+  };
+  if (hasWorld) autoOpenJoin();
   const root = createRoot(document.getElementById('join-root') as HTMLElement);
   const render = () => root.render(createElement(JoinPanel, { token, controllers: socket.controllers, compact: false }));
   socket.on('controllers', render);

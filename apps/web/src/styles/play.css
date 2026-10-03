@@ -56,7 +56,14 @@ body.play[data-biome="night"] { --hud-alpha: 0.92; }
   display: block;
   outline: none;
   touch-action: none;
+  opacity: 1;
+  transition: opacity 700ms ease, visibility 0s linear 0s;
 }
+/* No world yet: keep the canvas mounted but hidden so no ocean or sky shows, only the plain gradient. */
+body.play:not(.has-world) #scene { visibility: hidden; opacity: 0; }
+body.play:not(.has-world) .hud-objective,
+body.play:not(.has-world) .hud-title-row { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) { #scene { transition: none; } }
 #hud { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
 #hud > * { pointer-events: none; }
 
@@ -113,6 +120,16 @@ body.play[data-biome="night"] { --hud-alpha: 0.92; }
 .hud-version.pulse { color: var(--amber-2); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .hud-mode-chip { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
 .hud-fixture { flex: none; font-size: var(--fs-1); color: var(--muted); }
+.hud-built {
+  flex: none;
+  font-size: var(--fs-1);
+  line-height: 1.4;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--ease);
+}
+.hud-built.changed { color: var(--amber-2); }
 
 /* ---------- top-right: objective, timer, hold rings, hazard meter, relic gems, score ---------- */
 .hud-objective {
@@ -306,17 +323,25 @@ body.play[data-hazard="lava"] .hud-hazard-fill { background: var(--lava); }
   text-overflow: ellipsis;
 }
 
-/* ---------- empty state ---------- */
+/* ---------- empty state: a studio-style card on the plain gradient (same card as the 2D studio) ---------- */
 .hud-empty {
   position: absolute;
   left: 50%; top: 50%;
   transform: translate(-50%, -50%);
-  padding: var(--s3) var(--s4);
+  display: flex; flex-direction: column; gap: var(--s1);
+  padding: 20px 22px;
   text-align: center;
-  max-width: 460px;
+  width: max-content;
+  max-width: min(460px, calc(100vw - 32px));
+  background: var(--bp-panel, rgba(var(--surface-rgb), 0.86));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--bp-shadow);
+  color: var(--ink);
 }
-.hud-empty h2 { margin: 0 0 var(--s1); font-family: var(--font-display); font-weight: 650; font-size: var(--fs-4); color: var(--stone); }
-.hud-empty p { margin: 0; color: var(--muted); font-size: var(--fs-2); }
+.hud-empty[hidden] { display: none; }
+.hud-empty h2 { margin: 0; font-family: var(--font-display); font-weight: 650; font-size: var(--fs-4); line-height: 1.2; color: var(--ink); }
+.hud-empty p { margin: 0; color: var(--muted); font-size: var(--fs-2); line-height: 1.4; }
 
 /* ---------- join drawer (right side, collapsed by default, only with a director token) ---------- */
 .join-drawer {
