@@ -74,7 +74,8 @@ export function stepMover(
   else if (mag > 1) { ax /= mag; az /= mag; }
   // Speed comes from the compiled spec (movement.speed, default MODE_LIMITS.movementSpeed.default) so set_movement
   // patches change the walk speed without touching the stepMover signature.
-  const speed = effectiveSpeed(compiled.spec);
+  const scale = Number.isFinite(input.speedScale) && (input.speedScale as number) > 0 ? Math.min(2, input.speedScale as number) : 1;
+  const speed = effectiveSpeed(compiled.spec) * scale;
   let vx = ax * speed;
   let vz = az * speed;
 

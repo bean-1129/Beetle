@@ -58,7 +58,7 @@ export type Mover = {
   statusSinceMs: number;
   supportId: string | null;
 };
-export type MoveInput = { axes: { x: number; z: number }; active: boolean }; // active=false clears velocity (stale input, disconnected)
+export type MoveInput = { axes: { x: number; z: number }; active: boolean; speedScale?: number }; // speedScale: sprint or slow multiplier, default 1 // active=false clears velocity (stale input, disconnected)
 export type StepEvent = 'fell' | 'hazard_contact' | 'respawned';
 export type StepResult = { mover: Mover; events: StepEvent[] };
 

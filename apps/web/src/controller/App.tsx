@@ -5,8 +5,9 @@ import { useBeetleSocket } from '../shared/use-socket.ts';
 import { InputSender } from '../shared/input-sender.ts';
 import { Joystick } from './Joystick.tsx';
 import { BeetleGlyph } from '../shared/Wordmark.tsx';
+import { ObjectiveStrip } from './Objective.tsx';
+import { canVibrate, useInHill, useTickCues, vibrate, type FeedbackMode } from './feedback.ts';
 
-type FeedbackMode = 'flash' | 'vibration';
 type JoinState = { phase: 'none' | 'joining' | 'joined' | 'error'; join: JoinResult | null; error: string | null };
 
 function storageKey(invite: string) { return `beetle.join.${invite}`; }
@@ -22,6 +23,10 @@ function readStoredJoin(invite: string): JoinResult | null {
   } catch { /* ignore */ }
   return null;
 }
+
+const STATUS_COPY: Record<string, string> = {
+  connected: 'Connected', connecting: 'Connecting', reconnecting: 'Reconnecting', joining: 'Joining', none: 'Waiting', error: 'Not joined',
+};
 
 export function ControllerApp() {
   const invite = useMemo(() => new URLSearchParams(location.search).get('invite'), []);
@@ -50,7 +55,7 @@ export function ControllerApp() {
     type: 'hello', role: 'controller', token: js.join?.controllerToken ?? 'unset-token', lastSeq: senderRef.current?.seq ?? 0,
   }), [js.join]);
   const view = useBeetleSocket(hello, js.phase === 'joined');
-  const { socket, state, rttMs, tick, welcome } = view;
+  const { socket, state, rttMs, tick, welcome, world } = view;
 
   if (!senderRef.current) senderRef.current = new InputSender(socket);
   const sender = senderRef.current;
@@ -76,29 +81,17 @@ export function ControllerApp() {
     };
   }, [socket, sender, releaseAll]);
 
-  // feedback preference
+  // feedback preference: flash always; vibration on top of it when enabled and supported (Android)
   const [feedback, setFeedback] = useState<FeedbackMode>(() => {
     try { return (sessionStorage.getItem('beetle.feedback') as FeedbackMode) || 'flash'; } catch { return 'flash'; }
   });
-  const canVibrate = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
-  const [flash, setFlash] = useState(false);
+  const haptics = feedback === 'vibration' && canVibrate;
   const toggleFeedback = () => {
     // user gesture: this is the only place vibration is enabled
     let next: FeedbackMode = feedback === 'vibration' ? 'flash' : 'vibration';
-    if (next === 'vibration') {
-      let ok = false;
-      try { ok = canVibrate && navigator.vibrate(20) === true; } catch { ok = false; }
-      if (!ok) next = 'flash';
-    }
+    if (next === 'vibration' && !vibrate(20)) next = 'flash';
     setFeedback(next);
     try { sessionStorage.setItem('beetle.feedback', next); } catch { /* ignore */ }
-  };
-  const pulse = () => {
-    if (feedback === 'vibration' && canVibrate) {
-      try { navigator.vibrate(18); return; } catch { /* fall through */ }
-    }
-    setFlash(true);
-    window.setTimeout(() => setFlash(false), 140);
   };
 
   const [interactDown, setInteractDown] = useState(false);
@@ -107,7 +100,7 @@ export function ControllerApp() {
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* ignore */ }
     setInteractDown(true);
     sender.setInteract(true);
-    pulse();
+    if (haptics) vibrate(12);
   };
   const onInteractUp = (e: React.PointerEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -115,38 +108,71 @@ export function ControllerApp() {
     sender.setInteract(false);
   };
 
+  const meId = js.join?.playerId ?? welcome?.playerId ?? null;
   const label = js.join?.label ?? welcome?.playerLabel ?? 'Player';
   const color = js.join?.color ?? welcome?.playerColor ?? '#9fb7b3';
   const status = js.phase !== 'joined' ? js.phase : state === 'connected' ? 'connected' : state === 'connecting' ? 'connecting' : 'reconnecting';
   const lag = tick && typeof tick.lastInputSeq === 'number' ? Math.max(0, sender.seq - tick.lastInputSeq) : null;
-  const me = tick?.players.find((p) => p.id === js.join?.playerId);
+  const me = tick?.players.find((p) => p.id === meId);
+
+  const cues = useTickCues(tick, meId, haptics);
+  const objective = tick?.objective;
+  const lost = objective?.lost === true && !tick?.gate.won;
+  const won = tick?.gate.won === true;
+  const koth = objective?.kind === 'king_of_the_hill';
+  const myHold = koth && meId ? objective?.holdSec?.[meId] ?? 0 : 0;
+  const holdTarget = koth ? objective?.holdTarget ?? 0 : 0;
+  const holdFrac = holdTarget > 0 ? Math.min(1, myHold / holdTarget) : 0;
+  const inHill = useInHill(myHold);
+  const showHold = koth && (inHill || holdFrac >= 1) && holdFrac > 0;
+
+  const centre = won
+    ? 'You did it'
+    : lost
+      ? 'Time is up'
+      : me && me.status !== 'active'
+        ? me.status === 'falling' ? 'Falling' : me.status === 'respawning' ? 'Respawning' : 'Disconnected'
+        : tick?.gate.unlocked ? 'Gate open. Go.' : '';
+
+  const appClass = [
+    'controller-app',
+    cues.relic ? 'cue-relic' : '',
+    cues.fall ? 'cue-fall' : '',
+    cues.win ? 'cue-win' : '',
+    won ? 'is-won' : '',
+    lost ? 'is-lost' : '',
+  ].filter(Boolean).join(' ');
 
   return (
-    <div className={`controller-app ${flash ? 'flash' : ''}`}>
-      <header className="ctl-top">
-        <span className="ctl-player" style={{ ['--player' as string]: color }}>
+    <div className={appClass} style={{ ['--player' as string]: color }}>
+      <div className="ctl-backdrop" aria-hidden="true" />
+
+      <header className="ctl-top ctl-glass">
+        <span className="ctl-player">
           <span className="swatch" />
-          {label}
+          <span className="ctl-player-name">{label}</span>
         </span>
-        <span className="ctl-status">
+        <span className={`ctl-status ${status}`}>
           <span className={`dot ${status === 'connected' ? 'on' : status === 'error' ? 'off' : 'warn'}`} />
-          {status}
+          <span className="ctl-status-text">{STATUS_COPY[status] ?? status}</span>
+          <span className="ctl-net mono">{rttMs === null ? '' : `${Math.round(rttMs)} ms`}{lag !== null && lag > 0 ? ` +${lag}` : ''}</span>
         </span>
-        <span className="ctl-rtt mono">WebSocket RTT {rttMs === null ? 'n/a' : `${Math.round(rttMs)} ms`}</span>
-        <span className="ctl-lag mono" title="inputs sent minus last input the server applied">lag {lag === null ? 'n/a' : lag}</span>
-        <button type="button" className="ctl-feedback" onClick={toggleFeedback} aria-pressed={feedback === 'vibration'}>
-          {feedback === 'vibration' ? 'Vibration' : 'Flash'}
-        </button>
+        {js.phase === 'joined' && <ObjectiveStrip tick={tick} spec={world?.spec ?? null} meId={meId} />}
+        {canVibrate && (
+          <button type="button" className="ctl-feedback" onClick={toggleFeedback} aria-pressed={feedback === 'vibration'}>
+            {feedback === 'vibration' ? 'Vibration on' : 'Vibration off'}
+          </button>
+        )}
       </header>
 
       {js.phase === 'error' && (
-        <div className="ctl-error" role="alert">
+        <div className="ctl-error ctl-glass" role="alert">
           <BeetleGlyph size={40} />
           <p>{js.error}</p>
           <p className="muted">Invites expire after five minutes and work once. Ask the director for a new one.</p>
         </div>
       )}
-      {js.phase === 'joining' && <div className="ctl-error"><p>Joining</p></div>}
+      {js.phase === 'joining' && <div className="ctl-error ctl-glass"><p>Joining</p></div>}
 
       {js.phase === 'joined' && (
         <main className="ctl-controls">
@@ -158,27 +184,38 @@ export function ControllerApp() {
               onChange={(x, z) => sender.setAxes(x, z)}
               onRelease={() => sender.setAxes(0, 0)}
             />
-            <div className="ctl-hint muted">move</div>
+            <div className="ctl-hint">Move</div>
           </div>
-          <div className="ctl-centre muted">
-            {me ? (me.status === 'active' ? '' : me.status) : ''}
-            {tick?.gate.won ? 'Gate entered. You won.' : tick?.gate.unlocked ? 'Gate unlocked' : ''}
+          <div className={`ctl-centre ${won ? 'won' : lost ? 'lost' : ''}`} aria-live="polite">
+            {centre && <span className="ctl-centre-pill ctl-glass">{centre}</span>}
           </div>
           <div className="ctl-right">
             <button
               type="button"
-              className={`interact ${interactDown ? 'down' : ''}`}
+              className={`interact ${interactDown ? 'down' : ''} ${showHold ? 'holding' : ''}`}
+              style={{ ['--hold' as string]: holdFrac }}
               onPointerDown={onInteractDown}
               onPointerUp={onInteractUp}
               onPointerCancel={onInteractUp}
               onLostPointerCapture={() => { setInteractDown(false); sender.setInteract(false); }}
               onContextMenu={(e) => e.preventDefault()}
-              aria-label="Interact"
+              aria-label={showHold ? `Interact. Holding the hill, ${Math.round(holdFrac * 100)} percent` : 'Interact'}
             >
-              Interact
+              <span className="interact-fill" aria-hidden="true" />
+              <span className="interact-label">Interact</span>
             </button>
+            <div className="ctl-hint">{showHold ? 'Holding the hill' : koth ? 'Stand in the hill' : 'Action'}</div>
           </div>
         </main>
+      )}
+
+      <div className="ctl-edge" aria-hidden="true" />
+      <div className="ctl-win" aria-hidden={!cues.win}><span>You did it</span></div>
+      {lost && js.phase === 'joined' && (
+        <div className="ctl-lost" role="status">
+          <span className="ctl-lost-title">Time is up</span>
+          <span className="ctl-lost-sub">Wait for the director to reset the world</span>
+        </div>
       )}
     </div>
   );

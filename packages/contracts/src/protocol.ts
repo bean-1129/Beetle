@@ -10,13 +10,25 @@ export const HelloSchema = z.discriminatedUnion('role', [
   z.object({ type: z.literal('hello'), role: z.literal('display'), worldVersion: z.number().int().min(0).optional() }).strict(),
   z.object({ type: z.literal('hello'), role: z.literal('director'), token: z.string().min(8).max(128) }).strict(),
 ]);
+/** Controller buttons. interact = collect/open (cross), sprint = hold to run (circle or R2), slow = precision walk (L2),
+ *  ping = drop a team beacon on the shared screen (triangle), emote = wave (square). All optional for older clients. */
+export const ButtonsSchema = z.object({
+  sprint: z.boolean().optional(),
+  slow: z.boolean().optional(),
+  ping: z.boolean().optional(),
+  emote: z.boolean().optional(),
+}).strict();
 export const InputSchema = z.object({
   type: z.literal('input'),
   seq: z.number().int().min(0).max(2 ** 31),
   axes: z.object({ x: z.number().finite().min(-1).max(1), z: z.number().finite().min(-1).max(1) }).strict(),
   interact: z.boolean(),
+  buttons: ButtonsSchema.optional(),
   t: z.number().finite().optional(), // client clock, echoed in ack for RTT only
 }).strict();
+export const MOVEMENT_SCALES = { sprint: 1.35, slow: 0.5 } as const;
+export const PING_LIFETIME_MS = 3000;
+export const EMOTE_DURATION_MS = 1500;
 export const PingSchema = z.object({ type: z.literal('ping'), t: z.number().finite() }).strict();
 export const AckSchema = z.object({ type: z.literal('ack'), worldVersion: z.number().int().min(0) }).strict();
 export const ResyncSchema = z.object({ type: z.literal('resync'), haveVersion: z.number().int().min(0) }).strict();
@@ -31,7 +43,11 @@ export type PlayerView = {
   id: string; slot: 0 | 1; label: string; color: string;
   x: number; z: number; y: number; vx: number; vz: number; facingDeg: number;
   status: PlayerStatus; connected: boolean; supportId: string | null;
+  sprinting?: boolean; slow?: boolean;
+  emote?: 'wave' | null; // set for EMOTE_DURATION_MS after a square press
 };
+/** A team beacon placed by a player (triangle); shown on the shared screen for PING_LIFETIME_MS. */
+export type MarkerMessage = { type: 'marker'; playerId: string; color: string; x: number; z: number; until: number };
 export type TickMessage = {
   type: 'tick';
   tick: number;
@@ -67,7 +83,7 @@ export type ActivityMessage = { type: 'activity'; entries: AgentActivity[] };
 export type ErrorMessage = { type: 'error'; code: string; message: string };
 export type PongMessage = { type: 'pong'; t: number; serverMs: number };
 export type ControllerStatusMessage = { type: 'controllers'; players: { id: string; label: string; connected: boolean; lastInputAgeMs: number | null }[] };
-export type ServerMessage = TickMessage | WorldMessage | WelcomeMessage | ActivityMessage | ErrorMessage | PongMessage | ControllerStatusMessage;
+export type ServerMessage = TickMessage | WorldMessage | WelcomeMessage | ActivityMessage | ErrorMessage | PongMessage | ControllerStatusMessage | MarkerMessage;
 
 // ---------- Agent activity / requests / reports ----------
 export const AGENT_PHASES = ['queued', 'planning', 'validating', 'repairing', 'awaiting_safe_commit', 'committed', 'failed', 'cancelled'] as const;
