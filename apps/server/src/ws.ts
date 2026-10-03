@@ -5,7 +5,7 @@ import { WebSocket, WebSocketServer, type RawData } from 'ws';
 import {
   ClientMessageSchema, MAX_MESSAGE_BYTES, PROTOCOL_VERSION, ROUTES, SIMULATION,
   type ActivityMessage, type AgentActivity, type ClientMessage, type ControllerStatusMessage, type ErrorMessage,
-  type MarkerMessage, type PongMessage, type ServerMessage, type TickMessage, type WelcomeMessage, type WorldMessage,
+  type MarkerMessage, type PadMessage, type PongMessage, type ServerMessage, type TickMessage, type WelcomeMessage, type WorldMessage,
 } from '@beetle/contracts';
 import { NO_BUTTONS } from './session.ts';
 import { safeEqual } from './auth.ts';
@@ -14,6 +14,8 @@ import type { ServerContext } from './context.ts';
 export const HELLO_TIMEOUT_MS = 3000;
 export const CONTROLLER_STATUS_EVERY_MS = 2000;
 export const ACTIVITY_SNAPSHOT_SIZE = 50;
+/** Raw pad relay cap per player; zero-axis and button-change messages always go out so releases are never lost. */
+export const PAD_RELAY_MAX_PER_SEC = 30;
 
 export type SocketRole = 'controller' | 'display' | 'director';
 
@@ -53,6 +55,8 @@ export function createWsHub(ctx: HubContext): WsHub {
   let lastControllersAt = 0;
   /** The last committed world version waiting for a display ack; the simulation never waits on it. */
   let pendingPresent: { version: number; at: number } | null = null;
+  /** Per-player pad relay state: the last relayed pad (for change detection) and a one-second send window. */
+  const padRelay = new Map<string, { last: PadMessage | null; windowStartMs: number; count: number }>();
 
   function send(conn: Conn, message: ServerMessage | string): void {
     if (conn.ws.readyState !== WebSocket.OPEN) return;
@@ -141,6 +145,48 @@ export function createWsHub(ctx: HubContext): WsHub {
     send(conn, controllersMessage());
   }
 
+  function sendToScreens(message: ServerMessage): void {
+    const json = JSON.stringify(message);
+    for (const conn of connections) {
+      if (conn.role === 'display' || conn.role === 'director') send(conn, json);
+    }
+  }
+
+  /** Relays an accepted controller input as a PadMessage, at most PAD_RELAY_MAX_PER_SEC per player per second;
+   *  a pad whose axes are zero or whose buttons/interact changed since the last relayed one is always sent. */
+  function relayPad(pad: PadMessage, now: number): void {
+    let state = padRelay.get(pad.playerId);
+    if (!state) {
+      state = { last: null, windowStartMs: now, count: 0 };
+      padRelay.set(pad.playerId, state);
+    }
+    if (now - state.windowStartMs >= 1000 || now < state.windowStartMs) {
+      state.windowStartMs = now;
+      state.count = 0;
+    }
+    const last = state.last;
+    const zeroAxes = pad.axes.x === 0 && pad.axes.z === 0;
+    const buttonsChanged = !last || last.interact !== pad.interact
+      || last.buttons.sprint !== pad.buttons.sprint || last.buttons.slow !== pad.buttons.slow
+      || last.buttons.ping !== pad.buttons.ping || last.buttons.emote !== pad.buttons.emote;
+    if (state.count >= PAD_RELAY_MAX_PER_SEC && !zeroAxes && !buttonsChanged) return;
+    state.count += 1;
+    state.last = pad;
+    sendToScreens(pad);
+  }
+
+  /** One zeroed pad (all axes zero, nothing held) when a controller goes away, so screens release its inputs. */
+  function relayPadRelease(playerId: string): void {
+    const player = ctx.session.player(playerId);
+    padRelay.delete(playerId);
+    if (!player) return;
+    const pad: PadMessage = {
+      type: 'pad', playerId: player.id, slot: player.slot, seq: player.lastInputSeq,
+      axes: { x: 0, z: 0 }, interact: false, buttons: { sprint: false, slow: false, ping: false, emote: false },
+    };
+    sendToScreens(pad);
+  }
+
   function bindController(conn: Conn, token: string, lastSeq?: number): void {
     const player = ctx.session.playerForToken(token);
     if (!player) {
@@ -159,6 +205,7 @@ export function createWsHub(ctx: HubContext): WsHub {
       rt.interactPrev = false;
       rt.buttons = { ...NO_BUTTONS };
     }
+    padRelay.delete(player.id);
     for (const other of connections) {
       if (other !== conn && other.playerId === player.id) {
         other.playerId = null;
@@ -240,6 +287,10 @@ export function createWsHub(ctx: HubContext): WsHub {
       || prevButtons.sprint !== rt.buttons.sprint || prevButtons.slow !== rt.buttons.slow
       || prevButtons.ping !== rt.buttons.ping || prevButtons.emote !== rt.buttons.emote;
     if (changed) ctx.sim.requestEarlyStep();
+    relayPad({
+      type: 'pad', playerId: player.id, slot: player.slot, seq: msg.seq,
+      axes: { ...rt.axes }, interact: rt.interact, buttons: { ...rt.buttons },
+    }, now);
   }
 
   function handleMessage(conn: Conn, data: RawData, isBinary: boolean): void {
@@ -312,6 +363,7 @@ export function createWsHub(ctx: HubContext): WsHub {
       if (player && !stillBound) {
         ctx.session.markDisconnected(player, ctx.clock.now());
         ctx.events.emit({ name: 'player.leave', sessionId: ctx.session.state.sessionId, worldVersion: ctx.world.version, data: { playerId: player.id, slot: player.slot } });
+        relayPadRelease(player.id);
         broadcastControllers();
       }
     }
@@ -425,6 +477,7 @@ export function createWsHub(ctx: HubContext): WsHub {
         n += 1;
         try { conn.ws.close(4002, 'replaced by a newer controller'); } catch { /* ignore */ }
       }
+      if (n > 0) relayPadRelease(playerId);
       return n;
     },
     counts() {
