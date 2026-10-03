@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { ActivityMessage, AgentActivity, AgentPhase, HelloMessage, PlayerStatus, TickMessage, WorldMessage } from '@beetle/contracts';
