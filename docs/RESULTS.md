@@ -428,3 +428,7 @@ the whole time (nvidia-smi 72 to 91 % busy before our calls), so the model wait 
   repair). The prompt now carries one complete valid answer (suggested centres 18 m beyond the rim, checked for clearance)
   and the agent converts a world-position localPosition on a new island to an offset before staging; no INVALID_SCHEMA
   afterwards.
+
+## Streaming extension through OpenClaw mode (15:26 CDT, port 7781, seed2, OpenClaw worker)
+
+A scripted player walked east on haven; the server raised the automatic request; OpenClaw's agent run read the world, staged "Add two new islands east of haven with decorations and bridges from haven", the validator and connectivity checks passed, and v2 committed 49.3 s after the trigger (islands island-east1 and island-east2). The play HUD showed "Beetle is building ahead to the east" during the request. Submission path verified for streaming as well as briefs and edits.
