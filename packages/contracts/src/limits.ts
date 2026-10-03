@@ -6,19 +6,19 @@ export const COMPILER_VERSION = 1 as const;
 export const PROTOCOL_VERSION = 1 as const;
 
 export const WORLD_LIMITS = {
-  islands: { min: 4, max: 8 },
-  bridges: { max: 16 },
+  islands: { min: 2, max: 24 },
+  bridges: { max: 48 },
   spawns: 2,
   relics: 3,
   gates: 1,
-  decorations: { max: 40 },
+  decorations: { max: 96 },
   island: { minRadius: 4, maxRadius: 14 },
   bridge: { minWidth: 1.6, maxWidth: 4, minLength: 1, maxLength: 36 },
   bounds: { halfExtent: 60 },
   title: { maxLength: 60 },
   name: { maxLength: 40 },
   summary: { maxLength: 240 },
-  patchOps: { max: 12 },
+  patchOps: { max: 16 },
   localOffset: 20,
 } as const;
 
@@ -37,6 +37,14 @@ export const GEOMETRY = {
   socketTolerance: 0.35,
   fallDurationMs: 700,
   respawnDurationMs: 900,
+} as const;
+
+/** Streaming generation: the brief builds the zone around the spawn; Beetle extends the world ahead of players. */
+export const STREAMING = {
+  frontierMeters: 4,        // a player this close to an island rim with no crossing beyond triggers an extension
+  cooldownMs: 12000,        // minimum gap between automatic extensions
+  maxIslands: 24,           // hard stop for automatic growth
+  islandsPerExtension: { min: 1, max: 2 },
 } as const;
 
 export const SIMULATION = {

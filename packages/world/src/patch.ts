@@ -145,6 +145,58 @@ export function applyPatch(
         note('title');
         break;
       }
+      case 'add_island': {
+        if (allIds(out).has(op.id)) { issues.push(issue('DUPLICATE_ID', `ops[${i}] add_island: id "${op.id}" already exists`, [op.id], ev())); break; }
+        if (out.islands.length >= WORLD_LIMITS.islands.max) { issues.push(issue('RESOURCE_LIMIT', `ops[${i}] add_island "${op.id}": world already has ${out.islands.length} islands (max ${WORLD_LIMITS.islands.max})`, [op.id], ev({ count: out.islands.length, max: WORLD_LIMITS.islands.max }))); break; }
+        const H = WORLD_LIMITS.bounds.halfExtent;
+        let cx = Math.min(H - op.radius, Math.max(-(H - op.radius), op.center.x));
+        let cz = Math.min(H - op.radius, Math.max(-(H - op.radius), op.center.z));
+        // Deterministic overlap resolution: push the new island away from the nearest existing island until the 1.25 m gap holds.
+        for (let iter = 0; iter < 40; iter++) {
+          let worst: { dx: number; dz: number; depth: number } | null = null;
+          for (const is of out.islands) {
+            const dx = cx - is.center.x; const dz = cz - is.center.z;
+            const d = Math.hypot(dx, dz) || 1e-6;
+            const depth = is.radius + op.radius + 1.25 - d;
+            if (depth > 1e-4 && (!worst || depth > worst.depth)) worst = { dx: dx / d, dz: dz / d, depth };
+          }
+          if (!worst) break;
+          cx = Math.min(H - op.radius, Math.max(-(H - op.radius), cx + worst.dx * worst.depth));
+          cz = Math.min(H - op.radius, Math.max(-(H - op.radius), cz + worst.dz * worst.depth));
+        }
+        const centre = { x: round3(cx), z: round3(cz) };
+        if (centre.x !== op.center.x || centre.z !== op.center.z) normalizations.push({ path: `ops[${i}].center`, from: op.center, to: centre, reason: 'island moved to clear existing islands or the bounds' });
+        out.islands.push({ id: op.id, name: op.name, center: centre, radius: op.radius, topElevation: 0 });
+        note(op.id);
+        // Crossing from an anchor island (given or nearest), as a regular bridge subject to the same validation.
+        const anchorId = op.bridgeFrom ?? out.islands.filter((is) => is.id !== op.id).sort((a, b) => dist(a.center, centre) - dist(b.center, centre))[0]?.id;
+        const anchor = anchorId ? out.islands.find((is) => is.id === anchorId) : undefined;
+        if (!anchor) { issues.push(issue('INVALID_REFERENCE', `ops[${i}] add_island "${op.id}": unknown bridgeFrom island "${op.bridgeFrom}"`, [op.id, String(op.bridgeFrom)], ev())); break; }
+        if (out.bridges.length < WORLD_LIMITS.bridges.max) {
+          const bid = `bridge-${anchor.id}-${op.id}`.slice(0, 32);
+          if (!allIds(out).has(bid)) {
+            const pa = rimPointToward(anchor.center, anchor.radius, centre);
+            const pb = rimPointToward(centre, op.radius, anchor.center);
+            out.bridges.push({ id: bid, endpoints: [{ islandId: anchor.id, point: { x: round3(pa.x), z: round3(pa.z) } }, { islandId: op.id, point: { x: round3(pb.x), z: round3(pb.z) } }], width: DEFAULT_BRIDGE_WIDTH });
+            note(bid);
+          }
+        }
+        break;
+      }
+      case 'remove_island': {
+        const idx = out.islands.findIndex((is) => is.id === op.id);
+        if (idx < 0) { issues.push(issue('INVALID_REFERENCE', `ops[${i}] remove_island: unknown island "${op.id}"`, [op.id], ev())); break; }
+        const holds = [...out.spawns, ...out.relics, out.gate].filter((o) => o.supportingSurfaceId === op.id).map((o) => o.id);
+        if (holds.length) { issues.push(issue('UNSUPPORTED_OPERATION', `ops[${i}] remove_island "${op.id}": it carries ${holds.join(', ')}; move them first`, [op.id, ...holds], ev())); break; }
+        if (out.islands.length <= WORLD_LIMITS.islands.min) { issues.push(issue('RESOURCE_LIMIT', `ops[${i}] remove_island "${op.id}": a world needs at least ${WORLD_LIMITS.islands.min} islands`, [op.id], ev())); break; }
+        out.islands.splice(idx, 1);
+        for (const b of out.bridges.filter((b) => b.endpoints.some((e) => e.islandId === op.id))) note(b.id);
+        out.bridges = out.bridges.filter((b) => !b.endpoints.some((e) => e.islandId === op.id));
+        for (const d of out.decorations.filter((d) => d.supportingSurfaceId === op.id)) note(d.id);
+        out.decorations = out.decorations.filter((d) => d.supportingSurfaceId !== op.id);
+        note(op.id);
+        break;
+      }
       case 'set_mode': {
         if ((op.mode.relicsRequired ?? 1) > out.relics.length) {
           issues.push(issue('MODE_INVALID', `ops[${i}] set_mode: relicsRequired ${op.mode.relicsRequired} exceeds the ${out.relics.length} relics in the world`, ['mode'], ev()));

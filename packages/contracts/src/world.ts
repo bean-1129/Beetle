@@ -108,6 +108,8 @@ export const WorldSpecSchema = z.object({
   objectiveRules: z.array(z.enum(OBJECTIVE_RULES)).min(1),
   mode: ModeSchema.optional(),
   movement: MovementSchema.optional(),
+  /** Streaming generation on: the world grows ahead of players through automatic extension requests. */
+  streaming: z.boolean().optional(),
 }).strict();
 
 /** Effective mode with defaults applied (relic_hunt, all relics required, no timer). */
@@ -160,6 +162,7 @@ export const WorldDraftSchema = z.object({
   mode: ModeSchema.optional(),
   movementSpeed: Finite.min(MODE_LIMITS.movementSpeed.min).max(MODE_LIMITS.movementSpeed.max).optional(),
   hazardRise: HazardRiseSchema.optional(),
+  streaming: z.boolean().optional(),
 }).strict();
 export type WorldDraft = z.infer<typeof WorldDraftSchema>;
 
@@ -206,6 +209,7 @@ export const WORLD_DRAFT_JSON_SCHEMA = {
     biome: { type: 'string', enum: [...BIOMES] },
     mode: { type: 'object', additionalProperties: false, required: ['kind'], properties: { kind: { type: 'string', enum: [...GAME_MODES] }, timeLimitSec: { type: 'integer', minimum: MODE_LIMITS.timeLimitSec.min, maximum: MODE_LIMITS.timeLimitSec.max }, holdSeconds: { type: 'integer', minimum: MODE_LIMITS.holdSeconds.min, maximum: MODE_LIMITS.holdSeconds.max }, relicsRequired: { type: 'integer', minimum: 1, maximum: 3 }, orderedCheckpoints: { type: 'boolean' } } },
     movementSpeed: { type: 'number', minimum: MODE_LIMITS.movementSpeed.min, maximum: MODE_LIMITS.movementSpeed.max },
+    streaming: { type: 'boolean' },
     hazardRise: { type: 'object', additionalProperties: false, required: ['afterSec', 'metersPerSec', 'maxElevation'], properties: { afterSec: { type: 'integer', minimum: 5, maximum: 300 }, metersPerSec: { type: 'number', minimum: 0.01, maximum: 0.5 }, maxElevation: { type: 'number', minimum: -2, maximum: -0.6 } } },
     decorations: {
       type: 'array', maxItems: WORLD_LIMITS.decorations.max,

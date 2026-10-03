@@ -106,6 +106,9 @@ export type DirectorRequest = {
   id: string;
   kind: RequestKind;
   prompt: string;
+  /** true when Beetle created the request itself (streaming extension ahead of a player). */
+  auto?: boolean;
+  autoReason?: { islandId: string; direction: string; playerId: string };
   createdAt: number;
   worldVersionAtRequest: number;
   status: AgentPhase;
@@ -134,6 +137,7 @@ export type BuildReport = {
 
 // ---------- HTTP DTOs ----------
 export const JoinRequestSchema = z.object({ inviteCode: z.string().min(4).max(64) }).strict();
+export const DirectorSettingsBodySchema = z.object({ autoExpand: z.boolean().optional() }).strict();
 export const DirectorRequestBodySchema = z.object({
   kind: z.enum(REQUEST_KINDS),
   prompt: z.string().min(1).max(1000).regex(/^[^\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]*$/),
@@ -167,6 +171,7 @@ export const ROUTES = {
   directorActivity: '/api/director/activity',
   directorReports: '/api/director/reports',
   directorUndo: '/api/director/undo',
+  directorSettings: '/api/director/settings',
   join: '/api/join',
   agentWorld: '/api/agent/world',
   agentRequestsClaim: '/api/agent/requests/claim',
