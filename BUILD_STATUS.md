@@ -1,6 +1,6 @@
 # BUILD_STATUS
 
-Last updated: 2026-10-03 12:35 CDT. Submission deadline set by the user: 15:32 CDT (3 hours from 12:32). Integration and packaging reserve starts 14:45 CDT.
+Last updated: 2026-10-03 13:10 CDT. Submission deadline set by the user: 15:32 CDT. Integration and packaging reserve starts 14:45 CDT.
 
 Legend: implemented = code exists; tested = an automated or recorded manual test ran and passed; untested = exists, no test run; blocked = cannot proceed without something external; omitted = deliberately cut.
 
@@ -22,43 +22,45 @@ Legend: implemented = code exists; tested = an automated or recorded manual test
 | Area | Status | Notes |
 |---|---|---|
 | Contracts (schemas, limits, codes, protocol, routes) | implemented, typechecked | packages/contracts |
-| Observability (JSONL events, sanitizer, stopwatch) | implemented, untested | packages/observability |
-| World compiler, WalkField, nav grid, validators, playability, patches, fixtures | in progress | packages/world |
-| Server: HTTP, WebSocket, simulation, transactions, persistence, auth | in progress | apps/server |
-| Web: director, play, controller, Babylon renderer | in progress | apps/web |
-| Agent: Ollama client, jobs, worker, direct harness | in progress | packages/agent |
-| OpenClaw tool plugin and isolated profile | in progress | packages/agent/openclaw-plugin |
-| Benchmark script | in progress | scripts/benchmark-local.ts |
-| Dev runner, demo check | implemented, untested | scripts/dev.mjs, scripts/demo-check.mjs |
-| Docs: environment, architecture, local-only checklist | implemented | docs/ |
-| README, runbook, storyboard, pitch outline | not started | |
+| Observability (JSONL events, sanitizer, stopwatch) | implemented, used by server and agent | packages/observability |
+| World compiler, WalkField, nav grid, validators, playability, patches, fixtures | implemented, tested (73 unit tests incl. 23 adversarial) | packages/world; deterministic normalization of model output added (names and compass words to ids, offsets, limits, island separation) |
+| Server: HTTP, WebSocket, simulation, transactions, persistence, auth | implemented, tested (38 in-process tests, 23 integration tests on a real server with real sockets) | apps/server; loop body avg 0.04 ms per tick with 2 players and a 16-bridge world |
+| Web: director, play, controller, Babylon renderer | implemented, typechecked, built; verified in the browser against the live server (fixture world renders, keyboard player joins, live edit swaps water to lava and adds a bridge without reset, controller page joins and moves) | apps/web |
+| Agent: Ollama client, jobs, worker, direct harness | implemented; live edit through the direct harness committed v2 in 7 s on a quiet GPU and 61 s under contention | packages/agent; direct mode is labelled in every report |
+| OpenClaw tool plugin and isolated profile | in progress (builder applying the security findings) | packages/agent/openclaw-plugin, .openclaw-home |
+| Benchmark script | implemented, run for qwen3.5:4b | scripts/benchmark-local.ts, data/benchmarks |
+| Live-run recorder and fresh prompts | implemented, run (docs/RESULTS.md, before normalization) | scripts/run-prompts.ts |
+| Latency measurement | implemented, run | docs/LATENCY.md: WebSocket RTT p50 0.5 ms, input to server tick p50 19 ms (not input to photon) |
+| Dev runner, demo check, export, offline proof, recording, captions | implemented; export and offline-proof run once; capture scripts tested with a synthetic clip | scripts/ |
+| Pitch deck | implemented (six slides, placeholders for measured numbers) | docs/pitch |
+| Security review | done; high and medium findings fixed or assigned | docs/SECURITY_REVIEW.md |
+| Docs: environment, architecture, local-only checklist, runbook, storyboard, pitch outline, submission checklist | implemented | docs/ |
 
 ## Required test cases (section 14)
 
 | # | Case | Status |
 |---|---|---|
-| 1 | schema rejections | pending |
-| 2 | deterministic compile | pending |
-| 3 | valid world routes | pending |
-| 4 | gapped bridge fails | pending |
-| 5 | blocked path and gate dependency fail | pending |
-| 6 | removing only goal route fails without mutation | pending |
-| 7 | replacement crossing passes and commits | pending |
-| 8 | occupied support cannot vanish under a player | pending |
-| 9 | stale patch fails, duplicate commit idempotent | pending |
-| 10 | editing preserves identity, relics, score, connections | pending |
-| 11 | simultaneous pickup once, undo cannot duplicate | pending |
-| 12 | two phones, reconnect, timeout clears motion | pending (physical part unrun) |
-| 13 | controller token cannot edit or call admin | pending |
-| 14 | malformed model output triggers bounded retries | pending |
-| 15 | slow or missing model leaves gameplay responsive, no cloud fallback | pending |
-| 16 | client behind on versions resyncs | pending |
-| 17 | fresh request through real OpenClaw tools with genuine report | pending |
-| 18 | fresh edit under local-only runtime configuration | pending |
+| 1 | schema rejections | tested (tests/unit/contracts.test.ts) |
+| 2 | deterministic compile | tested (tests/unit/compiler.test.ts) |
+| 3 | valid world routes | tested (validators.test.ts) |
+| 4 | gapped bridge fails | tested (BRIDGE_ENDPOINT_GAP) |
+| 5 | blocked path and gate dependency fail | tested (UNREACHABLE_RELIC, GATE_HIDES_RELIC) |
+| 6 | removing only goal route fails without mutation | tested (DISCONNECTED_GOAL, spec unchanged) |
+| 7 | replacement crossing passes and commits | tested (add_bridge passes, commits in integration) |
+| 8 | occupied support cannot vanish under a player | tested (deferred then OCCUPIED_SUPPORT, then commits after the player moves) |
+| 9 | stale patch fails, duplicate commit idempotent | tested (STALE_WORLD_VERSION; idempotent replay) |
+| 10 | editing preserves identity, relics, score, connections | tested (ids, positions, relics, score, sockets preserved) |
+| 11 | simultaneous pickup once, undo cannot duplicate | tested (one award; undo keeps relic collected) |
+| 12 | two phones, reconnect, timeout clears motion | tested with real WebSocket controllers (independent movement, reconnect restores identity, timeout clears motion); physical phones unrun |
+| 13 | controller token cannot edit or call admin | tested (401/403 on director and agent routes; non-loopback rejected) |
+| 14 | malformed model output triggers bounded retries | tested (tests/unit/agent.test.ts: malformed and truncated output, bounded retries, no mutation) |
+| 15 | slow or missing model leaves gameplay responsive, no cloud fallback | tested (deadline ends the job, no fallback host contacted) |
+| 16 | client behind on versions resyncs | tested (resync returns current spec) |
+| 17 | fresh request through real OpenClaw tools with genuine report | pending: OpenClaw runner being finished; smoke evidence goes to packages/agent/SMOKE.md |
+| 18 | fresh edit under local-only runtime configuration | partial: edits commit through the direct harness under the local-only configuration; briefs improved by normalization, re-measured after the agent fix lands |
 
 ## Blocked
 
-- GitHub push: no credentials on the machine (no gh, no credential helper, no SSH key). The user must authenticate once from their terminal.
 - Team chat channel: no credentials; report publishing stays local.
 - Physical phone tests: need a person on site.
 
