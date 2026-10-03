@@ -1,10 +1,11 @@
 # Model selection for the Beetle demo
 
-Status: written 2026-10-03 13:22 CDT. Every number below is copied from a run file or log named in the table it
-appears in; nothing is estimated. Section 9 is appended later if qwen3.8:27b lands before 14:10 CDT.
+Status: FINAL, 2026-10-03 13:45 CDT. Every number below is copied from a run file or log named in the table it
+appears in; nothing is estimated. Section 9 records the end of the qwen3.8:27b attempt.
 
-Decision (as of 13:25 CDT): the demo runs on qwen3.5:4b (Q4_K_M). qwen3.8:27b has not been benchmarked because its
-pull failed (section 6); the 4b is selected on measured time to a valid result, not on size.
+Decision (final): the demo runs on qwen3.5:4b (Q4_K_M). qwen3.8:27b was never benchmarked: its first pull failed on
+a digest mismatch and its second pull was stopped at 13:43 CDT (sections 6 and 9). The 4b is selected on measured
+time to a valid result, not on size.
 
 ## 1. Rule applied
 
@@ -200,3 +201,23 @@ tail, on a quiet GPU, with tool calling confirmed. None of that has been observe
 | `data/logs/probe-run.log`, `data/logs/probe-qwen3.5_4b.json` | probe (true cold load, tool call) |
 | `data/logs/ollama-serve.log`, `data/logs/ollama-serve-2.log` | daemon request logs used for the contention labels |
 | `data/logs/pull-qwen3.8-27b.log`, `data/logs/pull-qwen3.8-27b-2.log` | 27b pull attempts |
+
+## 9. Final line on qwen3.8:27b (13:45 CDT)
+
+qwen3.8:27b was not benchmarked. The second pull (`data/logs/pull-qwen3.8-27b-2.log`) was stopped by the coordinator
+at 13:43 CDT when the Ollama daemon had to be restarted; its last logged progress line reads 48%, 8.1 GB of 16 GB,
+6.3 MB/s, ETA 23 min, which would have completed after the 14:20 quiet-GPU cutoff even before digest verification.
+No `ollama pull` process is running and `ollama list` shows only qwen3.5:4b. Polling has stopped and no further model
+calls are made from this track.
+
+Daemon wedge, as reported by the coordinator and consistent with the logs: after 13:32 CDT the second daemon stopped
+answering `/api/chat` (a 4-token probe got no reply in 20 s); it was restarted at 13:43:04 CDT as the third daemon
+(`data/logs/ollama-serve-3.log`, `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_FLASH_ATTENTION=true`, `OLLAMA_KEEP_ALIVE=1h`). Note
+that the second daemon's `OLLAMA_NUM_PARALLEL=4` never took effect for this model: its log carries
+`WARN sched.go:514 msg="model architecture does not currently support parallel requests" architecture=qwen35`
+(13:03:22 and 13:04:13 CDT), and every llama-server launch observed today used `-np 1`. Every Ollama client therefore
+serialises behind every other one, which is why the contended numbers in sections 4.3 and 4.4 are so much worse than
+the quiet ones and why the demo needs an otherwise idle daemon.
+
+Final decision: qwen3.5:4b is the demo model by measured completion latency (section 7). Unmeasured for the 27b and
+not claimed: parameters, quantization, context, family, memory, cold load, any workload time, tool calling.
