@@ -1,0 +1,1353 @@
+{
+  "startedAt": "2026-10-03T17:43:49.696Z",
+  "serverUrl": "http://127.0.0.1:7790",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 1,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7790",
+    "uptimeMs": 14872
+  },
+  "args": {
+    "kind": "edit",
+    "repeat": 1,
+    "ids": [
+      "E1",
+      "E2",
+      "E3",
+      "E4",
+      "E5",
+      "E6",
+      "B1",
+      "B2"
+    ]
+  },
+  "attempts": [
+    {
+      "id": "E1",
+      "kind": "edit",
+      "prompt": "Add a second route: a 3 metre wide bridge from the Orchard Island in the east straight to the Lantern Island in the south, and retitle the world \"Orchard Loop\".",
+      "expected": "pass",
+      "repeat": 1,
+      "requestId": "req-a81a2794",
+      "status": "committed",
+      "worldVersionBefore": 1,
+      "worldVersionAfter": 2,
+      "elapsedMs": 3017,
+      "activity": [
+        {
+          "id": "act-1-musol4n9",
+          "requestId": "req-a81a2794",
+          "phase": "queued",
+          "message": "Edit queued for the agent",
+          "at": 1791049429701,
+          "elapsedMs": 0,
+          "worldVersion": 1
+        },
+        {
+          "id": "act-2-musol4na",
+          "requestId": "req-a81a2794",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791049429702,
+          "elapsedMs": 1,
+          "worldVersion": 1
+        },
+        {
+          "id": "act-3-musol4nc",
+          "requestId": "req-a81a2794",
+          "phase": "planning",
+          "message": "[direct] reading the current world",
+          "at": 1791049429704,
+          "elapsedMs": 3,
+          "worldVersion": 1,
+          "tool": "read_world_state"
+        },
+        {
+          "id": "act-4-musol4nf",
+          "requestId": "req-a81a2794",
+          "phase": "planning",
+          "message": "[direct] drafting a patch for v1 with qwen3.5:4b",
+          "at": 1791049429707,
+          "elapsedMs": 6,
+          "worldVersion": 1
+        },
+        {
+          "id": "act-5-musol6ht",
+          "requestId": "req-a81a2794",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791049432097,
+          "elapsedMs": 2396,
+          "worldVersion": 1,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-6-musol6ie",
+          "requestId": "req-a81a2794",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791049432118,
+          "elapsedMs": 2417,
+          "worldVersion": 1,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-7-musol6iv",
+          "requestId": "req-a81a2794",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791049432135,
+          "elapsedMs": 2434,
+          "worldVersion": 1,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-8-musol6jk",
+          "requestId": "req-a81a2794",
+          "phase": "committed",
+          "message": "[direct] committed v2",
+          "at": 1791049432160,
+          "elapsedMs": 2459,
+          "worldVersion": 2,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-9-musol6jm",
+          "requestId": "req-a81a2794",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] Added a new bridge connecting Orchard Island to Lantern Island and updated the world title.",
+          "at": 1791049432162,
+          "elapsedMs": 2461,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-a-musol6jn",
+          "requestId": "req-a81a2794",
+          "phase": "committed",
+          "message": "Committed world version 2",
+          "at": 1791049432163,
+          "elapsedMs": 2462,
+          "worldVersion": 2
+        }
+      ],
+      "report": {
+        "reportId": "rep-29c0a3df",
+        "requestId": "req-a81a2794",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 2,
+        "baseWorldVersion": 1,
+        "summary": "[direct] Added a new bridge connecting Orchard Island to Lantern Island and updated the world title.",
+        "validation": {
+          "attempts": 1,
+          "failedCodes": []
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791049429701,
+          "firstModelResponseMs": 2389,
+          "validatedMs": 2415,
+          "committedMs": 2457,
+          "totalMs": 2459
+        },
+        "toolCalls": [
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          },
+          {
+            "tool": "propose_patch",
+            "ok": true,
+            "ms": 4
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 19
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 13
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 24
+          }
+        ],
+        "createdAt": 1791049432162
+      },
+      "startedAt": "2026-10-03T17:43:49.697Z"
+    },
+    {
+      "id": "E2",
+      "kind": "edit",
+      "prompt": "Remove the narrow western bridge, but keep the Moon Relic collectable.",
+      "expected": "fail first: UNREACHABLE_RELIC, then repair",
+      "repeat": 1,
+      "requestId": "req-166d90bc",
+      "status": "failed",
+      "worldVersionBefore": 2,
+      "worldVersionAfter": 2,
+      "elapsedMs": 4021,
+      "activity": [
+        {
+          "id": "act-b-musol6z2",
+          "requestId": "req-166d90bc",
+          "phase": "queued",
+          "message": "Edit queued for the agent",
+          "at": 1791049432718,
+          "elapsedMs": 0,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-c-musol6z3",
+          "requestId": "req-166d90bc",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791049432719,
+          "elapsedMs": 1,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-d-musol6z4",
+          "requestId": "req-166d90bc",
+          "phase": "planning",
+          "message": "[direct] reading the current world",
+          "at": 1791049432720,
+          "elapsedMs": 2,
+          "worldVersion": 2,
+          "tool": "read_world_state"
+        },
+        {
+          "id": "act-e-musol6z5",
+          "requestId": "req-166d90bc",
+          "phase": "planning",
+          "message": "[direct] drafting a patch for v2 with qwen3.5:4b",
+          "at": 1791049432721,
+          "elapsedMs": 3,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-f-musol860",
+          "requestId": "req-166d90bc",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791049434264,
+          "elapsedMs": 1546,
+          "worldVersion": 2,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-g-musol86c",
+          "requestId": "req-166d90bc",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: UNREACHABLE_RELIC[relic-west,west,spawn-0,spawn-1]",
+          "at": 1791049434276,
+          "elapsedMs": 1558,
+          "worldVersion": 2,
+          "codes": [
+            "UNREACHABLE_RELIC"
+          ],
+          "objectIds": [
+            "relic-west",
+            "west",
+            "spawn-0",
+            "spawn-1"
+          ]
+        },
+        {
+          "id": "act-h-musol92c",
+          "requestId": "req-166d90bc",
+          "phase": "repairing",
+          "message": "[direct] repair 2 of 2: INVALID_REFERENCE[bridge-west-loop,hearth-island,mossy-island]",
+          "at": 1791049435428,
+          "elapsedMs": 2710,
+          "worldVersion": 2,
+          "codes": [
+            "INVALID_REFERENCE"
+          ],
+          "objectIds": [
+            "bridge-west-loop",
+            "hearth-island",
+            "mossy-island"
+          ]
+        },
+        {
+          "id": "act-i-musola1d",
+          "requestId": "req-166d90bc",
+          "phase": "failed",
+          "message": "direct / qwen3.5:4b: [direct] failed: VALIDATION_FAILED rejected after 2 repairs: INVALID_REFERENCE[bridge-west-loop,hearth-island,mossy-island]",
+          "at": 1791049436689,
+          "elapsedMs": 3971,
+          "worldVersion": 2,
+          "codes": [
+            "UNREACHABLE_RELIC",
+            "INVALID_REFERENCE"
+          ]
+        },
+        {
+          "id": "act-j-musola1e",
+          "requestId": "req-166d90bc",
+          "phase": "failed",
+          "message": "Failed: rejected after 2 repairs: INVALID_REFERENCE[bridge-west-loop,hearth-island,mossy-island]",
+          "at": 1791049436690,
+          "elapsedMs": 3972,
+          "worldVersion": 2,
+          "codes": [
+            "VALIDATION_FAILED"
+          ]
+        }
+      ],
+      "report": {
+        "reportId": "rep-01e5e80e",
+        "requestId": "req-166d90bc",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "failed",
+        "worldVersion": 2,
+        "baseWorldVersion": 2,
+        "summary": "[direct] failed: VALIDATION_FAILED rejected after 2 repairs: INVALID_REFERENCE[bridge-west-loop,hearth-island,mossy-island]",
+        "validation": {
+          "attempts": 3,
+          "failedCodes": [
+            "UNREACHABLE_RELIC",
+            "INVALID_REFERENCE"
+          ]
+        },
+        "timings": {
+          "requestedAt": 1791049432718,
+          "firstModelResponseMs": 1542,
+          "totalMs": 3969
+        },
+        "toolCalls": [
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          },
+          {
+            "tool": "propose_patch",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 11
+          },
+          {
+            "tool": "propose_patch",
+            "ok": false,
+            "ms": 2
+          },
+          {
+            "tool": "propose_patch",
+            "ok": false,
+            "ms": 2
+          }
+        ],
+        "createdAt": 1791049436689
+      },
+      "startedAt": "2026-10-03T17:43:52.715Z",
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "message": "rejected after 2 repairs: INVALID_REFERENCE[bridge-west-loop,hearth-island,mossy-island]"
+      }
+    },
+    {
+      "id": "E3",
+      "kind": "edit",
+      "prompt": "Move the Sun Relic onto the Temple Island, right beside the shrine.",
+      "expected": "fail first: GATE_HIDES_RELIC",
+      "repeat": 1,
+      "requestId": "req-e2125719",
+      "status": "failed",
+      "worldVersionBefore": 2,
+      "worldVersionAfter": 2,
+      "elapsedMs": 6022,
+      "activity": [
+        {
+          "id": "act-k-musola2r",
+          "requestId": "req-e2125719",
+          "phase": "queued",
+          "message": "Edit queued for the agent",
+          "at": 1791049436739,
+          "elapsedMs": 0,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-l-musola2r",
+          "requestId": "req-e2125719",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791049436739,
+          "elapsedMs": 0,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-m-musola2t",
+          "requestId": "req-e2125719",
+          "phase": "planning",
+          "message": "[direct] reading the current world",
+          "at": 1791049436741,
+          "elapsedMs": 2,
+          "worldVersion": 2,
+          "tool": "read_world_state"
+        },
+        {
+          "id": "act-n-musola2v",
+          "requestId": "req-e2125719",
+          "phase": "planning",
+          "message": "[direct] drafting a patch for v2 with qwen3.5:4b",
+          "at": 1791049436743,
+          "elapsedMs": 4,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-o-musolbr7",
+          "requestId": "req-e2125719",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: INVALID_REFERENCE[relic-sun]",
+          "at": 1791049438915,
+          "elapsedMs": 2176,
+          "worldVersion": 2,
+          "codes": [
+            "INVALID_REFERENCE"
+          ],
+          "objectIds": [
+            "relic-sun"
+          ]
+        },
+        {
+          "id": "act-p-musolcxs",
+          "requestId": "req-e2125719",
+          "phase": "repairing",
+          "message": "[direct] repair 2 of 2: INVALID_REFERENCE[bridge-sun,hearth], INVALID_REFERENCE[relic-sun]",
+          "at": 1791049440448,
+          "elapsedMs": 3709,
+          "worldVersion": 2,
+          "codes": [
+            "INVALID_REFERENCE",
+            "INVALID_REFERENCE"
+          ],
+          "objectIds": [
+            "bridge-sun",
+            "hearth",
+            "relic-sun"
+          ]
+        },
+        {
+          "id": "act-q-musole3w",
+          "requestId": "req-e2125719",
+          "phase": "failed",
+          "message": "direct / qwen3.5:4b: [direct] failed: VALIDATION_FAILED rejected after 2 repairs: INVALID_REFERENCE[bridge-sun,hearth]",
+          "at": 1791049441964,
+          "elapsedMs": 5225,
+          "worldVersion": 2,
+          "codes": [
+            "INVALID_REFERENCE"
+          ]
+        },
+        {
+          "id": "act-r-musole3x",
+          "requestId": "req-e2125719",
+          "phase": "failed",
+          "message": "Failed: rejected after 2 repairs: INVALID_REFERENCE[bridge-sun,hearth]",
+          "at": 1791049441965,
+          "elapsedMs": 5226,
+          "worldVersion": 2,
+          "codes": [
+            "VALIDATION_FAILED"
+          ]
+        }
+      ],
+      "report": {
+        "reportId": "rep-ef4bcdfc",
+        "requestId": "req-e2125719",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "failed",
+        "worldVersion": 2,
+        "baseWorldVersion": 2,
+        "summary": "[direct] failed: VALIDATION_FAILED rejected after 2 repairs: INVALID_REFERENCE[bridge-sun,hearth]",
+        "validation": {
+          "attempts": 3,
+          "failedCodes": [
+            "INVALID_REFERENCE"
+          ]
+        },
+        "timings": {
+          "requestedAt": 1791049436739,
+          "firstModelResponseMs": 2173,
+          "totalMs": 5223
+        },
+        "toolCalls": [
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          },
+          {
+            "tool": "propose_patch",
+            "ok": false,
+            "ms": 2
+          },
+          {
+            "tool": "propose_patch",
+            "ok": false,
+            "ms": 2
+          },
+          {
+            "tool": "propose_patch",
+            "ok": false,
+            "ms": 1
+          }
+        ],
+        "createdAt": 1791049441963
+      },
+      "startedAt": "2026-10-03T17:43:56.737Z",
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "message": "rejected after 2 repairs: INVALID_REFERENCE[bridge-sun,hearth]"
+      }
+    },
+    {
+      "id": "E4",
+      "kind": "edit",
+      "prompt": "Plant a ring of six bushes around the edge of the Hearth Island, well clear of the four bridge mouths, and add one lantern next to each spawn.",
+      "expected": "pass",
+      "repeat": 1,
+      "requestId": "req-954baf0e",
+      "status": "failed",
+      "worldVersionBefore": 2,
+      "worldVersionAfter": 2,
+      "elapsedMs": 31081,
+      "activity": [
+        {
+          "id": "act-s-musoleq3",
+          "requestId": "req-954baf0e",
+          "phase": "queued",
+          "message": "Edit queued for the agent",
+          "at": 1791049442763,
+          "elapsedMs": 0,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-t-musoleq3",
+          "requestId": "req-954baf0e",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791049442763,
+          "elapsedMs": 0,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-u-musoleq4",
+          "requestId": "req-954baf0e",
+          "phase": "planning",
+          "message": "[direct] reading the current world",
+          "at": 1791049442764,
+          "elapsedMs": 1,
+          "worldVersion": 2,
+          "tool": "read_world_state"
+        },
+        {
+          "id": "act-v-musoleq6",
+          "requestId": "req-954baf0e",
+          "phase": "planning",
+          "message": "[direct] drafting a patch for v2 with qwen3.5:4b",
+          "at": 1791049442766,
+          "elapsedMs": 3,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-w-musolmmo",
+          "requestId": "req-954baf0e",
+          "phase": "repairing",
+          "message": "[direct] model output did not match the schema, asking again (1 of 2): truncated JSON (Unterminated string in JSON at position 1294 (line 54 column 28))",
+          "at": 1791049453008,
+          "elapsedMs": 10245,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-x-musolubq",
+          "requestId": "req-954baf0e",
+          "phase": "repairing",
+          "message": "[direct] model output did not match the schema, asking again (2 of 2): truncated JSON (Unterminated string in JSON at position 1294 (line 54 column 28))",
+          "at": 1791049462982,
+          "elapsedMs": 20219,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-y-musom1ya",
+          "requestId": "req-954baf0e",
+          "phase": "failed",
+          "message": "direct / qwen3.5:4b: [direct] failed: MODEL_OUTPUT_INVALID model output failed schema validation 3 times: truncated JSON (Unterminated string in JSON at position 1294 (line 54 column 28))",
+          "at": 1791049472866,
+          "elapsedMs": 30103,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-z-musom1ya",
+          "requestId": "req-954baf0e",
+          "phase": "failed",
+          "message": "Failed: model output failed schema validation 3 times: truncated JSON (Unterminated string in JSON at position 1294 (line 54 column 28))",
+          "at": 1791049472866,
+          "elapsedMs": 30103,
+          "worldVersion": 2,
+          "codes": [
+            "MODEL_OUTPUT_INVALID"
+          ]
+        }
+      ],
+      "report": {
+        "reportId": "rep-41d7c6cb",
+        "requestId": "req-954baf0e",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "failed",
+        "worldVersion": 2,
+        "baseWorldVersion": 2,
+        "summary": "[direct] failed: MODEL_OUTPUT_INVALID model output failed schema validation 3 times: truncated JSON (Unterminated string in JSON at position 1294 (line 54 column 28))",
+        "validation": {
+          "attempts": 0,
+          "failedCodes": []
+        },
+        "timings": {
+          "requestedAt": 1791049442763,
+          "firstModelResponseMs": 10243,
+          "totalMs": 30101
+        },
+        "toolCalls": [
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          }
+        ],
+        "createdAt": 1791049472865
+      },
+      "startedAt": "2026-10-03T17:44:02.761Z",
+      "error": {
+        "code": "MODEL_OUTPUT_INVALID",
+        "message": "model output failed schema validation 3 times: truncated JSON (Unterminated string in JSON at position 1294 (line 54 column 28))"
+      }
+    },
+    {
+      "id": "E5",
+      "kind": "edit",
+      "prompt": "Make the fall deadly: the hazard beneath the islands becomes lava. Rename the world \"Ember Garden\" to match.",
+      "expected": "pass",
+      "repeat": 1,
+      "requestId": "req-31848a30",
+      "status": "committed",
+      "worldVersionBefore": 2,
+      "worldVersionAfter": 3,
+      "elapsedMs": 3010,
+      "activity": [
+        {
+          "id": "act-10-musom2pg",
+          "requestId": "req-31848a30",
+          "phase": "queued",
+          "message": "Edit queued for the agent",
+          "at": 1791049473844,
+          "elapsedMs": 0,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-11-musom2pg",
+          "requestId": "req-31848a30",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791049473844,
+          "elapsedMs": 0,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-12-musom2ph",
+          "requestId": "req-31848a30",
+          "phase": "planning",
+          "message": "[direct] reading the current world",
+          "at": 1791049473845,
+          "elapsedMs": 1,
+          "worldVersion": 2,
+          "tool": "read_world_state"
+        },
+        {
+          "id": "act-13-musom2ph",
+          "requestId": "req-31848a30",
+          "phase": "planning",
+          "message": "[direct] drafting a patch for v2 with qwen3.5:4b",
+          "at": 1791049473845,
+          "elapsedMs": 1,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-14-musom4ag",
+          "requestId": "req-31848a30",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791049475896,
+          "elapsedMs": 2052,
+          "worldVersion": 2,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-15-musom4as",
+          "requestId": "req-31848a30",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791049475908,
+          "elapsedMs": 2064,
+          "worldVersion": 2,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-16-musom4b0",
+          "requestId": "req-31848a30",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791049475916,
+          "elapsedMs": 2072,
+          "worldVersion": 2,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-17-musom4cc",
+          "requestId": "req-31848a30",
+          "phase": "committed",
+          "message": "[direct] committed v3",
+          "at": 1791049475964,
+          "elapsedMs": 2120,
+          "worldVersion": 3,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-18-musom4cd",
+          "requestId": "req-31848a30",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] Changed the world hazard to lava and renamed the title.",
+          "at": 1791049475965,
+          "elapsedMs": 2121,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-19-musom4cf",
+          "requestId": "req-31848a30",
+          "phase": "committed",
+          "message": "Committed world version 3",
+          "at": 1791049475967,
+          "elapsedMs": 2123,
+          "worldVersion": 3
+        }
+      ],
+      "report": {
+        "reportId": "rep-d8a84ad6",
+        "requestId": "req-31848a30",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 3,
+        "baseWorldVersion": 2,
+        "summary": "[direct] Changed the world hazard to lava and renamed the title.",
+        "validation": {
+          "attempts": 1,
+          "failedCodes": []
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791049473844,
+          "firstModelResponseMs": 2049,
+          "validatedMs": 2063,
+          "committedMs": 2119,
+          "totalMs": 2120
+        },
+        "toolCalls": [
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 0
+          },
+          {
+            "tool": "propose_patch",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 11
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 7
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 46
+          }
+        ],
+        "createdAt": 1791049475965
+      },
+      "startedAt": "2026-10-03T17:44:33.842Z"
+    },
+    {
+      "id": "E6",
+      "kind": "edit",
+      "prompt": "Add a straight bridge from the Orchard Island in the east directly across to the Mossy Island in the west.",
+      "expected": "fail first: BRIDGE_CROSSES_ISLAND",
+      "repeat": 1,
+      "requestId": "req-75892bcd",
+      "status": "failed",
+      "worldVersionBefore": 3,
+      "worldVersionAfter": 3,
+      "elapsedMs": 5015,
+      "activity": [
+        {
+          "id": "act-1a-musom512",
+          "requestId": "req-75892bcd",
+          "phase": "queued",
+          "message": "Edit queued for the agent",
+          "at": 1791049476854,
+          "elapsedMs": 0,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1b-musom512",
+          "requestId": "req-75892bcd",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791049476854,
+          "elapsedMs": 0,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1c-musom513",
+          "requestId": "req-75892bcd",
+          "phase": "planning",
+          "message": "[direct] reading the current world",
+          "at": 1791049476855,
+          "elapsedMs": 1,
+          "worldVersion": 3,
+          "tool": "read_world_state"
+        },
+        {
+          "id": "act-1d-musom515",
+          "requestId": "req-75892bcd",
+          "phase": "planning",
+          "message": "[direct] drafting a patch for v3 with qwen3.5:4b",
+          "at": 1791049476857,
+          "elapsedMs": 3,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1e-musom6qt",
+          "requestId": "req-75892bcd",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: INVALID_REFERENCE[bridge-east-west,orchard-island,mossy-island]",
+          "at": 1791049479077,
+          "elapsedMs": 2223,
+          "worldVersion": 3,
+          "codes": [
+            "INVALID_REFERENCE"
+          ],
+          "objectIds": [
+            "bridge-east-west",
+            "orchard-island",
+            "mossy-island"
+          ]
+        },
+        {
+          "id": "act-1f-musom7on",
+          "requestId": "req-75892bcd",
+          "phase": "repairing",
+          "message": "[direct] repair 2 of 2: INVALID_REFERENCE[bridge-hearth-temple,hearth-island,temple-island]",
+          "at": 1791049480295,
+          "elapsedMs": 3441,
+          "worldVersion": 3,
+          "codes": [
+            "INVALID_REFERENCE"
+          ],
+          "objectIds": [
+            "bridge-hearth-temple",
+            "hearth-island",
+            "temple-island"
+          ]
+        },
+        {
+          "id": "act-1g-musom8o7",
+          "requestId": "req-75892bcd",
+          "phase": "failed",
+          "message": "direct / qwen3.5:4b: [direct] failed: VALIDATION_FAILED rejected after 2 repairs: INVALID_REFERENCE[bridge-hearth-temple,hearth-island,temple-island]",
+          "at": 1791049481575,
+          "elapsedMs": 4721,
+          "worldVersion": 3,
+          "codes": [
+            "INVALID_REFERENCE"
+          ]
+        },
+        {
+          "id": "act-1h-musom8o9",
+          "requestId": "req-75892bcd",
+          "phase": "failed",
+          "message": "Failed: rejected after 2 repairs: INVALID_REFERENCE[bridge-hearth-temple,hearth-island,temple-island]",
+          "at": 1791049481577,
+          "elapsedMs": 4723,
+          "worldVersion": 3,
+          "codes": [
+            "VALIDATION_FAILED"
+          ]
+        }
+      ],
+      "report": {
+        "reportId": "rep-f1a4150b",
+        "requestId": "req-75892bcd",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "failed",
+        "worldVersion": 3,
+        "baseWorldVersion": 3,
+        "summary": "[direct] failed: VALIDATION_FAILED rejected after 2 repairs: INVALID_REFERENCE[bridge-hearth-temple,hearth-island,temple-island]",
+        "validation": {
+          "attempts": 3,
+          "failedCodes": [
+            "INVALID_REFERENCE"
+          ]
+        },
+        "timings": {
+          "requestedAt": 1791049476854,
+          "firstModelResponseMs": 2220,
+          "totalMs": 4720
+        },
+        "toolCalls": [
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          },
+          {
+            "tool": "propose_patch",
+            "ok": false,
+            "ms": 2
+          },
+          {
+            "tool": "propose_patch",
+            "ok": false,
+            "ms": 2
+          },
+          {
+            "tool": "propose_patch",
+            "ok": false,
+            "ms": 2
+          }
+        ],
+        "createdAt": 1791049481575
+      },
+      "startedAt": "2026-10-03T17:44:36.853Z",
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "message": "rejected after 2 repairs: INVALID_REFERENCE[bridge-hearth-temple,hearth-island,temple-island]"
+      }
+    },
+    {
+      "id": "B1",
+      "kind": "brief",
+      "prompt": "Four islands arranged in a diamond with water below. Both spawns on the west island, the gate on the east island, one relic each on the north, south and west islands. Bridge every island to its two ring neighbours so there are two ways round. Title it \"Diamond Pond\".",
+      "expected": "pass",
+      "repeat": 1,
+      "requestId": "req-5ad48f21",
+      "status": "failed",
+      "worldVersionBefore": 3,
+      "worldVersionAfter": 3,
+      "elapsedMs": 77180,
+      "activity": [
+        {
+          "id": "act-1i-musom8we",
+          "requestId": "req-5ad48f21",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791049481870,
+          "elapsedMs": 0,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1j-musom8we",
+          "requestId": "req-5ad48f21",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791049481870,
+          "elapsedMs": 0,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1k-musom8wg",
+          "requestId": "req-5ad48f21",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791049481872,
+          "elapsedMs": 2,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1l-muson1o2",
+          "requestId": "req-5ad48f21",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791049519154,
+          "elapsedMs": 37284,
+          "worldVersion": 3,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-1m-muson1oh",
+          "requestId": "req-5ad48f21",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: OBJECT_NOT_ON_SURFACE[spawn-0,west_island], OBJECT_NOT_ON_SURFACE[relic_north,north_island], OBJECT_NOT_ON_SURFACE[relic_south,south_island], OBJECT_NOT_ON_SURFACE[gate,east_island], OBJECT_NOT_ON_SURFACE[dec_west_1,west_island], OBJECT_NOT_ON_SURFACE[dec_north_1,north_island]",
+          "at": 1791049519169,
+          "elapsedMs": 37299,
+          "worldVersion": 3,
+          "codes": [
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE"
+          ],
+          "objectIds": [
+            "spawn-0",
+            "west_island",
+            "relic_north",
+            "north_island",
+            "relic_south",
+            "south_island",
+            "gate",
+            "east_island",
+            "dec_west_1",
+            "west_island",
+            "dec_north_1",
+            "north_island",
+            "dec_north_2",
+            "north_island",
+            "dec_south_1",
+            "south_island",
+            "dec_south_2",
+            "south_island",
+            "dec_east_1",
+            "east_island",
+            "dec_east_2",
+            "east_island",
+            "dec_west_3",
+            "west_island",
+            "dec_north_3",
+            "north_island",
+            "dec_south_3",
+            "south_island",
+            "dec_east_3",
+            "east_island",
+            "dec_north_4",
+            "north_island"
+          ]
+        },
+        {
+          "id": "act-1n-musonh4a",
+          "requestId": "req-5ad48f21",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791049539178,
+          "elapsedMs": 57308,
+          "worldVersion": 3,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-1o-musonh4h",
+          "requestId": "req-5ad48f21",
+          "phase": "repairing",
+          "message": "[direct] repair 2 of 2: OBJECT_NOT_ON_SURFACE[spawn-0,west_island], OBJECT_NOT_ON_SURFACE[gate,east_island], OBJECT_NOT_ON_SURFACE[dec_west_1,west_island], OBJECT_NOT_ON_SURFACE[dec_north_1,north_island], OBJECT_NOT_ON_SURFACE[dec_north_2,north_island], OBJECT_NOT_ON_SURFACE[dec_south_1,south_island]",
+          "at": 1791049539185,
+          "elapsedMs": 57315,
+          "worldVersion": 3,
+          "codes": [
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE",
+            "OBJECT_NOT_ON_SURFACE"
+          ],
+          "objectIds": [
+            "spawn-0",
+            "west_island",
+            "gate",
+            "east_island",
+            "dec_west_1",
+            "west_island",
+            "dec_north_1",
+            "north_island",
+            "dec_north_2",
+            "north_island",
+            "dec_south_1",
+            "south_island",
+            "dec_south_2",
+            "south_island",
+            "dec_east_1",
+            "east_island",
+            "dec_west_3",
+            "west_island",
+            "dec_north_3",
+            "north_island",
+            "dec_south_3",
+            "south_island",
+            "dec_east_3",
+            "east_island",
+            "dec_north_4",
+            "north_island"
+          ]
+        },
+        {
+          "id": "act-1p-musonvs0",
+          "requestId": "req-5ad48f21",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791049558176,
+          "elapsedMs": 76306,
+          "worldVersion": 3,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-1q-musonvs8",
+          "requestId": "req-5ad48f21",
+          "phase": "failed",
+          "message": "direct / qwen3.5:4b: [direct] failed: VALIDATION_FAILED rejected after 2 repairs: OBJECT_NOT_ON_SURFACE[spawn-0,west_island], OBJECT_NOT_ON_SURFACE[dec_north_1,north_island], OBJECT_NOT_ON_SURFACE[dec_north_2,north_island], OBJECT_NOT_ON_SURFACE[dec_south_1,south_island], OBJECT_NOT_ON_SURFACE[dec_south_2,south_island], OBJECT_NOT_ON_SURFACE[dec_east_1,east_island]",
+          "at": 1791049558184,
+          "elapsedMs": 76314,
+          "worldVersion": 3,
+          "codes": [
+            "OBJECT_NOT_ON_SURFACE",
+            "UNREACHABLE_RELIC"
+          ]
+        },
+        {
+          "id": "act-1r-musonvs8",
+          "requestId": "req-5ad48f21",
+          "phase": "failed",
+          "message": "Failed: rejected after 2 repairs: OBJECT_NOT_ON_SURFACE[spawn-0,west_island], OBJECT_NOT_ON_SURFACE[dec_north_1,north_island], OBJECT_NOT_ON_SURFACE[dec_north_2,north_island], OBJECT_NOT_ON_SURFACE[dec_south_1,south_island], OBJECT_NOT_ON_SURFACE[dec_south_2,south_island], OBJECT_NOT_ON_SURFACE[dec_east_1,east_island]",
+          "at": 1791049558184,
+          "elapsedMs": 76314,
+          "worldVersion": 3,
+          "codes": [
+            "VALIDATION_FAILED"
+          ]
+        }
+      ],
+      "report": {
+        "reportId": "rep-b5232385",
+        "requestId": "req-5ad48f21",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "failed",
+        "worldVersion": 3,
+        "baseWorldVersion": 3,
+        "summary": "[direct] failed: VALIDATION_FAILED rejected after 2 repairs: OBJECT_NOT_ON_SURFACE[spawn-0,west_island], OBJECT_NOT_ON_SURFACE[dec_north_1,north_island], OBJECT_NOT_ON_SURFACE[dec_north_2,north_island], OBJECT_NOT_ON_SURFACE[dec_south_1,south_island], OBJECT_NOT_ON_SURFACE[dec_south_2,south_island], OBJECT_NOT_ON_SURFACE[dec_east_1,east_island]",
+        "validation": {
+          "attempts": 3,
+          "failedCodes": [
+            "OBJECT_NOT_ON_SURFACE",
+            "UNREACHABLE_RELIC"
+          ]
+        },
+        "timings": {
+          "requestedAt": 1791049481870,
+          "firstModelResponseMs": 37278,
+          "totalMs": 76312
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 4
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 13
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 7
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 7
+          }
+        ],
+        "createdAt": 1791049558184
+      },
+      "startedAt": "2026-10-03T17:44:41.869Z",
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "message": "rejected after 2 repairs: OBJECT_NOT_ON_SURFACE[spawn-0,west_island], OBJECT_NOT_ON_SURFACE[dec_north_1,north_island], OBJECT_NOT_ON_SURFACE[dec_north_2,north_island], OBJECT_NOT_ON_SURFACE[dec_south_1,south_island], OBJECT_NOT_ON_SURFACE[dec_south_2,south_island], OBJECT_NOT_ON_SURFACE[dec_east_1,east_island]"
+      }
+    },
+    {
+      "id": "B2",
+      "kind": "brief",
+      "prompt": "A chain of six small islands running from the south-west corner to the north-east corner, each linked to the next by one bridge, lava below. Spawns on the first island, the gate on the last, relics on the second, fourth and fifth islands. A few rocks and bushes at the edges, never on the bridge mouths. Title it \"Ember Chain\".",
+      "expected": "pass",
+      "repeat": 1,
+      "requestId": "req-5835e4cb",
+      "status": "failed",
+      "worldVersionBefore": 3,
+      "worldVersionAfter": 3,
+      "elapsedMs": 70165,
+      "activity": [
+        {
+          "id": "act-1s-musonwgc",
+          "requestId": "req-5835e4cb",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791049559052,
+          "elapsedMs": 0,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1t-musonwgc",
+          "requestId": "req-5835e4cb",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791049559052,
+          "elapsedMs": 0,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1u-musonwge",
+          "requestId": "req-5835e4cb",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791049559054,
+          "elapsedMs": 2,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1v-musoodyg",
+          "requestId": "req-5835e4cb",
+          "phase": "repairing",
+          "message": "[direct] model output did not match the schema, asking again (1 of 2): spawns.0.localPosition.x: Number must be greater than or equal to -20; spawns.0.localPosition.z: Number must be greater than or equal to -20; spawns.1.localPosition.x: Number must be greater than or equal to -20; spawns.1.localPosition.z: Number must be greater than or equal to -20; relics.2.localPosition.z: Number must be less",
+          "at": 1791049581736,
+          "elapsedMs": 22684,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1w-musoovly",
+          "requestId": "req-5835e4cb",
+          "phase": "repairing",
+          "message": "[direct] model output did not match the schema, asking again (2 of 2): spawns.0.localPosition.x: Number must be greater than or equal to -20; spawns.0.localPosition.z: Number must be greater than or equal to -20; spawns.1.localPosition.x: Number must be greater than or equal to -20; spawns.1.localPosition.z: Number must be greater than or equal to -20; relics.2.localPosition.z: Number must be less",
+          "at": 1791049604614,
+          "elapsedMs": 45562,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1x-musope4s",
+          "requestId": "req-5835e4cb",
+          "phase": "failed",
+          "message": "direct / qwen3.5:4b: [direct] failed: MODEL_OUTPUT_INVALID model output failed schema validation 3 times: relics.2.localPosition.z: Number must be less than or equal to 20; gate.localPosition.z: Number must be less than or equal to 20; decorations.0.localPosition.x: Number must be greater than or equal to -20; decorations.0.localPosition.z: Number must be greater than or equal to -20; decorations.",
+          "at": 1791049628620,
+          "elapsedMs": 69568,
+          "worldVersion": 3
+        },
+        {
+          "id": "act-1y-musope4t",
+          "requestId": "req-5835e4cb",
+          "phase": "failed",
+          "message": "Failed: model output failed schema validation 3 times: relics.2.localPosition.z: Number must be less than or equal to 20; gate.localPosition.z: Number must be less than or equal to 20; decorations.0.localPosition.x: Number must be greater than or equal to -20; decorations.0.localPosition.z: Number must be greater than or equal to -20; decorations.1.localPosition.x: Number must be greater than or equal to ",
+          "at": 1791049628621,
+          "elapsedMs": 69569,
+          "worldVersion": 3,
+          "codes": [
+            "MODEL_OUTPUT_INVALID"
+          ]
+        }
+      ],
+      "report": {
+        "reportId": "rep-a12f3ab4",
+        "requestId": "req-5835e4cb",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "failed",
+        "worldVersion": 3,
+        "baseWorldVersion": 3,
+        "summary": "[direct] failed: MODEL_OUTPUT_INVALID model output failed schema validation 3 times: relics.2.localPosition.z: Number must be less than or equal to 20; gate.localPosition.z: Number must be less than or equal to 20; decorations.0.localPosition.x: Number must be greater than or equal to -20; decorations.0.localPosition.z: Number must be greater than or equal to -20; decorations.1.localPosition.x: Number must be greater than or equal to -20; decorations.1.localPosition.z: Number must be greater than or equal to -20",
+        "validation": {
+          "attempts": 0,
+          "failedCodes": []
+        },
+        "timings": {
+          "requestedAt": 1791049559052,
+          "firstModelResponseMs": 22681,
+          "totalMs": 69566
+        },
+        "toolCalls": [],
+        "createdAt": 1791049628620
+      },
+      "startedAt": "2026-10-03T17:45:59.050Z",
+      "error": {
+        "code": "MODEL_OUTPUT_INVALID",
+        "message": "model output failed schema validation 3 times: relics.2.localPosition.z: Number must be less than or equal to 20; gate.localPosition.z: Number must be less than or equal to 20; decorations.0.localPosition.x: Number must be greater than or equal to -20; decorations.0.localPosition.z: Number must be greater than or equal to -20; decorations.1.localPosition.x: Number must be greater than or equal to "
+      }
+    }
+  ],
+  "finishedAt": "2026-10-03T17:47:09.216Z"
+}
