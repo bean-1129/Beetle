@@ -1,4 +1,8 @@
 // Beetle pitch deck generator (six slides). Output: docs/pitch/Beetle-pitch.pptx
+// This file is CommonJS. The repo package.json sets "type": "module", so run it from a copy named *.cjs
+// outside the repo with NODE_PATH pointing at a directory that holds pptxgenjs (not a repo dependency):
+//   cp docs/pitch/build-deck.js <scratch>/build-deck.cjs && NODE_PATH=<scratch>/node_modules node <scratch>/build-deck.cjs docs/pitch/Beetle-pitch.pptx
+//   soffice --headless --convert-to pdf --outdir docs/pitch docs/pitch/Beetle-pitch.pptx
 const path = require("path");
 const pptxgen = require("pptxgenjs");
 const { applyTheme } = require(
@@ -512,8 +516,8 @@ const SEC = { sectionTitle: "Beetle pitch" };
   s.addText(
     [
       { text: "[VIDEO PLACEHOLDER]", options: { fontSize: 14, bold: true, color: C.text1, breakLine: true, paraSpaceAfter: 3 } },
-      { text: "90 to 120 second demo recording, dropped in after rehearsal", options: { fontSize: 11, color: C.text2, breakLine: true } },
-      { text: "Any time compression is labelled on screen", options: { fontSize: 11, color: C.text2 } },
+      { text: "Insert the rehearsal recording here (90 to 120 s). Not yet recorded at 13:40 CDT.", options: { fontSize: 11, color: C.text2, breakLine: true } },
+      { text: "The caption names the agent mode used; any time compression is labelled on screen", options: { fontSize: 11, color: C.text2 } },
     ],
     {
       x: fx + 0.3,
@@ -549,8 +553,8 @@ const SEC = { sectionTitle: "Beetle pitch" };
     ["6 to 22 s", "A local model composes the world. Validated by game code before it is published."],
     ["22 to 34 s", "Two players join from their phones. Same screen, their phones only send controls."],
     ["34 to 58 s", "Edits land live. No disconnect, no reset."],
-    ["58 to 90 s", "The validator refuses a world nobody can finish. The agent repairs it and commits only a passing version."],
-    ["90 to 105 s", "Measured on one GB10. Local model, local agent, no cloud."],
+    ["58 to 90 s", "The validator refuses a world nobody can finish (DISCONNECTED_GOAL). The agent repairs it and commits only a passing version."],
+    ["90 to 105 s", "Measured on one GB10. Local model, local agent in [direct or OpenClaw] mode, no cloud."],
     ["105 to 115 s", "Beetle"],
   ];
   const runs = [];
@@ -560,7 +564,7 @@ const SEC = { sectionTitle: "Beetle pitch" };
   });
   s.addText(runs, { x: cx, y: 1.6, w: cw, h: 3.4, valign: "top", margin: 0, isTextBox: true, objectName: "caption list" });
 
-  s.addNotes("Play the recording here. Captions follow the storyboard; shots that cannot be produced honestly are cut, not faked.");
+  s.addNotes("Play the recording here. Captions follow docs/STORYBOARD.md; the mode caption is set to whichever agent mode was green at recording time. Rehearsal timings: brief 14 s on a quiet GPU, edits 2 to 14 s, DISCONNECTED_GOAL refused and repaired in 3.0 s. Shots that cannot be produced honestly are cut, not faked.");
 }
 
 // ====================== Slide 4: agent architecture and validation ======================
@@ -648,7 +652,7 @@ const SEC = { sectionTitle: "Beetle pitch" };
     objectName: "loop across",
   });
   arrow(s, agentX, loopY, agentX, loopTop, C.accent1, 1.25);
-  s.addText("validation issues go back for repair, at most [max attempts] attempts, then the request fails honestly", {
+  s.addText("validation issues go back for repair, at most 2 attempts, then the request fails honestly", {
     x: agentX + 0.15,
     y: loopY + 0.05,
     w: valX - agentX - 0.3,
@@ -704,32 +708,36 @@ const SEC = { sectionTitle: "Beetle pitch" };
   s.addText("Measured local-first results", { placeholder: "title" });
   smallWordmark(s);
 
+  // Filled 2026-10-03 13:40 CDT. Every value is copied from the file named in the card; see docs/pitch/FILL_IN.md.
   const cells = [
-    ["MODEL", "[model tag], [quantization]", "on the GB10 via Ollama on loopback"],
-    ["BRIEF TO PLAYABLE", "[min] / [p50] / [max] s", "over [N] runs, cold load [cold s] reported separately"],
-    ["EDIT TO COMMIT", "[min] / [p50] / [max] s", "edit request to committed version"],
-    ["INVALID EDITS CAUGHT", "[caught] of [attempts]", "repairs that succeeded: [repaired]"],
-    ["SESSION CONTINUITY", "[players kept] players, [relics kept] relics", "[reconnects] reconnects across [N commits] commits"],
-    ["OFFLINE PROOF", "[what was disconnected]", "still worked: [what still worked]"],
+    ["MODEL", "qwen3.5:4b, Q4_K_M", "4.7B, 3.4 GB, Ollama 0.35.1 on loopback. qwen3.8:27b not benchmarked: pull failed once, re-downloading. docs/MODEL_SELECTION.md"],
+    ["BRIEF, WARM, QUIET GPU", "26.2 / 26.5 / 27.7 s", "min / p50 / max, 3 runs, first draft valid (bench-qwen3.5_4b-1791049348895.json). 10 s target not met. 14 s once after normalization (RESULTS.md run 3)."],
+    ["COLD / CONTENDED GPU", "23.1 s load; 58 to 214 s", "cold: 23.1 s model load in a 54.4 s first draft (probe-run.log). Contended: drafts 58.8 to 214.1 s, one edit 45.1 s (bench-qwen3.5_4b-1791050596040.json)."],
+    ["EDIT TO COMMIT", "2.0 / 8.0 / 14.0 s", "min / p50 / max, 6 edits, 5 of 6 committed; run 3 after normalization, quiet GPU, direct mode (run-1791052136845.json). Run 2 before: 2 of 6, 3.0 s each."],
+    ["INVALID EDITS CAUGHT", "6 of 12 refused", "runs 2 and 3 (RESULTS.md); repairs that then committed: 1 (run 3 E6); invalid worlds committed: 0. On garden5 a DISCONNECTED_GOAL refusal was repaired and committed in 3.0 s."],
+    ["NORMALIZATION EFFECT", "2 of 30 to 13 of 30", "corpus validity without vs with the deterministic normalizer (MODEL_FAILURE_MODES.md, corpus/summary.json). Live edits committed: 2 of 6 to 5 of 6."],
+    ["LATENCY, LOOPBACK", "0.48 ms RTT, 18.8 ms tick", "p50, scripted controllers (p95 0.81 and 33.1 ms; LATENCY.md). Not input to photon: no phone, Wi-Fi, browser or display included."],
+    ["SESSION CONTINUITY", "not measured live", "no player connected in runs 2 and 3. Preserved ids, relics, score and reconnect are covered by integration tests with real sockets (BUILD_STATUS.md 10, 12)."],
+    ["OFFLINE PROOF", "not run", "only a before record exists (data/offline-proof/1791049273707.json: egress not blocked, server not up). Procedure: docs/OFFLINE_PROOF.md. Nothing claimed."],
   ];
   const cols = 3,
     cw = 2.9,
-    ch = 1.45,
+    ch = 1.08,
     gx = 0.15,
-    gy = 0.18,
+    gy = 0.06,
     x0 = 0.5,
-    y0 = 1.3;
+    y0 = 1.22;
   cells.forEach(([lab, big, sub], i) => {
     const x = x0 + (i % cols) * (cw + gx);
     const y = y0 + Math.floor(i / cols) * (ch + gy);
     card(s, x, y, cw, ch, "result card " + lab);
-    label(s, lab, x + 0.18, y + 0.14, cw - 0.36);
+    label(s, lab, x + 0.16, y + 0.08, cw - 0.32, { fontSize: 9, h: 0.2 });
     s.addText(big, {
-      x: x + 0.18,
-      y: y + 0.42,
-      w: cw - 0.36,
-      h: 0.6,
-      fontSize: 15,
+      x: x + 0.16,
+      y: y + 0.27,
+      w: cw - 0.32,
+      h: 0.3,
+      fontSize: 12.5,
       bold: true,
       color: C.accent1,
       valign: "middle",
@@ -738,11 +746,11 @@ const SEC = { sectionTitle: "Beetle pitch" };
       objectName: "result value " + lab,
     });
     s.addText(sub, {
-      x: x + 0.18,
-      y: y + 1.06,
-      w: cw - 0.36,
-      h: 0.38,
-      fontSize: 10,
+      x: x + 0.16,
+      y: y + 0.58,
+      w: cw - 0.32,
+      h: 0.48,
+      fontSize: 7.5,
       color: C.text2,
       valign: "top",
       margin: 0,
@@ -751,22 +759,24 @@ const SEC = { sectionTitle: "Beetle pitch" };
     });
   });
   s.addText(
-    "Every bracketed value is a placeholder. Values come only from data/benchmarks/*.json and data/reports/*.json. Nothing unmeasured goes on a slide.",
+    "All timings are from the direct harness, labelled [direct] in every report, and each names its GPU state because the Ollama daemon was shared for most of the day. OpenClaw tool calls are proven against a fake server (packages/agent/SMOKE.md); the run against the real server times out before any model call and is being diagnosed.",
     {
       x: 0.5,
-      y: 4.62,
+      y: 4.66,
       w: 9.0,
-      h: 0.45,
-      fontSize: 10,
+      h: 0.46,
+      fontSize: 8.5,
       italic: true,
       color: C.text2,
       margin: 0,
       isTextBox: true,
-      objectName: "placeholder note",
+      objectName: "sources note",
     }
   );
 
-  s.addNotes("Read the measured numbers from the filled cards. If a card is still bracketed, say that the measurement is pending rather than guessing.");
+  s.addNotes(
+    "Read the cards. Say out loud: the 10 s brief target is not met; a valid brief takes 24 to 28 s warm on a quiet GPU and 14 s was seen once after normalization. Edits commit in 2 to 14 s. Session continuity and the offline proof are covered by tests or procedure but not yet measured live; say so rather than guessing. The 27b was never benchmarked."
+  );
 }
 
 // ====================== Slide 6: business hypothesis and next validation ======================
