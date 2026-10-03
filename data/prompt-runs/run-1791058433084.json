@@ -1,0 +1,187 @@
+{
+  "startedAt": "2026-10-03T20:13:53.084Z",
+  "serverUrl": "http://127.0.0.1:7799",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 12,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7799",
+    "uptimeMs": 119071
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "Survival on a night archipelago: the water rises after 30 seconds, survive 120 seconds and reach the gate with 1 relic."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "Survival on a night archipelago: the water rises after 30 seconds, survive 120 seconds and reach the gate with 1 relic.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-57f50f08",
+      "status": "committed",
+      "worldVersionBefore": 12,
+      "worldVersionAfter": 13,
+      "elapsedMs": 13054,
+      "activity": [
+        {
+          "id": "act-1r-musty3pc",
+          "requestId": "req-57f50f08",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791058433088,
+          "elapsedMs": 0,
+          "worldVersion": 12
+        },
+        {
+          "id": "act-1s-musty3pc",
+          "requestId": "req-57f50f08",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791058433088,
+          "elapsedMs": 0,
+          "worldVersion": 12
+        },
+        {
+          "id": "act-1t-musty3pd",
+          "requestId": "req-57f50f08",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791058433089,
+          "elapsedMs": 1,
+          "worldVersion": 12
+        },
+        {
+          "id": "act-1u-mustydbp",
+          "requestId": "req-57f50f08",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058445557,
+          "elapsedMs": 12469,
+          "worldVersion": 12,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-1v-mustydbv",
+          "requestId": "req-57f50f08",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791058445563,
+          "elapsedMs": 12475,
+          "worldVersion": 12,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-1w-mustydc2",
+          "requestId": "req-57f50f08",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791058445570,
+          "elapsedMs": 12482,
+          "worldVersion": 12,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-1x-mustydcp",
+          "requestId": "req-57f50f08",
+          "phase": "committed",
+          "message": "[direct] committed v13",
+          "at": 1791058445593,
+          "elapsedMs": 12505,
+          "worldVersion": 13,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-1y-mustydcq",
+          "requestId": "req-57f50f08",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] new world \"Survival Night Archipelago\" with 5 islands and 5 bridges, mode survival, biome night",
+          "at": 1791058445594,
+          "elapsedMs": 12506,
+          "worldVersion": 13
+        },
+        {
+          "id": "act-1z-mustydcr",
+          "requestId": "req-57f50f08",
+          "phase": "committed",
+          "message": "Committed world version 13",
+          "at": 1791058445595,
+          "elapsedMs": 12507,
+          "worldVersion": 13
+        }
+      ],
+      "report": {
+        "reportId": "rep-99c0523a",
+        "requestId": "req-57f50f08",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 13,
+        "baseWorldVersion": 12,
+        "summary": "[direct] new world \"Survival Night Archipelago\" with 5 islands and 5 bridges, mode survival, biome night",
+        "validation": {
+          "attempts": 1,
+          "failedCodes": []
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791058433088,
+          "firstModelResponseMs": 12466,
+          "validatedMs": 12474,
+          "committedMs": 12504,
+          "totalMs": 12506
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 5
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 5
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 21
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791058445594
+      },
+      "startedAt": "2026-10-03T20:13:53.084Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T20:14:06.139Z"
+}

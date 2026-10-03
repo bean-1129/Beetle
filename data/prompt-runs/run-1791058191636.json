@@ -1,0 +1,231 @@
+{
+  "startedAt": "2026-10-03T20:09:51.636Z",
+  "serverUrl": "http://127.0.0.1:7799",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 4,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7799",
+    "uptimeMs": 323846
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "A puzzle world in a frozen archipelago: the relics are spread out, find all three to unlock the gate."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "A puzzle world in a frozen archipelago: the relics are spread out, find all three to unlock the gate.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-1d397196",
+      "status": "failed",
+      "worldVersionBefore": 4,
+      "worldVersionAfter": 4,
+      "elapsedMs": 44116,
+      "activity": [
+        {
+          "id": "act-20-mustsxeg",
+          "requestId": "req-1d397196",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791058191640,
+          "elapsedMs": 0,
+          "worldVersion": 4
+        },
+        {
+          "id": "act-21-mustsxeg",
+          "requestId": "req-1d397196",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791058191640,
+          "elapsedMs": 0,
+          "worldVersion": 4
+        },
+        {
+          "id": "act-22-mustsxei",
+          "requestId": "req-1d397196",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791058191642,
+          "elapsedMs": 2,
+          "worldVersion": 4
+        },
+        {
+          "id": "act-23-mustt8kx",
+          "requestId": "req-1d397196",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058206129,
+          "elapsedMs": 14489,
+          "worldVersion": 4,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-24-mustt8l3",
+          "requestId": "req-1d397196",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: BRIDGE_CROSSES_ISLAND[b3,i0], UNREACHABLE_RELIC[r2,i2,spawn-0,spawn-1]",
+          "at": 1791058206135,
+          "elapsedMs": 14495,
+          "worldVersion": 4,
+          "codes": [
+            "BRIDGE_CROSSES_ISLAND",
+            "UNREACHABLE_RELIC"
+          ],
+          "objectIds": [
+            "b3",
+            "i0",
+            "r2",
+            "i2",
+            "spawn-0",
+            "spawn-1"
+          ]
+        },
+        {
+          "id": "act-25-musttjj2",
+          "requestId": "req-1d397196",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058220318,
+          "elapsedMs": 28678,
+          "worldVersion": 4,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-26-musttjjb",
+          "requestId": "req-1d397196",
+          "phase": "repairing",
+          "message": "[direct] repair 2 of 2: BRIDGE_CROSSES_ISLAND[b3,i0], UNREACHABLE_RELIC[r1,i1,spawn-0,spawn-1], UNREACHABLE_RELIC[r3,i2,spawn-0,spawn-1]",
+          "at": 1791058220327,
+          "elapsedMs": 28687,
+          "worldVersion": 4,
+          "codes": [
+            "BRIDGE_CROSSES_ISLAND",
+            "UNREACHABLE_RELIC",
+            "UNREACHABLE_RELIC"
+          ],
+          "objectIds": [
+            "b3",
+            "i0",
+            "r1",
+            "i1",
+            "spawn-0",
+            "spawn-1",
+            "r3",
+            "i2",
+            "spawn-0",
+            "spawn-1"
+          ]
+        },
+        {
+          "id": "act-27-musttuod",
+          "requestId": "req-1d397196",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058234765,
+          "elapsedMs": 43125,
+          "worldVersion": 4,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-28-musttuoj",
+          "requestId": "req-1d397196",
+          "phase": "failed",
+          "message": "direct / qwen3.5:4b: [direct] failed: VALIDATION_FAILED rejected after 2 repairs: BRIDGE_CROSSES_ISLAND[b3,i0], UNREACHABLE_RELIC[r1,i1,spawn-0,spawn-1], UNREACHABLE_RELIC[r3,i2,spawn-0,spawn-1]",
+          "at": 1791058234771,
+          "elapsedMs": 43131,
+          "worldVersion": 4,
+          "codes": [
+            "BRIDGE_CROSSES_ISLAND",
+            "UNREACHABLE_RELIC"
+          ]
+        },
+        {
+          "id": "act-29-musttuok",
+          "requestId": "req-1d397196",
+          "phase": "failed",
+          "message": "Failed: rejected after 2 repairs: BRIDGE_CROSSES_ISLAND[b3,i0], UNREACHABLE_RELIC[r1,i1,spawn-0,spawn-1], UNREACHABLE_RELIC[r3,i2,spawn-0,spawn-1]",
+          "at": 1791058234772,
+          "elapsedMs": 43132,
+          "worldVersion": 4,
+          "codes": [
+            "VALIDATION_FAILED"
+          ]
+        }
+      ],
+      "report": {
+        "reportId": "rep-29afa9bd",
+        "requestId": "req-1d397196",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "failed",
+        "worldVersion": 4,
+        "baseWorldVersion": 4,
+        "summary": "[direct] failed: VALIDATION_FAILED rejected after 2 repairs: BRIDGE_CROSSES_ISLAND[b3,i0], UNREACHABLE_RELIC[r1,i1,spawn-0,spawn-1], UNREACHABLE_RELIC[r3,i2,spawn-0,spawn-1]",
+        "validation": {
+          "attempts": 3,
+          "failedCodes": [
+            "BRIDGE_CROSSES_ISLAND",
+            "UNREACHABLE_RELIC"
+          ]
+        },
+        "timings": {
+          "requestedAt": 1791058191640,
+          "firstModelResponseMs": 14485,
+          "totalMs": 43129
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 5
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 3
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 8
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 5
+          }
+        ],
+        "createdAt": 1791058234771
+      },
+      "startedAt": "2026-10-03T20:09:51.637Z",
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "message": "rejected after 2 repairs: BRIDGE_CROSSES_ISLAND[b3,i0], UNREACHABLE_RELIC[r1,i1,spawn-0,spawn-1], UNREACHABLE_RELIC[r3,i2,spawn-0,spawn-1]"
+      }
+    }
+  ],
+  "finishedAt": "2026-10-03T20:10:35.754Z"
+}

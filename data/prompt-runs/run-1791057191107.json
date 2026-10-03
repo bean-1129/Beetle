@@ -1,0 +1,187 @@
+{
+  "startedAt": "2026-10-03T19:53:11.107Z",
+  "serverUrl": "http://127.0.0.1:7802",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 0,
+    "hasWorld": false,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7802",
+    "uptimeMs": 99540
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "King of the hill on a frozen arena of four islands, hold the hill for 12 seconds, towers around the hill."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "King of the hill on a frozen arena of four islands, hold the hill for 12 seconds, towers around the hill.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-9ca15d40",
+      "status": "committed",
+      "worldVersionBefore": 0,
+      "worldVersionAfter": 1,
+      "elapsedMs": 128308,
+      "activity": [
+        {
+          "id": "act-1-must7he2",
+          "requestId": "req-9ca15d40",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791057191114,
+          "elapsedMs": 0,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-2-must7he2",
+          "requestId": "req-9ca15d40",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791057191114,
+          "elapsedMs": 0,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-3-must7he4",
+          "requestId": "req-9ca15d40",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791057191116,
+          "elapsedMs": 2,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-4-musta82c",
+          "requestId": "req-9ca15d40",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791057318996,
+          "elapsedMs": 127882,
+          "worldVersion": 0,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-5-musta82s",
+          "requestId": "req-9ca15d40",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791057319012,
+          "elapsedMs": 127898,
+          "worldVersion": 0,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-6-musta833",
+          "requestId": "req-9ca15d40",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791057319023,
+          "elapsedMs": 127909,
+          "worldVersion": 0,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-7-musta848",
+          "requestId": "req-9ca15d40",
+          "phase": "committed",
+          "message": "[direct] committed v1",
+          "at": 1791057319064,
+          "elapsedMs": 127950,
+          "worldVersion": 1,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-8-musta84c",
+          "requestId": "req-9ca15d40",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] new world \"King of the Hill (frost)\" with 4 islands and 4 bridges, mode king_of_the_hill",
+          "at": 1791057319068,
+          "elapsedMs": 127954,
+          "worldVersion": 1
+        },
+        {
+          "id": "act-9-musta84d",
+          "requestId": "req-9ca15d40",
+          "phase": "committed",
+          "message": "Committed world version 1",
+          "at": 1791057319069,
+          "elapsedMs": 127955,
+          "worldVersion": 1
+        }
+      ],
+      "report": {
+        "reportId": "rep-5543d5f0",
+        "requestId": "req-9ca15d40",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 1,
+        "baseWorldVersion": 0,
+        "summary": "[direct] new world \"King of the Hill (frost)\" with 4 islands and 4 bridges, mode king_of_the_hill",
+        "validation": {
+          "attempts": 1,
+          "failedCodes": []
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791057191114,
+          "firstModelResponseMs": 127875,
+          "validatedMs": 127895,
+          "committedMs": 127948,
+          "totalMs": 127951
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 3
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 14
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 9
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 39
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 2
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791057319068
+      },
+      "startedAt": "2026-10-03T19:53:11.109Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T19:55:19.418Z"
+}

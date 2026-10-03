@@ -1,0 +1,190 @@
+{
+  "startedAt": "2026-10-03T20:18:51.156Z",
+  "serverUrl": "http://127.0.0.1:7800",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 0,
+    "hasWorld": false,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7800",
+    "uptimeMs": 5368,
+    "settings": {
+      "autoExpand": true
+    }
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "An adventure relic hunt across five garden islands with a temple to the north, water below, trees and lanterns, one risky narrow bridge."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "An adventure relic hunt across five garden islands with a temple to the north, water below, trees and lanterns, one risky narrow bridge.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-813ee916",
+      "status": "committed",
+      "worldVersionBefore": 0,
+      "worldVersionAfter": 1,
+      "elapsedMs": 108266,
+      "activity": [
+        {
+          "id": "act-1-musu4hp5",
+          "requestId": "req-813ee916",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791058731161,
+          "elapsedMs": 0,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-2-musu4hp6",
+          "requestId": "req-813ee916",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791058731162,
+          "elapsedMs": 1,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-3-musu4hpa",
+          "requestId": "req-813ee916",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791058731166,
+          "elapsedMs": 5,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-4-musu6sk0",
+          "requestId": "req-813ee916",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058838544,
+          "elapsedMs": 107383,
+          "worldVersion": 0,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-5-musu6ski",
+          "requestId": "req-813ee916",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791058838562,
+          "elapsedMs": 107401,
+          "worldVersion": 0,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-6-musu6sl0",
+          "requestId": "req-813ee916",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791058838580,
+          "elapsedMs": 107419,
+          "worldVersion": 0,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-7-musu6slt",
+          "requestId": "req-813ee916",
+          "phase": "committed",
+          "message": "[direct] committed v1",
+          "at": 1791058838609,
+          "elapsedMs": 107448,
+          "worldVersion": 1,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-8-musu6slx",
+          "requestId": "req-813ee916",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] new world \"Relic Hunt (relic_hunt)\" with 5 islands and 4 bridges, mode relic_hunt, biome garden",
+          "at": 1791058838613,
+          "elapsedMs": 107452,
+          "worldVersion": 1
+        },
+        {
+          "id": "act-9-musu6sly",
+          "requestId": "req-813ee916",
+          "phase": "committed",
+          "message": "Committed world version 1",
+          "at": 1791058838614,
+          "elapsedMs": 107453,
+          "worldVersion": 1
+        }
+      ],
+      "report": {
+        "reportId": "rep-60acfc9b",
+        "requestId": "req-813ee916",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 1,
+        "baseWorldVersion": 0,
+        "summary": "[direct] new world \"Relic Hunt (relic_hunt)\" with 5 islands and 4 bridges, mode relic_hunt, biome garden",
+        "validation": {
+          "attempts": 1,
+          "failedCodes": []
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791058731161,
+          "firstModelResponseMs": 107375,
+          "validatedMs": 107398,
+          "committedMs": 107444,
+          "totalMs": 107448
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 5
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 16
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 16
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 26
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791058838612
+      },
+      "startedAt": "2026-10-03T20:18:51.157Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T20:20:39.425Z"
+}

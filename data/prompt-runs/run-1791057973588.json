@@ -1,0 +1,228 @@
+{
+  "startedAt": "2026-10-03T20:06:13.588Z",
+  "serverUrl": "http://127.0.0.1:7799",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 2,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7799",
+    "uptimeMs": 105797
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "Survival on a night archipelago: the water rises after 30 seconds, survive 120 seconds and reach the gate with 1 relic."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "Survival on a night archipelago: the water rises after 30 seconds, survive 120 seconds and reach the gate with 1 relic.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-09207fe4",
+      "status": "committed",
+      "worldVersionBefore": 2,
+      "worldVersionAfter": 3,
+      "elapsedMs": 33099,
+      "activity": [
+        {
+          "id": "act-m-musto95k",
+          "requestId": "req-09207fe4",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791057973592,
+          "elapsedMs": 0,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-n-musto95k",
+          "requestId": "req-09207fe4",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791057973592,
+          "elapsedMs": 0,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-o-musto95o",
+          "requestId": "req-09207fe4",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791057973596,
+          "elapsedMs": 4,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-p-mustoltg",
+          "requestId": "req-09207fe4",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791057990004,
+          "elapsedMs": 16412,
+          "worldVersion": 2,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-q-mustoltp",
+          "requestId": "req-09207fe4",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: BRIDGE_CROSSES_ISLAND[b3,i0]",
+          "at": 1791057990013,
+          "elapsedMs": 16421,
+          "worldVersion": 2,
+          "codes": [
+            "BRIDGE_CROSSES_ISLAND"
+          ],
+          "objectIds": [
+            "b3",
+            "i0"
+          ]
+        },
+        {
+          "id": "act-r-mustoygl",
+          "requestId": "req-09207fe4",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058006389,
+          "elapsedMs": 32797,
+          "worldVersion": 2,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-s-mustoygs",
+          "requestId": "req-09207fe4",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791058006396,
+          "elapsedMs": 32804,
+          "worldVersion": 2,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-t-mustoyh2",
+          "requestId": "req-09207fe4",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791058006406,
+          "elapsedMs": 32814,
+          "worldVersion": 2,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-u-mustoyi6",
+          "requestId": "req-09207fe4",
+          "phase": "committed",
+          "message": "[direct] committed v3",
+          "at": 1791058006446,
+          "elapsedMs": 32854,
+          "worldVersion": 3,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-v-mustoyi9",
+          "requestId": "req-09207fe4",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] new world \"Night Archipelago (Survival)\" with 5 islands and 5 bridges, mode survival, biome night",
+          "at": 1791058006449,
+          "elapsedMs": 32857,
+          "worldVersion": 3,
+          "codes": [
+            "BRIDGE_CROSSES_ISLAND"
+          ]
+        },
+        {
+          "id": "act-w-mustoyib",
+          "requestId": "req-09207fe4",
+          "phase": "committed",
+          "message": "Committed world version 3",
+          "at": 1791058006451,
+          "elapsedMs": 32859,
+          "worldVersion": 3
+        }
+      ],
+      "report": {
+        "reportId": "rep-100488c7",
+        "requestId": "req-09207fe4",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 3,
+        "baseWorldVersion": 2,
+        "summary": "[direct] new world \"Night Archipelago (Survival)\" with 5 islands and 5 bridges, mode survival, biome night",
+        "validation": {
+          "attempts": 2,
+          "failedCodes": [
+            "BRIDGE_CROSSES_ISLAND"
+          ]
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791057973592,
+          "firstModelResponseMs": 16404,
+          "validatedMs": 32801,
+          "committedMs": 32851,
+          "totalMs": 32854
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 4
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 6
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 3
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 5
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 8
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 39
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791058006449
+      },
+      "startedAt": "2026-10-03T20:06:13.588Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T20:06:46.688Z"
+}

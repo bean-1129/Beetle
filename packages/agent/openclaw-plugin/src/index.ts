@@ -4,7 +4,7 @@ import { Type } from 'typebox';
 import { defineToolPlugin } from 'openclaw/plugin-sdk/tool-plugin';
 import { appendFileSync, readFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { BIOMES, DECORATION_TYPES, GAME_MODES, HAZARD_KINDS, MODE_LIMITS, PATCH_OP_NAMES, WORLD_LIMITS, type ValidationCode } from '@beetle/contracts';
+import { BIOMES, DECORATION_TYPES, GAME_MODES, HAZARD_KINDS, MODE_LIMITS, PATCH_OP_NAMES, TERRAINS, WORLD_LIMITS, type ValidationCode } from '@beetle/contracts';
 import { createBeetleClient, type BeetleClient, type IssueList, type StatusBody } from '../../src/tools.ts';
 
 const PLUGIN_ID = 'beetle-tools';
@@ -27,8 +27,9 @@ const Vec = Type.Object({ x: Type.Number(), z: Type.Number() });
 const Num = (minimum: number, maximum: number) => Type.Number({ minimum, maximum });
 const Int = (minimum: number, maximum: number) => Type.Integer({ minimum, maximum });
 
-// Mirrors packages/contracts: BIOMES, ModeSchema, MODE_LIMITS.movementSpeed and HazardRiseSchema.
+// Mirrors packages/contracts: BIOMES, TERRAINS, ModeSchema, MODE_LIMITS.movementSpeed and HazardRiseSchema.
 const biomeSchema = Enum(BIOMES);
+const terrainSchema = Enum(TERRAINS);
 const modeSchema = Type.Object({
   kind: Enum(GAME_MODES),
   timeLimitSec: Type.Optional(Int(M.timeLimitSec.min, M.timeLimitSec.max)),
@@ -57,7 +58,8 @@ const worldDraftSchema = Type.Object({
   movementSpeed: Type.Optional(speedSchema),
   hazardRise: Type.Optional(hazardRiseSchema),
   streaming: Type.Optional(Type.Boolean()),
-}, { description: 'center is a world position (m); localPosition is an offset from the island centre. Always set biome and mode; hazardRise only for survival. streaming true: start with 2 to 4 islands around the spawn; the world grows as players explore.' });
+  terrain: Type.Optional(terrainSchema),
+}, { description: 'center is a world position (m); localPosition is an offset from the island centre. Always set terrain, biome and mode (terrain ground: one landmass, islands are zones or clearings, bridges are paths); hazardRise only for survival. streaming true: start with 2 to 4 islands around the spawn; the world grows as players explore.' });
 
 const patchOpSchema = Type.Object({
   op: Enum(PATCH_OP_NAMES),
@@ -73,11 +75,12 @@ const patchOpSchema = Type.Object({
   mode: Type.Optional(modeSchema),
   biome: Type.Optional(biomeSchema),
   speed: Type.Optional(speedSchema),
+  terrain: Type.Optional(terrainSchema),
   name: Type.Optional(Type.String({ maxLength: L.name.maxLength })),
   center: Type.Optional(Vec),
   radius: Type.Optional(Num(L.island.minRadius, L.island.maxRadius)),
   bridgeFrom: Type.Optional(Type.String()),
-}, { description: 'Only the fields of the op: add_bridge id,from,to,width?; remove_bridge id; set_hazard kind; add_decoration id,type,islandId,localPosition; move_decoration|move_relic id,islandId,localPosition; remove_decoration id; set_title title; set_mode mode; set_biome biome; set_movement speed; add_island id,name?,center {x,z} (world position, m),radius,bridgeFrom? (existing island id to bridge from); remove_island id' });
+}, { description: 'Only the fields of the op: add_bridge id,from,to,width?; remove_bridge id; set_hazard kind; add_decoration id,type,islandId,localPosition; move_decoration|move_relic id,islandId,localPosition; remove_decoration id; set_title title; set_mode mode; set_biome biome; set_movement speed; set_terrain terrain; add_island id,name?,center {x,z} (world position, m),radius,bridgeFrom? (existing island id to bridge from); remove_island id' });
 
 // ---------- runtime state for one exec run ----------
 type RunState = {
@@ -232,6 +235,7 @@ export default defineToolPlugin({
           title: spec.title,
           hazard: spec.hazard.kind,
           biome: spec.biome,
+          terrain: spec.terrain ?? 'islands',
           mode: spec.mode ?? { kind: 'relic_hunt' },
           movementSpeed: spec.movement?.speed,
           islands: spec.islands.map((i) => {

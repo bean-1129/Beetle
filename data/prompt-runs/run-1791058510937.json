@@ -1,0 +1,190 @@
+{
+  "startedAt": "2026-10-03T20:15:10.937Z",
+  "serverUrl": "http://127.0.0.1:7799",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 13,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7799",
+    "uptimeMs": 9917,
+    "settings": {
+      "autoExpand": true
+    }
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "A rush in a desert arena: king of the hill, hold for 8 seconds, speed 6.5."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "A rush in a desert arena: king of the hill, hold for 8 seconds, speed 6.5.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-522763bf",
+      "status": "committed",
+      "worldVersionBefore": 13,
+      "worldVersionAfter": 14,
+      "elapsedMs": 9044,
+      "activity": [
+        {
+          "id": "act-1-mustzrry",
+          "requestId": "req-522763bf",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791058510942,
+          "elapsedMs": 0,
+          "worldVersion": 13
+        },
+        {
+          "id": "act-2-mustzrry",
+          "requestId": "req-522763bf",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791058510942,
+          "elapsedMs": 0,
+          "worldVersion": 13
+        },
+        {
+          "id": "act-3-mustzrs4",
+          "requestId": "req-522763bf",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791058510948,
+          "elapsedMs": 6,
+          "worldVersion": 13
+        },
+        {
+          "id": "act-4-mustzy38",
+          "requestId": "req-522763bf",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058519124,
+          "elapsedMs": 8182,
+          "worldVersion": 13,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-5-mustzy3n",
+          "requestId": "req-522763bf",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791058519139,
+          "elapsedMs": 8197,
+          "worldVersion": 13,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-6-mustzy3w",
+          "requestId": "req-522763bf",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791058519148,
+          "elapsedMs": 8206,
+          "worldVersion": 13,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-7-mustzy4o",
+          "requestId": "req-522763bf",
+          "phase": "committed",
+          "message": "[direct] committed v14",
+          "at": 1791058519176,
+          "elapsedMs": 8234,
+          "worldVersion": 14,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-8-mustzy4s",
+          "requestId": "req-522763bf",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] new world \"King of the Hill (Desert)\" with 3 islands and 2 bridges, mode king_of_the_hill, biome desert",
+          "at": 1791058519180,
+          "elapsedMs": 8238,
+          "worldVersion": 14
+        },
+        {
+          "id": "act-9-mustzy4t",
+          "requestId": "req-522763bf",
+          "phase": "committed",
+          "message": "Committed world version 14",
+          "at": 1791058519181,
+          "elapsedMs": 8239,
+          "worldVersion": 14
+        }
+      ],
+      "report": {
+        "reportId": "rep-a0713c48",
+        "requestId": "req-522763bf",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 14,
+        "baseWorldVersion": 13,
+        "summary": "[direct] new world \"King of the Hill (Desert)\" with 3 islands and 2 bridges, mode king_of_the_hill, biome desert",
+        "validation": {
+          "attempts": 1,
+          "failedCodes": []
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791058510942,
+          "firstModelResponseMs": 8172,
+          "validatedMs": 8191,
+          "committedMs": 8229,
+          "totalMs": 8232
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 4
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 12
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 8
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 26
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791058519179
+      },
+      "startedAt": "2026-10-03T20:15:10.938Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T20:15:19.983Z"
+}

@@ -1,0 +1,47 @@
+{
+  "startedAt": "2026-10-03T20:18:06.845Z",
+  "serverUrl": "http://127.0.0.1:7806",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 0,
+    "hasWorld": false,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7806",
+    "uptimeMs": 17277,
+    "settings": {
+      "autoExpand": true
+    }
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "A co-op puzzle garden: four islands with only two bridges, the relics placed so players must plan the route; the gate on the far island."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "A co-op puzzle garden: four islands with only two bridges, the relics placed so players must plan the route; the gate on the far island.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-f4ed4214",
+      "status": "error(planning)",
+      "worldVersionBefore": 0,
+      "worldVersionAfter": null,
+      "elapsedMs": 32094,
+      "activity": [],
+      "report": null,
+      "startedAt": "2026-10-03T20:18:06.846Z",
+      "error": "fetch failed"
+    }
+  ],
+  "finishedAt": "2026-10-03T20:18:38.940Z"
+}

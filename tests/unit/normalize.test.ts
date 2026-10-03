@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyPatch, expandDraft, fixtureWorld, normalizeDraft, resolveIslandRef, validateSpec } from '@beetle/world';
+import { applyPatch, expandDraft, fixtureWorld, normalizeDraft, normalizePatchDraft, resolveIslandRef, validateSpec } from '@beetle/world';
 
 const spec = fixtureWorld('garden5');
 
@@ -130,5 +130,37 @@ describe('structural normalization of drafts', () => {
     expect(v.issues.map((i) => i.code)).not.toContain('BRIDGE_LENGTH');
     expect(v.issues.map((i) => i.code)).not.toContain('GATE_HIDES_RELIC');
     expect(v.ok).toBe(true);
+  });
+});
+
+describe('terrain normalization', () => {
+  const base = () => ({ title: 'Plain', hazard: 'water', islands: [{ id: 'i0', name: 'Hub', center: { x: 0, z: 0 }, radius: 8 }], bridges: [], spawns: [], relics: [], gate: { islandId: 'i0', localPosition: { x: 0, z: 0 } }, decorations: [] });
+
+  it('fills a missing terrain from the title words, then the island names; island words win', () => {
+    const forest = normalizeDraft({ ...base(), title: 'Misty Forest Valley' });
+    expect((forest.draft as { terrain?: string }).terrain).toBe('ground');
+    expect(forest.normalizations.some((n) => n.path === 'terrain' && /title/.test(n.reason))).toBe(true);
+    const sky = normalizeDraft({ ...base(), title: 'Sky Forest Isles' });
+    expect((sky.draft as { terrain?: string }).terrain).toBe('islands');
+    const names = normalizeDraft({ ...base(), islands: [{ id: 'i0', name: 'Canyon Floor', center: { x: 0, z: 0 }, radius: 8 }] });
+    expect((names.draft as { terrain?: string }).terrain).toBe('ground');
+    const none = normalizeDraft(base());
+    expect((none.draft as { terrain?: string }).terrain).toBeUndefined();
+  });
+
+  it('keeps an explicit terrain, resolves a terrain word and drops an unknown one', () => {
+    expect((normalizeDraft({ ...base(), title: 'Forest', terrain: 'islands' }).draft as { terrain?: string }).terrain).toBe('islands');
+    expect((normalizeDraft({ ...base(), terrain: 'floating' }).draft as { terrain?: string }).terrain).toBe('islands');
+    expect((normalizeDraft({ ...base(), terrain: 'on the ground' }).draft as { terrain?: string }).terrain).toBe('ground');
+    expect((normalizeDraft({ ...base(), terrain: 'cheese' }).draft as { terrain?: string }).terrain).toBeUndefined();
+  });
+
+  it('set_terrain is accepted in patches, with terrain words resolved', () => {
+    const r = applyPatch(spec, { summary: 'ground it', ops: [{ op: 'set_terrain', terrain: 'ground' }] });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.spec.terrain).toBe('ground');
+    const n = normalizePatchDraft(spec, { summary: 'float', ops: [{ op: 'set_terrain', terrain: 'floating islands' }] });
+    expect((n.patch as { ops: { terrain: string }[] }).ops[0].terrain).toBe('islands');
+    expect(n.normalizations).toHaveLength(1);
   });
 });

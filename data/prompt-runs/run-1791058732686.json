@@ -1,0 +1,168 @@
+{
+  "startedAt": "2026-10-03T20:18:52.686Z",
+  "serverUrl": "http://127.0.0.1:7802",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 0,
+    "hasWorld": false,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7802",
+    "uptimeMs": 4086,
+    "settings": {
+      "autoExpand": true
+    }
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "King of the hill on a frozen arena of four islands, hold the hill for 12 seconds, towers around the hill."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "King of the hill on a frozen arena of four islands, hold the hill for 12 seconds, towers around the hill.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-5f35e8b0",
+      "status": "failed",
+      "worldVersionBefore": 0,
+      "worldVersionAfter": 0,
+      "elapsedMs": 180450,
+      "activity": [
+        {
+          "id": "act-1-musu4ivp",
+          "requestId": "req-5f35e8b0",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791058732693,
+          "elapsedMs": 0,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-2-musu4ivp",
+          "requestId": "req-5f35e8b0",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791058732693,
+          "elapsedMs": 0,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-3-musu4ivw",
+          "requestId": "req-5f35e8b0",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791058732700,
+          "elapsedMs": 7,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-4-musu72fj",
+          "requestId": "req-5f35e8b0",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058851343,
+          "elapsedMs": 118650,
+          "worldVersion": 0,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-5-musu72g1",
+          "requestId": "req-5f35e8b0",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: UNREACHABLE_RELIC[r2,i2,spawn-0,spawn-1], UNREACHABLE_RELIC[r3,i3,spawn-0,spawn-1]",
+          "at": 1791058851361,
+          "elapsedMs": 118668,
+          "worldVersion": 0,
+          "codes": [
+            "UNREACHABLE_RELIC",
+            "UNREACHABLE_RELIC"
+          ],
+          "objectIds": [
+            "r2",
+            "i2",
+            "spawn-0",
+            "spawn-1",
+            "r3",
+            "i3",
+            "spawn-0",
+            "spawn-1"
+          ]
+        },
+        {
+          "id": "act-6-musu8drv",
+          "requestId": "req-5f35e8b0",
+          "phase": "failed",
+          "message": "direct / qwen3.5:4b: [direct] failed: MODEL_TIMEOUT model call timed out after 61333 ms",
+          "at": 1791058912699,
+          "elapsedMs": 180006,
+          "worldVersion": 0,
+          "codes": [
+            "UNREACHABLE_RELIC"
+          ]
+        },
+        {
+          "id": "act-7-musu8drx",
+          "requestId": "req-5f35e8b0",
+          "phase": "failed",
+          "message": "Failed: model call timed out after 61333 ms",
+          "at": 1791058912701,
+          "elapsedMs": 180008,
+          "worldVersion": 0,
+          "codes": [
+            "MODEL_TIMEOUT"
+          ]
+        }
+      ],
+      "report": {
+        "reportId": "rep-12523103",
+        "requestId": "req-5f35e8b0",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "failed",
+        "worldVersion": 0,
+        "baseWorldVersion": 0,
+        "summary": "[direct] failed: MODEL_TIMEOUT model call timed out after 61333 ms",
+        "validation": {
+          "attempts": 1,
+          "failedCodes": [
+            "UNREACHABLE_RELIC"
+          ]
+        },
+        "timings": {
+          "requestedAt": 1791058732693,
+          "firstModelResponseMs": 118644,
+          "totalMs": 180003
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 3
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 16
+          }
+        ],
+        "createdAt": 1791058912699
+      },
+      "startedAt": "2026-10-03T20:18:52.687Z",
+      "error": {
+        "code": "MODEL_TIMEOUT",
+        "message": "model call timed out after 61333 ms"
+      }
+    }
+  ],
+  "finishedAt": "2026-10-03T20:21:53.138Z"
+}

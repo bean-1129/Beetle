@@ -4,7 +4,7 @@
 // JSON-schema grammar does not enforce. These are mechanical, unambiguous corrections; anything ambiguous is
 // left untouched so the validator reports it. Every change is recorded so the agent and the UI can show it.
 import { pointSegment, rimPointToward } from './geom.ts';
-import { BIOMES, DECORATION_RADIUS, GAME_MODES, MODE_LIMITS, WORLD_LIMITS, compassName, type Biome, type GameMode, type Vec2 } from '@beetle/contracts';
+import { BIOMES, DECORATION_RADIUS, GAME_MODES, MODE_LIMITS, TERRAINS, WORLD_LIMITS, compassName, type Biome, type GameMode, type Terrain, type Vec2 } from '@beetle/contracts';
 
 export type Normalization = { path: string; from: unknown; to: unknown; reason: string };
 
@@ -133,6 +133,21 @@ const BIOME_WORDS: { biome: Biome; words: string[] }[] = [
   { biome: 'volcanic', words: ['volcanic', 'volcano', 'lava', 'ash', 'ashen', 'magma', 'ember', 'embers', 'fire', 'inferno', 'cinder'] },
   { biome: 'garden', words: ['garden', 'grass', 'grassy', 'meadow', 'forest', 'green', 'spring', 'summer', 'orchard'] },
 ];
+
+// Terrain words: the same lists as the agent's brief hints (packages/agent/src/prompts.ts). Island words win when both appear.
+export const GROUND_WORDS = ['forest', 'forests', 'woods', 'woodland', 'field', 'fields', 'meadow', 'meadows', 'canyon', 'canyons', 'valley', 'valleys', 'park', 'street', 'streets', 'city', 'town', 'arena', 'battlefield', 'jungle', 'swamp', 'marsh', 'village', 'farm', 'farmland', 'ground', 'landmass'];
+export const ISLAND_WORDS = ['floating', 'sky', 'skies', 'archipelago', 'island', 'islands', 'isle', 'isles', 'islet', 'islets', 'lagoon'];
+
+/** Resolve terrain words ("floating sky isles", "Misty Forest Valley", "on the ground") to a Terrain; undefined when nothing matches. */
+export function resolveTerrain(ref: unknown): Terrain | undefined {
+  if (typeof ref !== 'string') return undefined;
+  if ((TERRAINS as readonly string[]).includes(ref)) return ref as Terrain;
+  const t = tokens(ref);
+  const joined = t.join(' ');
+  if (t.some((w) => ISLAND_WORDS.includes(w)) || /\blava sea\b|\bsea of lava\b/.test(joined)) return 'islands';
+  if (t.some((w) => GROUND_WORDS.includes(w))) return 'ground';
+  return undefined;
+}
 
 function tokens(ref: string): string[] {
   return slugify(ref).split('-').filter((t) => t.length > 0);
@@ -470,6 +485,27 @@ export function normalizeDraft(draft: unknown): { draft: unknown; normalizations
     if (Array.isArray(d[key])) (d[key] as unknown[]).forEach((raw, i) => { if (raw && typeof raw === 'object') fixPlaced(raw as Record<string, unknown>, `${key}[${i}]`); });
   }
   if (d.gate && typeof d.gate === 'object') fixPlaced(d.gate as Record<string, unknown>, 'gate');
+  // A decoration on top of a spawn, relic or gate blocks the walkable cell under it (UNREACHABLE_SPAWN and walk failures):
+  // drop decorations whose collision circle comes within 1.5 m of a key object on the same island.
+  if (Array.isArray(d.decorations)) {
+    const keys: { islandId: unknown; p: Vec2 }[] = [];
+    const keyOf = (o: unknown) => {
+      const r = o as { islandId?: unknown; localPosition?: { x?: unknown; z?: unknown } } | null;
+      const x = num(r?.localPosition?.x); const z = num(r?.localPosition?.z);
+      if (r && x !== undefined && z !== undefined) keys.push({ islandId: r.islandId, p: { x, z } });
+    };
+    for (const k of ['spawns', 'relics'] as const) if (Array.isArray(d[k])) (d[k] as unknown[]).forEach(keyOf);
+    keyOf(d.gate);
+    d.decorations = (d.decorations as unknown[]).filter((raw, i) => {
+      const dec = raw as { islandId?: unknown; type?: unknown; localPosition?: { x?: unknown; z?: unknown } } | null;
+      const x = num(dec?.localPosition?.x); const z = num(dec?.localPosition?.z);
+      if (!dec || x === undefined || z === undefined) return true;
+      const rad = typeof dec.type === 'string' && dec.type in DECORATION_RADIUS ? (DECORATION_RADIUS as Record<string, number>)[dec.type] : 1;
+      const hit = keys.some((k) => k.islandId === dec.islandId && Math.hypot(k.p.x - x, k.p.z - z) < rad + 1.5);
+      if (hit) log.push({ path: `decorations[${i}]`, from: raw, to: undefined, reason: 'decoration on top of a spawn, relic or gate dropped' });
+      return !hit;
+    });
+  }
   if (Array.isArray(d.decorations) && d.decorations.length > WORLD_LIMITS.decorations.max) {
     log.push({ path: 'decorations', from: d.decorations.length, to: WORLD_LIMITS.decorations.max, reason: 'truncated to the decoration limit' });
     d.decorations = d.decorations.slice(0, WORLD_LIMITS.decorations.max);
@@ -482,10 +518,32 @@ export function normalizeDraft(draft: unknown): { draft: unknown; normalizations
     log.push({ path: 'biome', from: undefined, to: 'volcanic', reason: 'lava hazard without a biome: volcanic' });
     d.biome = 'volcanic';
   }
+  normalizeTerrainValue(d, log);
   if (d.movementSpeed === null) { log.push({ path: 'movementSpeed', from: null, to: undefined, reason: 'null dropped' }); delete d.movementSpeed; }
   if (d.movementSpeed !== undefined) d.movementSpeed = clampNum(d.movementSpeed, MODE_LIMITS.movementSpeed.min, MODE_LIMITS.movementSpeed.max, log, 'movementSpeed');
   normalizeHazardRise(d, 'hazardRise', log, 'hazardRise');
   return { draft: d, normalizations: log };
+}
+
+/**
+ * Terrain on a draft: a word becomes the enum value; when the model left it out, terrain words in the title or the
+ * island names decide (same lists as the brief hints); nothing matching leaves it absent (islands applies).
+ */
+function normalizeTerrainValue(d: Record<string, unknown>, log: Normalization[]): void {
+  const raw = d.terrain;
+  if (raw === 'islands' || raw === 'ground') return;
+  if (raw !== undefined && raw !== null) {
+    const resolved = resolveTerrain(raw);
+    if (resolved) { log.push({ path: 'terrain', from: raw, to: resolved, reason: 'terrain word resolved' }); d.terrain = resolved; }
+    else { log.push({ path: 'terrain', from: raw, to: undefined, reason: 'unknown terrain dropped; islands applies' }); delete d.terrain; }
+    return;
+  }
+  if (raw === null) delete d.terrain;
+  const names = Array.isArray(d.islands) ? (d.islands as { name?: unknown }[]).map((i) => (typeof i?.name === 'string' ? i.name : '')).join(' ') : '';
+  const fromTitle = resolveTerrain(typeof d.title === 'string' ? d.title : '');
+  const resolved = fromTitle ?? resolveTerrain(names);
+  if (resolved) log.push({ path: 'terrain', from: undefined, to: resolved, reason: `terrain words in the ${fromTitle ? 'title' : 'island names'}` });
+  if (resolved) d.terrain = resolved;
 }
 
 /** Normalize a raw model PatchDraft against the current spec: resolve references, clamp positions and widths. */
@@ -547,6 +605,12 @@ export function normalizePatchDraft(
       case 'set_biome':
         normalizeBiomeValue(op, 'biome', log, `${path}.biome`);
         break;
+      case 'set_terrain': {
+        if (op.terrain === 'islands' || op.terrain === 'ground') break;
+        const resolved = resolveTerrain(op.terrain);
+        if (resolved) { log.push({ path: `${path}.terrain`, from: op.terrain, to: resolved, reason: 'terrain word resolved' }); op.terrain = resolved; }
+        break;
+      }
       case 'set_movement':
         if (op.speed !== undefined) op.speed = clampNum(op.speed, MODE_LIMITS.movementSpeed.min, MODE_LIMITS.movementSpeed.max, log, `${path}.speed`);
         break;

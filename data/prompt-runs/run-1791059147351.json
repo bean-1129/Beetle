@@ -1,0 +1,190 @@
+{
+  "startedAt": "2026-10-03T20:25:47.351Z",
+  "serverUrl": "http://127.0.0.1:7799",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 0,
+    "hasWorld": false,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7799",
+    "uptimeMs": 16141,
+    "settings": {
+      "autoExpand": true
+    }
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "A night heist across six islands in a ring: sneak in collecting three relics, then escape through the gate"
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "A night heist across six islands in a ring: sneak in collecting three relics, then escape through the gate",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-8718dea4",
+      "status": "committed",
+      "worldVersionBefore": 0,
+      "worldVersionAfter": 1,
+      "elapsedMs": 27082,
+      "activity": [
+        {
+          "id": "act-1-musudeu7",
+          "requestId": "req-8718dea4",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791059147359,
+          "elapsedMs": 0,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-2-musudeu8",
+          "requestId": "req-8718dea4",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791059147360,
+          "elapsedMs": 1,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-3-musudeul",
+          "requestId": "req-8718dea4",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791059147373,
+          "elapsedMs": 14,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-4-musudz9v",
+          "requestId": "req-8718dea4",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791059173843,
+          "elapsedMs": 26484,
+          "worldVersion": 0,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-5-musudzal",
+          "requestId": "req-8718dea4",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791059173869,
+          "elapsedMs": 26510,
+          "worldVersion": 0,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-6-musudzb4",
+          "requestId": "req-8718dea4",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791059173888,
+          "elapsedMs": 26529,
+          "worldVersion": 0,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-7-musudzcc",
+          "requestId": "req-8718dea4",
+          "phase": "committed",
+          "message": "[direct] committed v1",
+          "at": 1791059173932,
+          "elapsedMs": 26573,
+          "worldVersion": 1,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-8-musudzcg",
+          "requestId": "req-8718dea4",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] new world \"Night Heist (relic hunt)\" with 6 islands and 6 bridges, mode relic_hunt, biome night",
+          "at": 1791059173936,
+          "elapsedMs": 26577,
+          "worldVersion": 1
+        },
+        {
+          "id": "act-9-musudzch",
+          "requestId": "req-8718dea4",
+          "phase": "committed",
+          "message": "Committed world version 1",
+          "at": 1791059173937,
+          "elapsedMs": 26578,
+          "worldVersion": 1
+        }
+      ],
+      "report": {
+        "reportId": "rep-b6e9db92",
+        "requestId": "req-8718dea4",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 1,
+        "baseWorldVersion": 0,
+        "summary": "[direct] new world \"Night Heist (relic hunt)\" with 6 islands and 6 bridges, mode relic_hunt, biome night",
+        "validation": {
+          "attempts": 1,
+          "failedCodes": []
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791059147359,
+          "firstModelResponseMs": 26461,
+          "validatedMs": 26499,
+          "committedMs": 26562,
+          "totalMs": 26565
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 9
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 25
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 14
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 43
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791059173935
+      },
+      "startedAt": "2026-10-03T20:25:47.352Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T20:26:14.436Z"
+}

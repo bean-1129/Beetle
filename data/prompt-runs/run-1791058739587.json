@@ -1,0 +1,190 @@
+{
+  "startedAt": "2026-10-03T20:18:59.587Z",
+  "serverUrl": "http://127.0.0.1:7805",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 1,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7805",
+    "uptimeMs": 13073,
+    "settings": {
+      "autoExpand": true
+    }
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "A night heist: sneak across five islands collecting three relics past lantern-lit shrines, slow careful players."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "A night heist: sneak across five islands collecting three relics past lantern-lit shrines, slow careful players.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-823964f3",
+      "status": "committed",
+      "worldVersionBefore": 1,
+      "worldVersionAfter": 2,
+      "elapsedMs": 126302,
+      "activity": [
+        {
+          "id": "act-1-musu4o7h",
+          "requestId": "req-823964f3",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791058739597,
+          "elapsedMs": 0,
+          "worldVersion": 1
+        },
+        {
+          "id": "act-2-musu4o7i",
+          "requestId": "req-823964f3",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791058739598,
+          "elapsedMs": 1,
+          "worldVersion": 1
+        },
+        {
+          "id": "act-3-musu4o7l",
+          "requestId": "req-823964f3",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791058739601,
+          "elapsedMs": 4,
+          "worldVersion": 1
+        },
+        {
+          "id": "act-4-musu7cur",
+          "requestId": "req-823964f3",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058864851,
+          "elapsedMs": 125254,
+          "worldVersion": 1,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-5-musu7cv5",
+          "requestId": "req-823964f3",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791058864865,
+          "elapsedMs": 125268,
+          "worldVersion": 1,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-6-musu7cve",
+          "requestId": "req-823964f3",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791058864874,
+          "elapsedMs": 125277,
+          "worldVersion": 1,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-7-musu7cw6",
+          "requestId": "req-823964f3",
+          "phase": "committed",
+          "message": "[direct] committed v2",
+          "at": 1791058864902,
+          "elapsedMs": 125305,
+          "worldVersion": 2,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-8-musu7cw8",
+          "requestId": "req-823964f3",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] new world \"Night Heist\" with 5 islands and 4 bridges, mode time_trial, biome night",
+          "at": 1791058864904,
+          "elapsedMs": 125307,
+          "worldVersion": 2
+        },
+        {
+          "id": "act-9-musu7cw9",
+          "requestId": "req-823964f3",
+          "phase": "committed",
+          "message": "Committed world version 2",
+          "at": 1791058864905,
+          "elapsedMs": 125308,
+          "worldVersion": 2
+        }
+      ],
+      "report": {
+        "reportId": "rep-154b295b",
+        "requestId": "req-823964f3",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 2,
+        "baseWorldVersion": 1,
+        "summary": "[direct] new world \"Night Heist\" with 5 islands and 4 bridges, mode time_trial, biome night",
+        "validation": {
+          "attempts": 1,
+          "failedCodes": []
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791058739597,
+          "firstModelResponseMs": 125248,
+          "validatedMs": 125265,
+          "committedMs": 125303,
+          "totalMs": 125304
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 3
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 13
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 7
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 27
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 0
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791058864904
+      },
+      "startedAt": "2026-10-03T20:18:59.590Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T20:21:05.893Z"
+}

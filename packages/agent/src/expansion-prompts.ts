@@ -87,6 +87,9 @@ export function expansionSystemPrompt(spec: WorldSpec, islandId: string, directi
   const near = target0 ? [...spec.islands].sort((p, q) => Math.hypot(p.center.x - target0.center.x, p.center.z - target0.center.z) - Math.hypot(q.center.x - target0.center.x, q.center.z - target0.center.z)).slice(0, 10) : spec.islands.slice(0, 10);
   const rows = near.map((i) => `${i.id} | ${compassName(i.center)} | ${r1(i.center.x)},${r1(i.center.z)} | ${r1(i.radius)} | ${(bridgesOf.get(i.id) ?? []).join(' ') || '-'}`);
   const target = spec.islands.find((i) => i.id === islandId);
+  // Ground worlds: the same add_island geometry, but the words are clearings and paths (nothing to fall into).
+  const ground = spec.terrain === 'ground';
+  const isl = ground ? 'clearing' : 'island';
   const ids = freshIds(spec, 'x', 2);
   const decoIds = freshIds(spec, 'xd', 2);
   const types = ['tree', 'rock'].filter((t) => (DECORATION_TYPES as readonly string[]).includes(t));
@@ -95,14 +98,16 @@ export function expansionSystemPrompt(spec: WorldSpec, islandId: string, directi
     `{"op":"add_decoration","id":"${decoIds[k]}","type":"${types[k % types.length] ?? DECORATION_TYPES[0]}","islandId":"${ids[k]}","localPosition":{"x":1,"z":-1}}`,
   ]);
   return [
-    'You extend a floating-island world ahead of a player. North is +z, east is +x, metres.',
-    `Islands near the target (${near.length} of ${spec.islands.length}; id | compass | centre x,z | radius | bridged to):`,
+    ground
+      ? 'You extend a ground world (one landmass; clearings joined by paths, each clearing is an island entry) ahead of a player. North is +z, east is +x, metres.'
+      : 'You extend a floating-island world ahead of a player. North is +z, east is +x, metres.',
+    `${ground ? 'Clearings' : 'Islands'} near the target (${near.length} of ${spec.islands.length}; id | compass | centre x,z | radius | ${ground ? 'paths' : 'bridged'} to):`,
     ...rows,
-    `Target: island ${islandId}${target ? ` at ${r1(target.center.x)},${r1(target.center.z)} radius ${r1(target.radius)}` : ''}, direction ${direction}.`,
-    `Rule: return 1 to 2 add_island ops with bridgeFrom set to the target island, centres 14 to 24 m beyond its rim in that direction, radius 5 to 9, plus one add_decoration per new island; never remove or move anything; ids must be new lowercase slugs. Keep centres within plus or minus ${HALF} and at least 2 m clear of every other island rim.`,
-    `add_decoration types: ${DECORATION_TYPES.join(', ')}. localPosition is an offset from the new island centre within 2 m, never a world position.`,
+    `Target: ${isl} ${islandId}${target ? ` at ${r1(target.center.x)},${r1(target.center.z)} radius ${r1(target.radius)}` : ''}, direction ${direction}.`,
+    `Rule: return 1 to 2 add_island ops (new ${isl}s) with bridgeFrom set to the target ${isl}, centres 14 to 24 m beyond its rim in that direction, radius 5 to 9, plus one add_decoration per new ${isl}; never remove or move anything; ids must be new lowercase slugs. Keep centres within plus or minus ${HALF} and at least 2 m clear of every other ${isl} rim.`,
+    `add_decoration types: ${DECORATION_TYPES.join(', ')}. localPosition is an offset from the new ${isl} centre within 2 m, never a world position.`,
     `Fresh ids: ${ids.join(', ')}; decorations ${decoIds.join(', ')}.`,
-    sugg.length ? `Valid answer: {"summary":"New islands ${direction} of ${islandId}","ops":[${sugg.join(',')}]}` : 'No clear spot was found along that direction; turn up to 60 degrees aside.',
+    sugg.length ? `Valid answer: {"summary":"New ${isl}s ${direction} of ${islandId}","ops":[${sugg.join(',')}]}` : 'No clear spot was found along that direction; turn up to 60 degrees aside.',
     'Output only compact JSON {"summary","ops"}; summary one short sentence.',
   ].join('\n');
 }

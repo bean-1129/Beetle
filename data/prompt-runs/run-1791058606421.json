@@ -1,0 +1,190 @@
+{
+  "startedAt": "2026-10-03T20:16:46.421Z",
+  "serverUrl": "http://127.0.0.1:7799",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 19,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7799",
+    "uptimeMs": 105402,
+    "settings": {
+      "autoExpand": true
+    }
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "A puzzle world in a frozen archipelago: the relics are spread out, find all three to unlock the gate."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "A puzzle world in a frozen archipelago: the relics are spread out, find all three to unlock the gate.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-6f2718c7",
+      "status": "committed",
+      "worldVersionBefore": 19,
+      "worldVersionAfter": 20,
+      "elapsedMs": 17060,
+      "activity": [
+        {
+          "id": "act-1l-musu1tgb",
+          "requestId": "req-6f2718c7",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791058606427,
+          "elapsedMs": 0,
+          "worldVersion": 19
+        },
+        {
+          "id": "act-1m-musu1tgb",
+          "requestId": "req-6f2718c7",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791058606427,
+          "elapsedMs": 0,
+          "worldVersion": 19
+        },
+        {
+          "id": "act-1n-musu1tgd",
+          "requestId": "req-6f2718c7",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791058606429,
+          "elapsedMs": 2,
+          "worldVersion": 19
+        },
+        {
+          "id": "act-1o-musu25yn",
+          "requestId": "req-6f2718c7",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058622639,
+          "elapsedMs": 16212,
+          "worldVersion": 19,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-1p-musu25ys",
+          "requestId": "req-6f2718c7",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791058622644,
+          "elapsedMs": 16217,
+          "worldVersion": 19,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-1q-musu25yx",
+          "requestId": "req-6f2718c7",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791058622649,
+          "elapsedMs": 16222,
+          "worldVersion": 19,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-1r-musu25zs",
+          "requestId": "req-6f2718c7",
+          "phase": "committed",
+          "message": "[direct] committed v20",
+          "at": 1791058622680,
+          "elapsedMs": 16253,
+          "worldVersion": 20,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-1s-musu25zv",
+          "requestId": "req-6f2718c7",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] new world \"Relic Gate Puzzle\" with 5 islands and 5 bridges, mode relic_hunt, biome frost",
+          "at": 1791058622683,
+          "elapsedMs": 16256,
+          "worldVersion": 20
+        },
+        {
+          "id": "act-1t-musu25zv",
+          "requestId": "req-6f2718c7",
+          "phase": "committed",
+          "message": "Committed world version 20",
+          "at": 1791058622683,
+          "elapsedMs": 16256,
+          "worldVersion": 20
+        }
+      ],
+      "report": {
+        "reportId": "rep-3813c773",
+        "requestId": "req-6f2718c7",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 20,
+        "baseWorldVersion": 19,
+        "summary": "[direct] new world \"Relic Gate Puzzle\" with 5 islands and 5 bridges, mode relic_hunt, biome frost",
+        "validation": {
+          "attempts": 1,
+          "failedCodes": []
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791058606427,
+          "firstModelResponseMs": 16208,
+          "validatedMs": 16215,
+          "committedMs": 16251,
+          "totalMs": 16254
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 4
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 5
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 29
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791058622683
+      },
+      "startedAt": "2026-10-03T20:16:46.422Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T20:17:03.484Z"
+}

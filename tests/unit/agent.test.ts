@@ -5,7 +5,8 @@ import { WorldSpecSchema, WorldDraftSchema, type WorldDraft, type PatchDraft } f
 import { startFakeBeetleServer, type FakeBeetleServer } from '../../packages/agent/test-support/fake-beetle-server.ts';
 import { startFakeOllama, chatReply, type FakeOllama } from '../../packages/agent/test-support/fake-ollama.ts';
 import { fixtureSpec } from '../../packages/agent/test-support/fixture-world.ts';
-import { fixExpansionDraft, briefWantsStreaming } from '../../packages/agent/src/expansion-prompts.ts';
+import { fixExpansionDraft, briefWantsStreaming, expansionSystemPrompt } from '../../packages/agent/src/expansion-prompts.ts';
+import { applyBriefHints, briefHints, briefUserPrompt, patchDraftSystemPrompt, worldDraftSystemPrompt, openclawInstructionPrompt } from '../../packages/agent/src/prompts.ts';
 import { createOllamaClient, createBeetleClient, runJob, isLoopbackUrl, loadConfig, auditOpenClawConfig, buildOpenClawConfig, sanitizeText, type JobEnv, type AgentConfig } from '../../packages/agent/src/index.ts';
 
 const MODEL = 'qwen3.5:4b';
@@ -368,14 +369,15 @@ describe('game modes: draft fields pass through', () => {
     expect(result.outcome).toBe('committed');
     expect(result.modelCalls).toBe(1);
     // The agent does not touch the draft: the server receives exactly what the model produced, new fields included
-    // (plus streaming: true, the default for briefs that do not ask for the whole world up front).
+    // (plus streaming: true, the default for briefs that do not ask for the whole world up front, and terrain islands
+    // because the brief says "across the islands").
     const proposed = beetle.calls('propose_world');
     expect(proposed).toHaveLength(1);
-    expect((proposed[0].body as { spec: unknown }).spec).toEqual({ ...draft, streaming: true });
+    expect((proposed[0].body as { spec: unknown }).spec).toEqual({ ...draft, streaming: true, terrain: 'islands' });
     expect((proposed[0].body as { requestId: string }).requestId).toBe(request.id);
     // The system prompt carries the mode and biome vocabulary and the mapping rule; the draft schema sent as `format` allows the fields.
     const sys = (ollama.requests[0].body.messages as { role: string; content: string }[])[0].content;
-    for (const word of ['relic_hunt', 'time_trial', 'king_of_the_hill', 'checkpoint_race', 'survival', 'garden', 'volcanic', 'frost', 'desert', 'night', 'movementSpeed', 'Always set "biome" and "mode"', '"hazardRise" only for survival']) expect(sys).toContain(word);
+    for (const word of ['relic_hunt', 'time_trial', 'king_of_the_hill', 'checkpoint_race', 'survival', 'garden', 'volcanic', 'frost', 'desert', 'night', 'movementSpeed', 'Always set "terrain", "biome" and "mode"', '"hazardRise" only for survival']) expect(sys).toContain(word);
     const format = ollama.requests[0].body.format as { properties: Record<string, unknown> };
     for (const key of ['biome', 'mode', 'movementSpeed', 'hazardRise']) expect(format.properties).toHaveProperty(key);
     // The build report names the mode and biome.
@@ -469,5 +471,85 @@ describe('streaming: expansion draft fixes and brief default', () => {
   it('streaming is the default for briefs unless the whole world is asked for up front', () => {
     expect(briefWantsStreaming('a snowy race over floating islands')).toBe(true);
     expect(briefWantsStreaming('build the whole world up front, eight islands')).toBe(false);
+  });
+});
+
+describe('terrain choice and honest mapping', () => {
+  it('brief words choose the terrain; island words win; nothing implied leaves it to the default', () => {
+    expect(briefHints('A relic hunt in a misty forest valley').terrain).toBe('ground');
+    expect(briefHints('A king of the hill battle in a desert canyon').terrain).toBe('ground');
+    expect(briefHints('Tag on the ground in a park').terrain).toBe('ground');
+    expect(briefHints('A race over floating sky islands').terrain).toBe('islands');
+    expect(briefHints('King of the hill on a frozen arena of four islands').terrain).toBe('islands');
+    expect(briefHints('Survive on a lava sea').terrain).toBe('islands');
+    expect(briefHints('A first person shooting game where we shoot walking trees, multiplayer').terrain).toBeUndefined();
+    expect(briefUserPrompt('A relic hunt in a misty forest valley')).toContain('terrain is ground.');
+  });
+
+  it('applyBriefHints sets an implied terrain and defaults to ground unless lava or survival makes the hazard the fun', () => {
+    const forest: Record<string, unknown> = { title: 'Mist Hunt', hazard: 'water', terrain: 'islands', mode: { kind: 'relic_hunt' } };
+    expect(applyBriefHints(forest, 'A relic hunt in a misty forest valley')).toContain('terrain islands -> ground');
+    expect(forest.terrain).toBe('ground');
+    const plain: Record<string, unknown> = { title: 'Walking Trees Hunt (relic hunt, no shooting)', hazard: 'water', mode: { kind: 'relic_hunt' } };
+    applyBriefHints(plain, 'A first person shooting game where we shoot walking trees, multiplayer');
+    expect(plain.terrain).toBe('ground');
+    const lava: Record<string, unknown> = { title: 'Hot Run', hazard: 'lava', mode: { kind: 'relic_hunt' } };
+    applyBriefHints(lava, 'Grab the relics before the magma gets you');
+    expect(lava.terrain).toBe('islands');
+    const titled: Record<string, unknown> = { title: 'Sky Isles', hazard: 'water', mode: { kind: 'relic_hunt' } };
+    applyBriefHints(titled, 'something fun');
+    expect(titled.terrain).toBeUndefined(); // title words are resolved by the world normalizer
+  });
+
+  it('the draft prompt carries the terrain rule and the honest-mapping rule; edit and OpenClaw prompts know set_terrain', () => {
+    const sys = worldDraftSystemPrompt({ streaming: true });
+    for (const word of ['"terrain"', 'forest, field, meadow, canyon, valley, park, street, city, arena, battlefield, jungle, swamp, village, farm', 'floating, sky, archipelago, islands, lagoon, lava sea', 'zones or clearings', 'ground for relic hunts and arenas', 'No shooting, enemies, combat, first-person view, vehicles or building', 'Walking Trees Hunt (relic hunt, no shooting)']) expect(sys).toContain(word);
+    expect(sys.length).toBeLessThan(3000); // about 757 tokens on qwen3.5:4b (prompt_eval_count, system only, streaming on)
+    const edit = patchDraftSystemPrompt({ spec: fixtureSpec(), summary: null });
+    expect(edit).toContain('"op":"set_terrain","terrain":"ground"');
+    expect(edit).toContain('terrain islands;');
+    const oc = openclawInstructionPrompt({ kind: 'brief', requestId: 'req-1', prompt: 'shoot walking trees', model: MODEL });
+    expect(oc).toContain('terrain (islands or ground)');
+    expect(oc).toContain('No shooting');
+  });
+
+  it('an unsupported mechanic is named in the title when the model leaves it out', () => {
+    const d: Record<string, unknown> = { title: 'Walking Trees Hunt', hazard: 'water' };
+    const changed = applyBriefHints(d, 'A first person shooting game where we shoot walking trees, multiplayer');
+    expect(d.title).toBe('Walking Trees Hunt (relic hunt, no shooting)'); // both words would pass the 60 character limit
+    expect(changed.some((c) => c.startsWith('title'))).toBe(true);
+    const koth: Record<string, unknown> = { title: 'Canyon Tag Arena (king of the hill)', hazard: 'water', mode: { kind: 'king_of_the_hill' } };
+    applyBriefHints(koth, 'A king of the hill battle in a desert canyon');
+    expect(koth.title).toBe('Canyon Tag Arena (king of the hill, no combat)');
+    const ok: Record<string, unknown> = { title: 'Misty Valley Hunt', hazard: 'water' };
+    applyBriefHints(ok, 'A relic hunt in a misty forest valley');
+    expect(ok.title).toBe('Misty Valley Hunt');
+    const said: Record<string, unknown> = { title: 'Tree Hunt (no shooting)', hazard: 'water' };
+    applyBriefHints(said, 'shoot the trees');
+    expect(said.title).toBe('Tree Hunt (no shooting)');
+    const long: Record<string, unknown> = { title: 'An Extremely Long Title For A Forest Of Walking Trees Here', hazard: 'water' };
+    applyBriefHints(long, 'drive tanks and shoot enemies');
+    expect(String(long.title).length).toBeLessThanOrEqual(60);
+    expect(String(long.title)).toContain('no shooting');
+  });
+
+  it('a brief INVALID_REFERENCE repair names the missing island fix', async () => {
+    const { validatorRepairPrompt } = await import('../../packages/agent/src/prompts.ts');
+    const hint = validatorRepairPrompt([{ code: 'INVALID_REFERENCE', message: 'gate references unknown island i4', objectIds: ['gate', 'i4'] }], null);
+    expect(hint).toContain('add that island to islands');
+  });
+
+  it('expansion in a ground world says clearings and keeps the geometry identical', () => {
+    const spec = fixtureSpec();
+    const target = spec.islands[0].id;
+    const islands = expansionSystemPrompt(spec, target, 'east');
+    const ground = expansionSystemPrompt({ ...spec, terrain: 'ground' }, target, 'east');
+    expect(islands).toContain('floating-island world');
+    expect(islands).not.toContain('clearing');
+    expect(ground).toContain('clearings joined by paths');
+    expect(ground).toContain(`Target: clearing ${target}`);
+    const answer = (t: string) => t.split('\n').find((l) => l.startsWith('Valid answer'))?.replace(/"summary":"[^"]*"/, '');
+    expect(answer(ground)).toBe(answer(islands));
+    expect(answer(ground)).toContain('"op":"add_island"');
   });
 });

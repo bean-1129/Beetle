@@ -436,3 +436,49 @@ A scripted player walked east on haven; the server raised the automatic request;
 ## Ground terrain, live (15:38 CDT, port 7781)
 
 A set_terrain ground patch on the seed2 world committed as v2 ("Misty Forest Valley") through the validated path. The play page rendered one continuous landmass with a stone road to the temple plateau and scattered trees, no islands and no water, at 45 fps in the software-rendered browser pane. Switching back to islands restores the floating look (renderer check by the ground owner).
+
+## Terrain choice and honest mapping (15:34 to 15:39 CDT, port 7860, no world at start, direct worker, qwen3.5:4b)
+
+What changed: the brief prompt (packages/agent/src/prompts.ts) now has the model choose `terrain`: ground for forest,
+field, meadow, canyon, valley, park, street, city, arena, battlefield, jungle, swamp, village, farm or anything on the
+ground; islands for floating, sky, archipelago, islands, lagoon or a lava sea; with nothing implied, ground for relic
+hunts and arenas and islands only when water or lava is the fun. Islands keep their schema fields but are called zones
+or clearings in ground worlds. The honest-mapping rule names the missing mechanics (shooting, enemies, combat,
+first-person view, vehicles, building) and asks for the closest playable game with the mapping said plainly in the
+title. The draft system prompt was trimmed from 949 to 757 tokens (Ollama `prompt_eval_count`, system message only,
+streaming on; 794 with the brief) to make room. Deterministic backstops in the agent's brief hints: terrain from brief
+words (island words win over ground words), a ground default when nothing is implied and the hazard is not the fun, and
+a title suffix such as "(relic hunt, no shooting)" when the brief asks for an unsupported mechanic and the title does
+not already say "no ...". The world normalizer fills a missing terrain from title words, then island names, and resolves
+terrain words in `set_terrain` patches. In ground worlds the expansion prompt calls new areas "clearings" and the
+geometry it suggests is identical. The OpenClaw plugin schema has `terrain` on the world draft and the `set_terrain`
+op (rebuilt and reinstalled per SMOKE.md: build.mjs, plugins build, validate "valid", install --force
+--accept-capabilities, inspect: loaded, seven tools).
+
+Stack: server on 127.0.0.1:7860 with `BEETLE_START_WORLD=none` and a scratch data dir, one direct worker (deadline
+180 s, at most 2 repairs). Briefs were sent in order against the same server (each one a new world).
+
+Final run (code as shipped):
+
+| Brief | Outcome | Build time | Terrain | Mode | Biome | Mapping said in the title (and the build report summary) | Who decided |
+|---|---|---|---|---|---|---|---|
+| A first person shooting game where we shoot walking trees, multiplayer | committed v5, 0 repairs | 14.5 s | ground | relic_hunt (mode field omitted; default) | garden | "Walking Trees Hunt (relic hunt, no shooting)" | model wrote terrain ground and "Walking Trees Hunt"; the brief hints appended "(relic hunt, no shooting)". This draft had no decorations, so no tree stood in for the walking trees |
+| A relic hunt in a misty forest valley | committed v6, 0 repairs | 14.8 s | ground | relic_hunt | garden | "Misty Valley Relic Hunt" (no mapping needed) | model wrote terrain ground; hints set biome garden (model omitted it) |
+| A king of the hill battle in a desert canyon | committed v7, 0 repairs | 11.6 s | ground | king_of_the_hill, hold 60 s | desert | "Desert Canyon Tag Arena (king of the hill, no combat)" | model omitted terrain and biome and chose lava; hints set ground (canyon), desert, water, and appended "(king of the hill, no combat)" |
+
+Earlier attempts in the same session (same briefs, prompt as above, before the title backstop existed):
+
+- Shooting brief, first try: failed after 2 repairs, 41.1 s, `INVALID_REFERENCE[gate,i4]` (the gate named an island that
+  was not in the islands array; the model repeated it in both repairs). The brief repair prompt now says that a new
+  world's INVALID_REFERENCE means "add that island to islands or use an id that is already there". Two retries then
+  committed in 18.1 s and 17.0 s, terrain ground, four trees as the walking trees in one of them, but both titled only
+  "Walking Trees Hunt": the model copied the example title and dropped the mapping. That is why the title suffix is now
+  applied in code when the brief names an unsupported mechanic.
+- Forest brief: committed in 31.1 s with 1 repair (UNREACHABLE_RELIC, DISCONNECTED_GOAL), terrain ground, "Misty Valley Hunt".
+- Canyon brief: committed in 28.1 s with 1 repair (BRIDGE_CROSSES_ISLAND), terrain ground, king_of_the_hill, desert,
+  "Canyon Tag Arena" (no mapping said; "battle" implies combat).
+
+Not measured here: OpenClaw mode with the new terrain field (plugin rebuilt and reinstalled, not exercised end to end). The OpenClaw
+brief instruction gained the terrain and honest-mapping rules (about 140 tokens net after the shorter MODE_RULE) and the
+plugin schema about 30 tokens; the earlier headroom on the commit turn was about 1 KB, so check the 8192 context on the next run.
+Stack stopped at 15:39 (server and worker by pid; port 7860 free).
