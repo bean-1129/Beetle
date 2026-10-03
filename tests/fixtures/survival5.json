@@ -215,7 +215,7 @@
     "rise": {
       "afterSec": 20,
       "metersPerSec": 0.05,
-      "maxElevation": -1.2
+      "maxElevation": -0.7
     }
   },
   "decorations": [

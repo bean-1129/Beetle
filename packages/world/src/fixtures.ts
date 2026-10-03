@@ -115,7 +115,7 @@ function survival5(): WorldSpec {
     ...base('survival5', 55505, 'Survive the Rising Lava (fixture)', 'volcanic'),
     hazard: {
       kind: 'lava', planeElevation: GEOMETRY.hazardPlaneElevation, policy: hazardPolicyFor('lava'),
-      rise: { afterSec: 20, metersPerSec: 0.05, maxElevation: -1.2 },
+      rise: { afterSec: 20, metersPerSec: 0.05, maxElevation: -0.7 },
     },
     decorations: [
       { id: 'ruin-1', type: 'ruin', supportingSurfaceId: 'centre', localPosition: { x: 5, z: 5 }, rotationDeg: 20, scale: 1 },
