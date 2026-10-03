@@ -1,9 +1,8 @@
 import { BIOMES, GAME_MODES, type Biome, type GameMode } from '@beetle/contracts';
 import { getHealth, describeError } from '../shared/api.ts';
-import { wordmarkHtml } from '../shared/Wordmark.tsx';
+import { renderPlatformHeader } from '../shared/platform-header.ts';
 
 const el = (id: string) => document.getElementById(id) as HTMLElement;
-el('wordmark').innerHTML = wordmarkHtml(48);
 
 // ---------- director token: from ?token= on this URL, kept in memory and stripped from the address bar ----------
 let token: string | null = null;
@@ -45,7 +44,6 @@ const form = el('prompt-form') as HTMLFormElement;
 const promptEl = el('prompt') as HTMLTextAreaElement;
 const startBtn = el('start') as HTMLButtonElement;
 const noteEl = el('start-note');
-const navDirector = el('nav-director') as HTMLAnchorElement;
 
 function makeChip(label: string, onPick: () => void, title: string): HTMLButtonElement {
   const b = document.createElement('button');
@@ -79,7 +77,6 @@ try { if (sessionStorage.getItem('beetle.landingKind') === '2d') kind = '2d'; } 
 const kindButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('#kind-choice .kind'));
 const modeGroup = el('mode-group');
 const biomeGroup = el('biome-group');
-const nav2d = el('nav-2d') as HTMLAnchorElement;
 
 function pageUrl(path: '/director' | '/2d', prompt: string): string {
   const params = new URLSearchParams();
@@ -147,9 +144,28 @@ form.addEventListener('submit', (e) => {
   }
   location.assign(directorUrl(text));
 });
-navDirector.href = directorUrl('');
-nav2d.href = studio2dUrl('');
 setKind(kind);
+
+// ---------- shared platform header: wordmark, the 2D / 3D switch, and the other pages ----------
+// The header API needs a side; the landing is neither, so no switch entry is marked as the current page.
+// The token was stored in sessionStorage above, so the switch links carry it.
+{
+  const pages = document.createElement('nav');
+  pages.className = 'landing-pages';
+  pages.setAttribute('aria-label', 'Pages');
+  for (const [label, href] of [['Play screen', '/play'], ['Controller', '/controller']] as const) {
+    const a = document.createElement('a');
+    a.href = href; a.textContent = label;
+    pages.appendChild(a);
+  }
+  const header = el('platform-header');
+  renderPlatformHeader(header, '3d', pages);
+  for (const a of Array.from(header.querySelectorAll('.bp-switch a'))) a.removeAttribute('aria-current');
+  // Keep the switch links pointing at the same URLs the Start button uses.
+  const [to2d, to3d] = Array.from(header.querySelectorAll<HTMLAnchorElement>('.bp-switch a'));
+  if (to2d) to2d.href = studio2dUrl('');
+  if (to3d) to3d.href = directorUrl('');
+}
 
 // ---------- server status ----------
 async function refresh() {
