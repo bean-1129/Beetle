@@ -1,4 +1,5 @@
-import { test } from "vitest";
+// Beetle 2D assets and audio: sprites, tiles, backgrounds, sprite sheets, generated-art cutouts, sfx and music.
+import { it } from "vitest";
 import assert from "node:assert/strict";
 import { SAMPLES, samplePlatformer } from "../../apps/web/src/studio2d/samples/index.ts";
 import { buildAssets, processGenerated, rigFromImage, assetPrompt } from "../../apps/web/src/studio2d/assets/pipeline.ts";
@@ -14,7 +15,7 @@ import { compose, renderScore } from "../../apps/web/src/studio2d/audio/music.ts
 import { PALETTES } from "../../apps/web/src/studio2d/spec/defaults.ts";
 import { SFX_PRESETS, MOODS } from "../../apps/web/src/studio2d/spec/types.ts";
 
-test("a full asset set builds fast and every asset passes its checks, for every sample", () => {
+it("a full asset set builds fast and every asset passes its checks, for every sample", () => {
   for (const [name, make] of Object.entries(SAMPLES)) {
     const spec = make();
     const built = buildAssets(spec);
@@ -25,7 +26,7 @@ test("a full asset set builds fast and every asset passes its checks, for every 
   }
 });
 
-test("pixel-art characters stay on palette, are cut out and readable", () => {
+it("pixel-art characters stay on palette, are cut out and readable", () => {
   const pal = PALETTES.forest;
   for (const recipe of ["fox", "slime", "bat", "knight", "beetle", "robot", "wizard", "frog", "giant slime", "mystery thing"]) {
     const s = makeCharacter(recipe, [0.9, 0.9], 16, "pixel", pal, 42);
@@ -39,7 +40,7 @@ test("pixel-art characters stay on palette, are cut out and readable", () => {
   assert.equal(archetypeOf("blue robot knight"), "biped");
 });
 
-test("cutout animation: every animation has its frames and frames never drift in colour", () => {
+it("cutout animation: every animation has its frames and frames never drift in colour", () => {
   const s = makeCharacter("fox", [0.8, 0.9], 16, "pixel", PALETTES.forest, 7);
   for (const a of ANIMS) assert.equal(s.frames[a]!.length, FRAME_COUNT[a], a);
   // Walking frames differ in pose but share the same pixels (perfect consistency).
@@ -49,7 +50,7 @@ test("cutout animation: every animation has its frames and frames never drift in
   for (const f of s.frames.run!) assert.ok(frameDrift(s.frames.idle![0], f) < 0.15);
 });
 
-test("tilesets: 47 blob variants, 16 edge variants, and clean seams", () => {
+it("tilesets: 47 blob variants, 16 edge variants, and clean seams", () => {
   assert.equal(BLOB_MASKS.length, 47);
   assert.equal(new Set(EDGE_MASKS.map(canonical)).size, 16);
   for (const recipe of ["forest ground", "desert sand", "snow", "space station", "castle stone", "candy land", "lava cave"]) {
@@ -69,7 +70,7 @@ test("tilesets: 47 blob variants, 16 edge variants, and clean seams", () => {
   assert.equal(blobIndexAt(() => true, 5, 5), BLOB_INDEX.get(255));
 });
 
-test("parallax backgrounds tile horizontally without a seam", () => {
+it("parallax backgrounds tile horizontally without a seam", () => {
   for (const recipe of ["forest sky", "forest hills", "forest trees", "desert hills", "city trees", "space sky"]) {
     const bg = makeBackground(recipe, 384, 272, "pixel", PALETTES.forest, 5);
     let diff = 0;
@@ -81,7 +82,7 @@ test("parallax backgrounds tile horizontally without a seam", () => {
   }
 });
 
-test("items and props draw from their recipes", () => {
+it("items and props draw from their recipes", () => {
   for (const r of ["coin", "glowing seed", "heart", "key", "flag", "portal", "crate", "spikes", "spring", "door", "switch", "turret", "lantern", "gem"]) {
     const s = makeItem(r, [0.8, 0.8], 16, "pixel", PALETTES.forest, 3);
     const f = s.frames.idle![0];
@@ -92,7 +93,7 @@ test("items and props draw from their recipes", () => {
   assert.equal(makeItem("coin", [0.6, 0.6], 16, "pixel", PALETTES.forest, 1).frames.idle!.length, 4, "coins spin");
 });
 
-test("sprite sheet packing keeps every image without overlap", () => {
+it("sprite sheet packing keeps every image without overlap", () => {
   const items = Array.from({ length: 40 }, (_, i) => {
     const p = pixels(8 + (i % 7) * 3, 6 + (i % 5) * 4);
     rect(p, 0, 0, p.w, p.h, [i * 5, 100, 200, 255]);
@@ -108,7 +109,7 @@ test("sprite sheet packing keeps every image without overlap", () => {
   assert.ok(a.image.w <= 128);
 });
 
-test("generated art is cut down to size, snapped to the palette, checked and rigged", () => {
+it("generated art is cut down to size, snapped to the palette, checked and rigged", () => {
   const spec = samplePlatformer();
   // A fake 256px generation: a big orange blob on transparent background.
   const img = pixels(256, 256);
@@ -128,7 +129,7 @@ test("generated art is cut down to size, snapped to the palette, checked and rig
   assert.match(assetPrompt(spec, spec.assets.hero), /pixel art/);
 });
 
-test("sound effects synthesize for every preset, seeded and bounded", () => {
+it("sound effects synthesize for every preset, seeded and bounded", () => {
   for (const p of SFX_PRESETS) {
     const a = renderSfx(sfxParams(p, 1));
     const b = renderSfx(sfxParams(p, 1));
@@ -142,7 +143,7 @@ test("sound effects synthesize for every preset, seeded and bounded", () => {
   assert.notDeepEqual(renderSfx(sfxParams("jump", 1)), renderSfx(sfxParams("jump", 2)));
 });
 
-test("music: every mood composes a clean loop", () => {
+it("music: every mood composes a clean loop", () => {
   for (const mood of MOODS) {
     const score = compose({ id: mood, mood, seed: 3 });
     assert.equal(score.beats, 32);
@@ -159,7 +160,7 @@ test("music: every mood composes a clean loop", () => {
   assert.ok(boss.tempo > calm.tempo);
 });
 
-test("generated art cutouts: Vision masks and plain-background flood fill", async () => {
+it("generated art cutouts: Vision masks and plain-background flood fill", async () => {
   const { applyMask, cutoutPlainBackground } = await import("../../apps/web/src/studio2d/assets/pipeline.ts");
   const img = pixels(40, 40);
   rect(img, 0, 0, 40, 40, [250, 250, 250, 255]);

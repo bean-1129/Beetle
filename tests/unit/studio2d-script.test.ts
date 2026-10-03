@@ -1,4 +1,5 @@
-import { test } from "vitest";
+// Beetle 2D scripted games: templates, routing, the static check, auto-fix, smoke tests and export.
+import { it } from "vitest";
 import assert from "node:assert/strict";
 import { ScriptGame, checkScript, autoFix, smokeTest, compileScript, scriptWrapper } from "../../apps/web/src/studio2d/runtime/script.ts";
 import { SCRIPT_TEMPLATES, SCRIPT_SAMPLES, fillTemplate, findTemplate } from "../../apps/web/src/studio2d/samples/scripts.ts";
@@ -9,7 +10,7 @@ import { templateSpec } from "../../apps/web/src/studio2d/gen/ai.ts";
 import { validateSpec } from "../../apps/web/src/studio2d/spec/validate.ts";
 import { exportHtml } from "../../apps/web/src/studio2d/export/export.ts";
 
-test("every classic template passes the static check and a long random smoke test", () => {
+it("every classic template passes the static check and a long random smoke test", () => {
   assert.ok(SCRIPT_TEMPLATES.length >= 12);
   for (const t of SCRIPT_TEMPLATES) {
     const code = fillTemplate(t.code, { enemy: "zombie", pickup: "apple" });
@@ -22,7 +23,7 @@ test("every classic template passes the static check and a long random smoke tes
   }
 });
 
-test("templates are found from ideas, and their looks come from the idea", () => {
+it("templates are found from ideas, and their looks come from the idea", () => {
   assert.equal(findTemplate("make tetris but spooky")?.id, "tetris");
   assert.equal(findTemplate("a pong game")?.id, "pong");
   assert.equal(findTemplate("space invaders with cats")?.id, "invaders");
@@ -35,7 +36,7 @@ test("templates are found from ideas, and their looks come from the idea", () =>
   assert.equal(fillTemplate('look: "{{hero}} spaceship"', {}), 'look: "spaceship"');
 });
 
-test("ideas route to a genre, a template or a model-written script", () => {
+it("ideas route to a genre, a template or a model-written script", () => {
   const route = (i: string) => designFromIdea(i).route;
   assert.equal(route("make a copy of plants vs zombies"), "genre");
   assert.equal(designFromIdea("make a copy of plants vs zombies").genre, "defense");
@@ -51,7 +52,7 @@ test("ideas route to a genre, a template or a model-written script", () => {
   assert.equal(repairDesign({ fits: true }, base).route, "genre");
 });
 
-test("plants-vs-zombies style ideas become a playable, bot-verified lane defense game", () => {
+it("plants-vs-zombies style ideas become a playable, bot-verified lane defense game", () => {
   const d = designFromIdea("make a copy of plants vs zombies");
   const r = specFromDesign(d, { seed: 3 });
   assert.deepEqual(validateSpec(r.spec).errors, []);
@@ -61,7 +62,7 @@ test("plants-vs-zombies style ideas become a playable, bot-verified lane defense
   assert.ok(r.ms < 10000);
 });
 
-test("the static check refuses network, storage, page and timer APIs", () => {
+it("the static check refuses network, storage, page and timer APIs", () => {
   const bad = {
     'fetch("https://x.y")': /network/,
     "localStorage.setItem('a', 1)": /storage/,
@@ -80,7 +81,7 @@ test("the static check refuses network, storage, page and timer APIs", () => {
   assert.match(checkScript("function create(g) {}").join(), /must define function update/);
 });
 
-test("common small-model slips are repaired or tolerated", () => {
+it("common small-model slips are repaired or tolerated", () => {
   const fixed = autoFix('function create(g) {\n  g.every(1, "spawn") {\n    g.add({});\n  }\n}\nfunction update(g){}');
   assert.match(fixed.code, /if \(g\.every\(1, "spawn"\)\) \{/);
   assert.ok(fixed.fixes.length);
@@ -93,14 +94,14 @@ test("common small-model slips are repaired or tolerated", () => {
   assert.equal(game.objs[0].x, 1);
 });
 
-test("the smoke test catches crashes, empty games and frozen games", () => {
+it("the smoke test catches crashes, empty games and frozen games", () => {
   assert.match(smokeTest(compileScript("function create(g){ g.add({}); }\nfunction update(g){ g.nothing.go(); }")).error ?? "", /update\(\) failed/);
   assert.match(smokeTest(compileScript("function update(g){}")).error ?? "", /nothing is on screen/);
   assert.match(smokeTest(compileScript("function create(g){ g.add({x:1,y:1}); }\nfunction update(g){}")).error ?? "", /nothing ever moves/);
   assert.match(smokeTest(compileScript("function create(g){ g.o = g.add({x:1,y:1}); }\nfunction update(g){ g.o.x = NaN; }")).error ?? "", /invalid position/);
 });
 
-test("scripted games validate, export with the script and an error reporter", () => {
+it("scripted games validate, export with the script and an error reporter", () => {
   for (const [id, s] of Object.entries(SCRIPT_SAMPLES)) {
     const spec = scriptedSpec({ ...s, idea: id });
     assert.deepEqual(validateSpec(spec).errors, [], id);

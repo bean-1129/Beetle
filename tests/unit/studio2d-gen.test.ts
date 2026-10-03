@@ -1,4 +1,5 @@
-import { afterEach, describe, test } from "vitest";
+// Beetle 2D generation: idea to design, design to bot-verified game, world building, word patches, desktop bridge.
+import { afterEach, describe, it } from "vitest";
 import assert from "node:assert/strict";
 import { designFromIdea, repairDesign, detectGenre, DESIGN_SCHEMA } from "../../apps/web/src/studio2d/gen/design.ts";
 import { specFromDesign } from "../../apps/web/src/studio2d/gen/build.ts";
@@ -15,7 +16,7 @@ import { mulberry } from "../../apps/web/src/studio2d/engine/rng.ts";
 import { jumpReach, limits } from "../../apps/web/src/studio2d/world/platformer.ts";
 import { makeDesign, changeInWords } from "../../apps/web/src/studio2d/gen/ai.ts";
 
-test("ideas are read into a design without any model", () => {
+it("ideas are read into a design without any model", () => {
   const d = designFromIdea("a fox who collects glowing seeds in a rainy forest, with moving platforms and a boss at the end");
   assert.equal(d.genre, "platformer");
   assert.equal(d.art.hero, "fox");
@@ -39,7 +40,7 @@ test("ideas are read into a design without any model", () => {
   assert.ok(kid.difficulty < 0.3 && kid.tuning.lives >= 4);
 });
 
-test("the model's design is repaired onto the idea: bad values never get through", () => {
+it("the model's design is repaired onto the idea: bad values never get through", () => {
   const base = designFromIdea("a fox platformer in the forest");
   const d = repairDesign({ title: "  ", genre: "mmo", levels: [{ name: "One" }], art: { palette: "neon", hero: "Brave Fox!!", weather: "hail" }, difficulty: 7, tuning: { jumpHeight: 40, lives: -3 } }, base);
   assert.equal(d.title, base.title);
@@ -55,7 +56,7 @@ test("the model's design is repaired onto the idea: bad values never get through
   assert.ok(DESIGN_SCHEMA.required.includes("genre") && PATCH_SCHEMA.required.includes("ops"));
 });
 
-test("every genre goes from idea to a valid, bot-verified game", () => {
+it("every genre goes from idea to a valid, bot-verified game", () => {
   for (const idea of [
     "a fox who collects glowing seeds in a rainy forest with a boss",
     "an endless runner with a penguin on icy cliffs",
@@ -73,9 +74,9 @@ test("every genre goes from idea to a valid, bot-verified game", () => {
     assert.ok(r.reports.every((x) => x.attempts <= 2), `${idea}: repaired within two tries`);
     assert.ok(r.ms < 30000, `${idea} took ${r.ms}ms`);
   }
-});
+}, 60000); // its own budget is 30s per idea; keep the runner from cutting it off first
 
-test("the design's tuning reaches the spec", () => {
+it("the design's tuning reaches the spec", () => {
   const d = designFromIdea("a hard fox platformer with a double jump against the clock");
   const r = specFromDesign(d, { seed: 2 });
   const ctrl = r.spec.player.behaviors.find((b) => b.type === "platformer-controller");
@@ -84,7 +85,7 @@ test("the design's tuning reaches the spec", () => {
   assert.equal(r.spec.rules.find((x) => x.type === "lives")?.count, d.tuning.lives);
 });
 
-test("world building: outline beats, reachability, difficulty budget", () => {
+it("world building: outline beats, reachability, difficulty budget", () => {
   const plans = outline(5, 0.5);
   assert.deepEqual(plans.map((p) => p.beat), ["intro", "teach", "test", "twist", "finale"]);
   assert.ok(plans[4].difficulty > plans[0].difficulty);
@@ -106,7 +107,7 @@ test("world building: outline beats, reachability, difficulty budget", () => {
   assert.ok(limits({ ...ph, doubleJump: true }).gap > limits(ph).gap);
 });
 
-test("level validation holds across many seeds (reachable and within budget)", () => {
+it("level validation holds across many seeds (reachable and within budget)", () => {
   for (const genre of ["platformer", "runner", "top-down", "arena"] as const) {
     for (let seed = 1; seed <= 6; seed++) {
       const theme = { title: `Seeds ${seed}`, pitch: "", genre, hero: "fox" };
@@ -122,7 +123,7 @@ test("level validation holds across many seeds (reachable and within budget)", (
   }
 });
 
-test("puzzle rooms are generated backwards and always solvable", () => {
+it("puzzle rooms are generated backwards and always solvable", () => {
   for (let seed = 1; seed <= 25; seed++) {
     const room = generatePuzzleRoom(seed, (seed % 5) / 4);
     assert.ok(room, `seed ${seed}`);
@@ -132,7 +133,7 @@ test("puzzle rooms are generated backwards and always solvable", () => {
   }
 });
 
-test("wave function collapse keeps its adjacency rules", () => {
+it("wave function collapse keeps its adjacency rules", () => {
   const cells = wfcInterior(mulberry(3), 14, 10, [4, 3, 2]);
   for (let y = 0; y < 10; y++)
     for (let x = 0; x < 14; x++) {
@@ -141,7 +142,7 @@ test("wave function collapse keeps its adjacency rules", () => {
     }
 });
 
-test("endless runners stream chunks forever, always joined to the ground", () => {
+it("endless runners stream chunks forever, always joined to the ground", () => {
   const theme: Theme = { title: "Endless", pitch: "", genre: "runner", hero: "squirrel" };
   const spec = assemble(theme, [endlessLevel(9)]);
   assert.deepEqual(validateSpec(spec).errors, []);
@@ -168,20 +169,20 @@ test("endless runners stream chunks forever, always joined to the ground", () =>
   assert.ok(widest <= 8, `widest gap ${widest}`);
 });
 
-test("words become checked patches; impossible physics is refused", () => {
+it("words become checked patches; impossible physics is refused", () => {
   const spec = samplePlatformer();
   const cases: Record<string, (s: GameSpec) => boolean> = {
-    "make the jump higher": (s) => s.player.behaviors[0].params.jumpHeight > 3.4,
-    "add a double jump": (s) => s.player.behaviors[0].params.doubleJump === true,
-    "make the boss slower": (s) => s.entities.find((e) => e.id === "boss").behaviors[0].params.speed < 2.4,
-    "more rain": (s) => s.levels[0].weatherAmount > 0.6,
+    "make the jump higher": (s) => Number(s.player.behaviors[0]?.params?.jumpHeight) > 3.4,
+    "add a double jump": (s) => s.player.behaviors[0]?.params?.doubleJump === true,
+    "make the boss slower": (s) => Number(s.entities.find((e) => e.id === "boss")?.behaviors[0]?.params?.speed) < 2.4,
+    "more rain": (s) => (s.levels[0]?.weatherAmount ?? 0) > 0.6,
     "no rain please": (s) => s.levels.every((l) => l.weather === "none"),
-    "give me 7 lives": (s) => s.rules.find((r) => r.type === "lives").count === 7,
-    "call it Rainfox": (s) => s.meta.title === "Rainfox" && s.levels[0].weather === "rain",
+    "give me 7 lives": (s) => s.rules.find((r) => r.type === "lives")?.count === 7,
+    "call it Rainfox": (s) => s.meta.title === "Rainfox" && s.levels[0]?.weather === "rain",
     "make it painted style": (s) => s.meta.artStyle === "painted",
-    "remove the boss": (s) => !s.levels[1].placements.some((p) => p.def === "boss"),
+    "remove the boss": (s) => !s.levels[1]?.placements.some((p) => p.def === "boss"),
     "add a 90 second timer": (s) => s.rules.some((r) => r.type === "timer" && r.seconds === 90),
-    "make the enemies faster": (s) => s.entities.find((e) => e.id === "walker").behaviors[0].params.speed > 1.8,
+    "make the enemies faster": (s) => Number(s.entities.find((e) => e.id === "walker")?.behaviors[0]?.params?.speed) > 1.8,
   };
   for (const [text, check] of Object.entries(cases)) {
     const plan = planPatch(spec, text);
@@ -207,7 +208,7 @@ test("words become checked patches; impossible physics is refused", () => {
 
 // The old desktop main-process module (local-only model calls, reply JSON parsing, play-frame
 // network guard) has no counterpart in Beetle; the renderer side talks to globalThis.studio2d.
-test.skip("desktop module: local-only model calls, JSON parsing, and a network guard for game frames (no desktop main-process module in Beetle)", () => {});
+it.skip("desktop module: local-only model calls, JSON parsing, and a network guard for game frames (no desktop main-process module in Beetle)", () => {});
 
 describe("desktop bridge (stub on globalThis.studio2d)", () => {
   const g = globalThis as { studio2d?: unknown };
@@ -215,7 +216,7 @@ describe("desktop bridge (stub on globalThis.studio2d)", () => {
     delete g.studio2d;
   });
 
-  test("with no bridge the idea is read directly and unknown changes fail clearly", async () => {
+  it("with no bridge the idea is read directly and unknown changes fail clearly", async () => {
     delete g.studio2d;
     const r = await makeDesign("a fox platformer in the forest");
     assert.equal(r.source, "idea");
@@ -225,7 +226,7 @@ describe("desktop bridge (stub on globalThis.studio2d)", () => {
     assert.match(c.reason, /local model is not available/);
   });
 
-  test("the model's design goes through the bridge and is repaired onto the idea", async () => {
+  it("the model's design goes through the bridge and is repaired onto the idea", async () => {
     const calls: { id: string; schema: object }[] = [];
     g.studio2d = {
       llm: async (p: { id: string; schema: object }) => {
@@ -243,14 +244,14 @@ describe("desktop bridge (stub on globalThis.studio2d)", () => {
     assert.equal(r.design.difficulty, 1);
   });
 
-  test("a bridge failure falls back to the idea", async () => {
+  it("a bridge failure falls back to the idea", async () => {
     g.studio2d = { llm: async () => { throw new Error("offline"); } };
     const r = await makeDesign("a fox platformer in the forest");
     assert.equal(r.source, "idea");
     assert.match(r.note ?? "", /offline/);
   });
 
-  test("model patches from the bridge pass the same safety gate", async () => {
+  it("model patches from the bridge pass the same safety gate", async () => {
     const spec = samplePlatformer();
     g.studio2d = { llm: async () => ({ ok: true, json: { summary: "huge jump", ops: [{ op: "replace", path: "/player/behaviors/0/params/jumpHeight", value: 99 }] } }) };
     const bad = await changeInWords(spec, "tell me a joke");

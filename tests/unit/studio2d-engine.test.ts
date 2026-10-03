@@ -1,4 +1,5 @@
-import { test } from "vitest";
+// Beetle 2D engine: spec validation and repair, patches, physics, behaviors, determinism, bots, input, saves.
+import { it } from "vitest";
 import assert from "node:assert/strict";
 import { SAMPLES, samplePlatformer, samplePuzzle, sampleTopDown } from "../../apps/web/src/studio2d/samples/index.ts";
 import { validateSpec, repairSpec, SpecError } from "../../apps/web/src/studio2d/spec/validate.ts";
@@ -27,7 +28,7 @@ function tinyPlatformer(placements: Placement[] = [], mutate?: (spec: GameSpec) 
   return spec;
 }
 
-test("every sample spec validates and has at least one win rule", () => {
+it("every sample spec validates and has at least one win rule", () => {
   for (const [name, make] of Object.entries(SAMPLES)) {
     const spec = make();
     assert.deepEqual(validateSpec(spec).errors, [], name);
@@ -36,7 +37,7 @@ test("every sample spec validates and has at least one win rule", () => {
   assert.ok(Object.keys(SAMPLES).length >= 6);
 });
 
-test("the behavior library covers the 22 designed behaviors, each implemented with safe ranges", () => {
+it("the behavior library covers the 22 designed behaviors, each implemented with safe ranges", () => {
   assert.equal(CORE_BEHAVIORS.length, 22);
   for (const b of CORE_BEHAVIORS) {
     assert.ok(BEHAVIORS[b], b);
@@ -50,7 +51,7 @@ test("the behavior library covers the 22 designed behaviors, each implemented wi
   assert.equal(resolveParams("shoot", { aim: "sideways" }).aim, "player");
 });
 
-test("validation reports precise errors", () => {
+it("validation reports precise errors", () => {
   const spec = samplePlatformer();
   spec.player.behaviors[0]!.params!.jumpHeight = 40;
   spec.levels[0].tiles[3] = spec.levels[0].tiles[3].slice(0, 10);
@@ -65,7 +66,7 @@ test("validation reports precise errors", () => {
   assert.match(text, /at least one win condition/);
 });
 
-test("repair turns sloppy model output into a valid spec, or fails clearly", () => {
+it("repair turns sloppy model output into a valid spec, or fails clearly", () => {
   const messy = {
     meta: { title: "  Fox Run ", genre: "platformer", palette: ["#112233", "nope"] },
     player: { id: "the fox!", size: [1, 1], behaviors: ["platformer-controller", { type: "teleport" }, { type: "health", params: { hp: 900 } }] },
@@ -90,7 +91,7 @@ test("repair turns sloppy model output into a valid spec, or fails clearly", () 
   assert.deepEqual(again.spec, spec);
 });
 
-test("patches apply atomically and can never break the spec", () => {
+it("patches apply atomically and can never break the spec", () => {
   const spec = samplePlatformer();
   const ops = setParamOps(spec, "hero", "platformer-controller", "jumpHeight", 5)!;
   const next = applyPatch(spec, ops);
@@ -103,7 +104,7 @@ test("patches apply atomically and can never break the spec", () => {
   assert.equal(byId.levels[1].name, "Mossy Hollow");
 });
 
-test("physics: boxes land, one-way floors hold from above only, walls block", () => {
+it("physics: boxes land, one-way floors hold from above only, walls block", () => {
   const g = makeGrid(["......", "..==..", "......", "######"], true);
   const m = { x: 2.1, y: 0, w: 0.8, h: 0.8, vx: 0, vy: 0 };
   const r = moveBox(g, m, 0, 0.5, []);
@@ -122,7 +123,7 @@ test("physics: boxes land, one-way floors hold from above only, walls block", ()
   assert.ok(n && n.ny < -0.8 && n.nx > 0.4);
 });
 
-test("platformer: jump height matches the spec, stomping defeats, pickups score", () => {
+it("platformer: jump height matches the spec, stomping defeats, pickups score", () => {
   const spec = tinyPlatformer([{ def: "walker", x: 9, y: 5 }, { def: "pickup", x: 5, y: 5 }]);
   const g = new Game(spec);
   runHeadless(g, 30);
@@ -151,7 +152,7 @@ test("platformer: jump height matches the spec, stomping defeats, pickups score"
   assert.ok(g.s.defeated === 1);
 });
 
-test("moving platforms carry riders; springs launch; falling platforms fall", () => {
+it("moving platforms carry riders; springs launch; falling platforms fall", () => {
   const spec = tinyPlatformer([{ def: "platform", x: 6, y: 2 }, { def: "spring", x: 14, y: 5 }]);
   const g = new Game(spec);
   const plat = g.s.ents.find((e) => e.def === "platform")!;
@@ -175,7 +176,7 @@ test("moving platforms carry riders; springs launch; falling platforms fall", ()
   assert.ok(launched);
 });
 
-test("lives, checkpoints and respawn; falling out of the world costs a life", () => {
+it("lives, checkpoints and respawn; falling out of the world costs a life", () => {
   const spec = tinyPlatformer([{ def: "checkpoint", x: 8, y: 5 }], (s) => {
     const l = s.levels[0];
     const p = Paint.from(l.tiles).rect(12, 6, 13, 7, ".");
@@ -191,7 +192,7 @@ test("lives, checkpoints and respawn; falling out of the world costs a life", ()
   if (g.s.status === "playing") assert.ok(Math.abs(g.player.x - 8.1) < 0.6, "respawned at the checkpoint");
 });
 
-test("the engine is deterministic: same inputs give the same state, snapshots resume exactly", () => {
+it("the engine is deterministic: same inputs give the same state, snapshots resume exactly", () => {
   for (const make of [samplePlatformer, sampleTopDown]) {
     const spec = make();
     const inputs = Array.from({ length: 600 }, (_, i) => [BIT.right, BIT.right | BIT.jump, BIT.action | BIT.down, BIT.left, 0][(i * 7) % 5 >> 0]);
@@ -211,18 +212,18 @@ test("the engine is deterministic: same inputs give the same state, snapshots re
   }
 });
 
-test("puzzle: crates on plates open gates; grid moves push crates", () => {
+it("puzzle: crates on plates open gates; grid moves push crates", () => {
   const spec = samplePuzzle();
   const g = new Game(spec);
   const door = g.s.ents.find((e) => e.def === "door")!;
-  assert.equal(g.bh(door, "door").s.open, false);
+  assert.equal(g.bh(door, "door")!.s.open, false);
   const r = playtest(spec, 0);
   assert.ok(r.passed, r.reason);
   const g2 = replay(spec, 0, r.inputs);
   assert.equal(g2.s.status, "won");
 });
 
-test("the playtest bot finishes every level of every sample and its inputs replay", () => {
+it("the playtest bot finishes every level of every sample and its inputs replay", () => {
   for (const [name, make] of Object.entries(SAMPLES)) {
     const spec = make();
     for (let i = 0; i < spec.levels.length; i++) {
@@ -233,7 +234,7 @@ test("the playtest bot finishes every level of every sample and its inputs repla
   }
 });
 
-test("input mapper merges keys, gamepad and touch and supports remapping", () => {
+it("input mapper merges keys, gamepad and touch and supports remapping", () => {
   const spec = samplePlatformer();
   const m = new InputMapper(spec.controls);
   m.keyDown("ArrowRight");
@@ -247,7 +248,7 @@ test("input mapper merges keys, gamepad and touch and supports remapping", () =>
   assert.equal(m.read(), BIT.action);
 });
 
-test("save states survive JSON and resume exactly", async () => {
+it("save states survive JSON and resume exactly", async () => {
   const { serializeState, deserializeState } = await import("../../apps/web/src/studio2d/runtime/player.ts");
   const spec = samplePlatformer();
   const a = new Game(spec);
@@ -262,7 +263,7 @@ test("save states survive JSON and resume exactly", async () => {
   assert.equal(a.hash(), b.hash());
 });
 
-test("lane defense: placing costs currency, producers earn, shooters stop waves, idle play loses", async () => {
+it("lane defense: placing costs currency, producers earn, shooters stop waves, idle play loses", async () => {
   const { sampleDefense } = await import("../../apps/web/src/studio2d/samples/index.ts");
   const { playDefense, replayDefense, defenseLayout } = await import("../../apps/web/src/studio2d/world/defense.ts");
   const spec = sampleDefense();
