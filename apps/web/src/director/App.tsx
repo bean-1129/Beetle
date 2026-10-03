@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AgentActivity, BuildReport, CommitResult, GameMode, HelloMessage, RequestKind } from '@beetle/contracts';
-import { MODE_LIMITS, WORLD_LIMITS } from '@beetle/contracts';
-import { createDirectorRequest, describeError, getActivity, getHealth, getReports, undo, type HealthInfo } from '../shared/api.ts';
+import type { AgentActivity, BuildReport, CommitResult, DirectorRequest, GameMode, HelloMessage, RequestKind } from '@beetle/contracts';
+import { MODE_LIMITS, STREAMING, WORLD_LIMITS } from '@beetle/contracts';
+import { createDirectorRequest, describeError, getActivity, getDirectorRequest, getHealth, getReports, setDirectorSettings, undo, type HealthInfo } from '../shared/api.ts';
 import { takeDirectorToken } from '../shared/token.ts';
 import { useBeetleSocket } from '../shared/use-socket.ts';
 import { createRenderer, type BeetleRenderer } from '../renderer/index.ts';
@@ -32,6 +32,13 @@ const BIOME_HINTS: { biome: string; what: string; example: string }[] = [
   { biome: 'desert', what: 'sand, dunes and sun bleached ruins', example: 'desert ruins around a dry well' },
   { biome: 'night', what: 'dark sky, moonlight and glowing mushrooms', example: 'a night garden lit by mushrooms' },
 ];
+type AutoReason = NonNullable<DirectorRequest['autoReason']>;
+/** Activity entries may carry the auto flag directly once the server copies it from the request; otherwise it comes from the request cache. */
+type ActivityWithAuto = AgentActivity & { auto?: boolean; autoReason?: AutoReason };
+/** "extending north of Hearth Island for Amber" */
+function describeAutoReason(reason: AutoReason, islandName: (id: string) => string, playerName: (id: string) => string): string {
+  return `extending ${reason.direction} of ${islandName(reason.islandId)} for ${playerName(reason.playerId)}`;
+}
 function modeName(kind: string | undefined): string {
   return (MODE_NAMES as Record<string, string>)[kind ?? ''] ?? MODE_NAMES.relic_hunt;
 }
@@ -113,6 +120,61 @@ export function DirectorApp() {
     if (last && (last.phase === 'committed' || last.phase === 'failed')) refreshReports();
   }, [activity, refreshReports]);
 
+  // ---- request cache: which requests Beetle created itself (streaming extensions) ----
+  const [requestsById, setRequestsById] = useState<Record<string, DirectorRequest>>({});
+  const fetchedRequests = useRef(new Set<string>());
+  const rememberRequest = useCallback((r: DirectorRequest | null | undefined) => {
+    if (!r || !r.id) return;
+    fetchedRequests.current.add(r.id);
+    setRequestsById((m) => (m[r.id] === r ? m : { ...m, [r.id]: r }));
+  }, []);
+  useEffect(() => {
+    if (!token) return;
+    for (const e of activity as ActivityWithAuto[]) {
+      if (typeof e.auto === 'boolean' || fetchedRequests.current.has(e.requestId)) continue;
+      fetchedRequests.current.add(e.requestId);
+      getDirectorRequest(token, e.requestId).then(rememberRequest).catch(() => { fetchedRequests.current.delete(e.requestId); });
+    }
+  }, [activity, token, rememberRequest]);
+  const trailEntries = useMemo(() => {
+    const islandName = (id: string) => world?.spec.islands.find((i) => i.id === id)?.name ?? id;
+    const playerName = (id: string) => controllers.find((c) => c.id === id)?.label ?? id;
+    const seen = new Set<string>();
+    return activity.map((raw) => {
+      const e = raw as ActivityWithAuto;
+      const req = requestsById[e.requestId];
+      const auto = e.auto ?? req?.auto ?? false;
+      if (!auto) return raw;
+      const first = !seen.has(e.requestId);
+      seen.add(e.requestId);
+      const reason = e.autoReason ?? req?.autoReason;
+      const why = first && reason ? ` (${describeAutoReason(reason, islandName, playerName)})` : '';
+      return { ...raw, message: `auto \u00b7 ${e.message}${why}` };
+    });
+  }, [activity, requestsById, world, controllers]);
+
+  // ---- streaming generation toggle ----
+  const [autoExpand, setAutoExpand] = useState(true);
+  const [autoExpandState, setAutoExpandState] = useState<{ busy: boolean; error: string | null }>({ busy: false, error: null });
+  const serverAutoExpand = health?.autoExpand ?? null;
+  useEffect(() => {
+    if (serverAutoExpand !== null && !autoExpandState.busy) setAutoExpand(serverAutoExpand);
+  }, [serverAutoExpand, autoExpandState.busy]);
+  const toggleAutoExpand = async (next: boolean) => {
+    if (!token) return;
+    const previous = autoExpand;
+    setAutoExpand(next);
+    setAutoExpandState({ busy: true, error: null });
+    try {
+      const r = await setDirectorSettings(token, { autoExpand: next });
+      setAutoExpand(r.autoExpand);
+      setAutoExpandState({ busy: false, error: null });
+    } catch (err) {
+      setAutoExpand(previous);
+      setAutoExpandState({ busy: false, error: describeError(err) });
+    }
+  };
+
   // ---- prompt form ----
   const hasWorld = !!world;
   const [kind, setKind] = useState<RequestKind>('brief');
@@ -132,6 +194,7 @@ export function DirectorApp() {
       const body: { kind: RequestKind; prompt: string; authorizeNewWorld?: boolean } = { kind, prompt: text };
       if (kind === 'brief' && playersConnected && authorize) body.authorizeNewWorld = true;
       const r = await createDirectorRequest(token, body);
+      rememberRequest(r?.request);
       const id = r?.request?.id ?? 'unknown';
       setSubmitState({ busy: false, note: `Request ${id} ${r?.request?.status ?? 'queued'} (${kind}, base v${r?.request?.worldVersionAtRequest ?? world?.version ?? 0})`, error: null });
     } catch (err) {
@@ -237,6 +300,18 @@ export function DirectorApp() {
             {submitState.note && <div className="note">{submitState.note}</div>}
             {submitState.error && <div className="error" role="alert">{submitState.error}</div>}
           </form>
+          <label className="check" title={`A brief builds the zone around the spawn; when a player comes within ${STREAMING.frontierMeters} m of an island rim with no crossing beyond it, Beetle asks the agent for ${STREAMING.islandsPerExtension.min} to ${STREAMING.islandsPerExtension.max} more islands in that direction (up to ${STREAMING.maxIslands} islands)`}>
+            <input
+              id="auto-expand"
+              type="checkbox"
+              checked={autoExpand}
+              onChange={(e) => { void toggleAutoExpand(e.target.checked); }}
+              disabled={!token || autoExpandState.busy}
+            />
+            Grow the world as players explore
+            <span className="muted small"> {autoExpandState.busy ? 'saving' : autoExpand ? 'on: extensions are automatic requests, tagged auto in the trail' : 'off: the world stays as it was built'}</span>
+          </label>
+          {autoExpandState.error && <div className="error" role="alert">Could not change the setting: {autoExpandState.error}</div>}
           <details className="hints">
             <summary>What the agent can do</summary>
             <p className="hints-lead">Modes. Ask for any game in plain words; the agent picks the closest mode and says which.</p>
@@ -261,9 +336,15 @@ export function DirectorApp() {
                 </li>
               ))}
             </ul>
+            <p className="hints-lead">Streaming worlds</p>
+            <ul>
+              <li>The world starts small: a brief builds 2 to 4 islands around the spawn, then grows ahead of the players.</li>
+              <li>When a player comes within {STREAMING.frontierMeters} m of an island rim with no crossing beyond it, Beetle itself asks the agent for {STREAMING.islandsPerExtension.min} to {STREAMING.islandsPerExtension.max} more islands with crossings in that direction, at most once every {Math.round(STREAMING.cooldownMs / 1000)} s, up to {STREAMING.maxIslands} islands.</li>
+              <li>Each extension is validated and committed like any edit; if it fails, the world stays as it was. Turn it off above to freeze the layout.</li>
+            </ul>
             <p className="hints-lead">Edits while players are on the islands</p>
             <ul>
-              <li>Add or remove bridges between islands</li>
+              <li>Add or remove islands (with a bridge from an existing island), add or remove bridges between islands</li>
               <li>Switch the hazard between water and lava, or make it rise</li>
               <li>Add, move or remove decorations: trees, rocks, lanterns, pillars, bushes, shrines, towers, ruins, crystals, mushrooms, statues</li>
               <li>Move relics to another island, change the time limit, the hold time or the walking speed</li>
@@ -281,7 +362,7 @@ export function DirectorApp() {
 
         <section className="panel-section">
           <h2 className="section-title">Activity</h2>
-          <ActivityTrail entries={activity} />
+          <ActivityTrail entries={trailEntries} />
         </section>
 
         <section className="panel-section status-grid">

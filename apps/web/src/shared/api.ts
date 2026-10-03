@@ -21,7 +21,11 @@ export type HealthInfo = {
   agentConnected: boolean;
   publicUrl: string;
   uptimeMs: number;
+  /** Streaming generation switch as the server reports it; null when the health route does not carry it. */
+  autoExpand: boolean | null;
 };
+
+export type DirectorSettings = { autoExpand: boolean };
 
 export type InviteResult = { inviteCode: string; url: string; expiresAt: number; slot?: number };
 export type JoinResult = { controllerToken: string; playerId: string; label: string; color: string; slot?: number };
@@ -80,7 +84,14 @@ export async function getHealth(): Promise<HealthInfo> {
     agentConnected: asBool(r.agentConnected, false),
     publicUrl: asString(r.publicUrl, location.origin),
     uptimeMs: asNumber(r.uptimeMs, 0),
+    autoExpand: readAutoExpand(r),
   };
+}
+
+function readAutoExpand(r: Record<string, unknown>): boolean | null {
+  if (typeof r.autoExpand === 'boolean') return r.autoExpand;
+  const s = (r.settings && typeof r.settings === 'object' ? r.settings : r.streaming && typeof r.streaming === 'object' ? r.streaming : null) as Record<string, unknown> | null;
+  return s && typeof s.autoExpand === 'boolean' ? s.autoExpand : null;
 }
 
 export function createInvite(token: string): Promise<InviteResult> {
@@ -93,6 +104,23 @@ export function joinWithInvite(inviteCode: string): Promise<JoinResult> {
 
 export function createDirectorRequest(token: string, body: { kind: RequestKind; prompt: string; authorizeNewWorld?: boolean }): Promise<{ request: DirectorRequest }> {
   return request<{ request: DirectorRequest }>(ROUTES.directorRequest, { method: 'POST', body, token });
+}
+
+/** One director request by id (used to tag automatic streaming extensions in the activity trail). Null when the server does not know it. */
+export async function getDirectorRequest(token: string, id: string): Promise<DirectorRequest | null> {
+  const path = ROUTES.directorRequestById.replace(':id', encodeURIComponent(id));
+  const r = await request<{ request?: DirectorRequest } | DirectorRequest | null>(path, { token });
+  if (!r || typeof r !== 'object') return null;
+  if ('request' in r && r.request && typeof r.request === 'object') return r.request;
+  return 'id' in r && typeof r.id === 'string' ? (r as DirectorRequest) : null;
+}
+
+/** Streaming generation switch: POST /api/director/settings { autoExpand }. Tolerant of a bare or nested response. */
+export async function setDirectorSettings(token: string, body: DirectorSettings): Promise<DirectorSettings> {
+  const r = await request<Record<string, unknown> | null>(ROUTES.directorSettings, { method: 'POST', body, token });
+  const raw = r ?? {};
+  const nested = (raw.settings && typeof raw.settings === 'object' ? raw.settings : raw) as Record<string, unknown>;
+  return { autoExpand: asBool(nested.autoExpand, body.autoExpand) };
 }
 
 export async function getActivity(token: string, limit = 100): Promise<AgentActivity[]> {

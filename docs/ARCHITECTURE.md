@@ -192,3 +192,43 @@ The simulation keeps the common rules for every mode (30 Hz tick, movement with 
 5. For edits, the patch prompt describes the current mode (`describeMode`: "time_trial 60 s", "relic_hunt (default)") and biome from the world and offers `set_mode`, `set_biome` and `set_movement` beside the structural ops with worked examples ("make it a 60 second time trial" is `set_mode {kind: time_trial, timeLimitSec: 60}`, "make it snowy" is `set_biome frost`, "faster players" is `set_movement 6`), so "make it a race" or "frost, and faster" become one bounded patch that commits without a reset.
 
 Nothing here changes the trust boundary: the model proposes JSON, the server decides validity, and the mode rule is engine code chosen by an enum, never text the model wrote.
+
+## Streaming generation (added 15:20 CDT)
+
+A brief no longer builds the whole map. It builds the zone around the spawn (2 to 4 islands) and Beetle keeps extending the world ahead of the players with automatic director requests. The contract pieces are `STREAMING` in packages/contracts/src/limits.ts (`frontierMeters: 4`, `cooldownMs: 12000`, `maxIslands: 24`, `islandsPerExtension: {min: 1, max: 2}`), `WorldSpec.streaming` (world.ts), the patch ops `add_island` and `remove_island` (patch.ts, applied in packages/world/src/patch.ts), `DirectorRequest.auto` / `autoReason` and `DirectorSettingsBodySchema` with `ROUTES.directorSettings` (protocol.ts). World limits were raised to 24 islands and 48 bridges so a grown world still validates.
+
+The server trigger, settings route and extension prompt belong to the server and agent owners; the paragraphs below state the agreed contract (what the web and docs rely on). Confirm the exact heading quantisation, cooldown start and cancellation rule against apps/server once their change lands.
+
+### Trigger (server, deterministic)
+
+Each simulation tick the server looks at every connected player's authoritative position. A player is "at the frontier" when they are within `STREAMING.frontierMeters` of the rim of the island that supports them, and no bridge leaves that island on the side the player is approaching (the direction is the compass heading from the island centre through the player, quantised to north, east, south, west). Nothing on the client decides this: the check uses the same compiled world and the same positions that drive collision and support, so two displays, or a replay from `data/events/server.jsonl`, reach the same decision at the same tick. Keeping it server-side also means a phone that lies about its position cannot force generation; inputs are still intent only.
+
+### Cooldown and limits
+
+- At most one automatic request every `STREAMING.cooldownMs` (12 s) per world, and never while another request (manual or automatic) is open, so a slow model cannot queue a backlog of extensions.
+- No automatic request when the world already has `STREAMING.maxIslands` (24) islands, when `WorldSpec.streaming` is false, or when the director switched `autoExpand` off (`POST /api/director/settings { autoExpand: false }`, director token; the setting is in memory and defaults to on at startup).
+- An extension asks for `islandsPerExtension.min` to `max` (1 to 2) islands; the patch budget stays `WORLD_LIMITS.patchOps.max`, so one extension is a normal-sized edit.
+- Manual requests come first: a director brief or edit is never blocked by an automatic request (the intended rule is that a queued automatic request is cancelled and shows as cancelled in the trail; confirm in apps/server).
+
+### Request flow
+
+1. The frontier check fires for player P at island I in direction D. The server creates a `DirectorRequest` with `kind: 'edit'`, `auto: true`, `autoReason: { islandId: I, direction: D, playerId: P }` and a server-written prompt ("Add one or two islands north of Hearth Island, each joined by a bridge, matching the biome; keep every existing island, bridge, relic, spawn and the gate"). It is queued, broadcast as activity and claimed by the agent worker exactly like a manual edit.
+2. The agent drafts a patch made of `add_island` (with `bridgeFrom` set to the frontier island) and `add_bridge` / `add_decoration` ops, proposes it through the normal candidate route, and the server validates, defers on `OCCUPIED_SUPPORT` and commits through the same transaction as any edit (see "Transaction flow"). Players keep positions, inventory and connections; nothing resets.
+3. The committed world is broadcast as a new version; the director trail shows the request with the `auto` tag and the reason ("extending north of Hearth Island for Amber"), and the build report carries the same request id.
+4. If the agent fails within its repair budget, the request finishes `failed`, the world stays exactly as it was and the cooldown applies before the next attempt. There is no partial commit.
+
+### Ops
+
+- `add_island { id, name?, center, radius, bridgeFrom? }`: the applier clamps the centre inside the bounds, pushes the island away from its nearest neighbour until the 1.25 m gap holds (deterministic, at most 40 iterations), and when `bridgeFrom` names an island it adds a straight bridge between the two rims so the new land is reachable in the same op. Refused with `DUPLICATE_ID` or `RESOURCE_LIMIT` (24 islands).
+- `remove_island { id }`: refused with `INVALID_REFERENCE` for an unknown id, `UNSUPPORTED_OPERATION` when the island carries a spawn, a relic or the gate, and `RESOURCE_LIMIT` below the minimum island count; otherwise the island, its bridges and its decorations go, and the touched ids are recorded for the live checks.
+
+### Validator checks
+
+An extension is validated as a full world, not as a delta: `OUT_OF_BOUNDS` (island discs inside the +-60 m bounds, step 3b), `ISLAND_OVERLAP` (step 4), bridge geometry (`BRIDGE_ENDPOINT_GAP`, `BRIDGE_LENGTH`, `BRIDGE_CROSSES_ISLAND`, `BRIDGE_DUPLICATE`), reachability of spawns, relics and the gate over the recompiled walk field, and the live checks against connected players (`PLAYER_CUT_OFF`, `OCCUPIED_SUPPORT` deferral). The `add_island` applier cannot produce an overlapping or out-of-bounds island, so the usual failure on an extension is a bridge the model drew across an existing island, which the agent repairs within its budget.
+
+### Why the frontier check lives on the server and is deterministic
+
+- Authority: positions, support and bridges are server state; a client-side trigger would have to trust a controller's view of where it stands.
+- Replay: the trigger is a pure function of (compiled world, tick positions, cooldown clock), so an extension seen in the demo can be reproduced from the event log and tested without a model by driving a scripted controller to a rim and asserting the automatic request.
+- Single writer: the server is the only thing that creates requests, so manual and automatic requests share one queue, one cooldown and one transaction path, and the "manual wins" rule is enforceable.
+- Status at 15:20 CDT: contracts, limits, the island ops and applier, the director toggle and the trail tagging are in the tree (`npx tsc -p apps/web/tsconfig.json` clean). The server trigger, the settings route and the agent prompt for extensions are owned by the server and agent owners and were still landing when this section was written; no streaming run is recorded in docs/RESULTS.md yet.

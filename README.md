@@ -72,7 +72,7 @@ The engine implements five game modes (`GAME_MODES` in packages/contracts/src/li
 | `checkpoint_race` | Run through the relics as checkpoints, in order by default, then the gate. Race requests map here | Every checkpoint reached (ordered when `orderedCheckpoints` is true, the default for this mode), then the gate | `orderedCheckpoints` true or false, `relicsRequired` 1 to 3; the validator requires at least 2 relics (MODE_INVALID otherwise) |
 | `survival` | Grab a relic and get to the gate while the hazard plane rises; once it passes -1.0 m every bridge submerges and stops supporting players | Collect `relicsRequired` relics (default 1 in this mode) and reach the gate before `timeLimitSec` ends; `lost` when the timer expires. The objective state carries `remainingSec`, `hazardElevation` and `lost`; the validator requires `hazard.rise` with `maxElevation` above the starting plane | `timeLimitSec` 20 to 600 s (default 120); `hazard.rise`: `afterSec` 5 to 300, `metersPerSec` 0.01 to 0.5, `maxElevation` -2 to -0.6 m (bridges below -1.0 m submerge) |
 
-Common to every mode: 4 to 8 islands, at most 16 bridges, 2 spawns, 3 relics, 1 gate, at most 40 decorations, movement speed 3 to 7 m/s (default 4.5, changed live with `set_movement`), and a hazard of `water` or `lava` under everything.
+Common to every mode: 2 to 24 islands (worlds start small and stream in), at most 48 bridges, 2 spawns, 3 relics, 1 gate, at most 40 decorations, movement speed 3 to 7 m/s (default 4.5, changed live with `set_movement`), and a hazard of `water` or `lava` under everything.
 
 Biomes (`BIOMES`): `garden`, `volcanic`, `frost`, `desert`, `night`. The biome is a world field, chosen by the brief and changed live with `set_biome`; the hazard kind is separate (`set_hazard`). Serene (garden, water) and volcanic (lava) rendering is verified in the browser with two moving players (docs/ACCEPTANCE.md); the biome presets for frost, desert and night are implemented and the frost hill fixture was verified in the browser at 32 fps in the software-rendered pane (BUILD_STATUS.md, renderer row); desert and night have no separate browser check recorded. Decoration types (11): tree, rock, lantern, pillar, bush, shrine, tower, ruin, crystal, mushroom, statue.
 
@@ -89,6 +89,14 @@ Example briefs and where they land:
 | "The flood is coming: stay above the water as it rises" | `survival` | garden, water | `hazard.rise` within the contract ranges |
 
 These examples show the mapping rule. The measured runs (18 briefs, 4 edits, 7 out-of-library requests) are in docs/RESULTS.md "Game modes from one prompt" and summarised under "What works today" below; note that the measured king-of-the-hill brief asked for desert and committed as volcanic because the model never wrote `desert`.
+
+## Streaming worlds
+
+A brief now builds only the zone around the spawn, 2 to 4 islands, and Beetle grows the world ahead of the players. When a player walks within 4 m of an island rim with no crossing beyond it, the server creates an automatic director request (`auto: true`, with the island, direction and player as the reason) asking the agent for one or two more islands with bridges in that direction. The extension is validated and committed like any edit, so players keep positions, relics and connections; if it fails, the world stays as it was. At most one extension every 12 s, up to 24 islands (`STREAMING` in packages/contracts/src/limits.ts). In the director trail, automatic requests carry a quiet `auto` tag and the reason ("extending north of Hearth Island for Amber").
+
+To turn it off, untick "Grow the world as players explore" in the director panel (it posts `{ autoExpand: false }` to `POST /api/director/settings` with the director token), or send that request yourself. The setting defaults to on.
+
+Status (2026-10-03 15:20 CDT): the contract, the `add_island` / `remove_island` ops and their applier, the raised limits (24 islands, 48 bridges), the director toggle and the trail tagging are implemented today; the server-side frontier trigger and settings route are being landed by their owners. Measured numbers (time from frontier to committed extension, failure rate): not yet measured; docs/RESULTS.md has no streaming run at the time of writing. See docs/ARCHITECTURE.md "Streaming generation" for the trigger, cooldown and validator checks.
 
 ## What works today (2026-10-03, measured on the GB10)
 

@@ -1,6 +1,6 @@
 # BUILD_STATUS
 
-Last updated: 2026-10-03 14:36 CDT. Submission deadline set by the user: 16:10 CDT.
+Last updated: 2026-10-03 14:36 CDT. Submission deadline set by the user: 16:30 CDT. Final checkpoint at 16:05, export and push by 16:20.
 
 Legend: implemented = code exists; tested = an automated or recorded manual test ran and passed; untested = exists, no test run; blocked = cannot proceed without something external; omitted = deliberately cut.
 
