@@ -1,0 +1,44 @@
+{
+  "startedAt": "2026-10-03T19:55:51.064Z",
+  "serverUrl": "http://127.0.0.1:7804",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 0,
+    "hasWorld": false,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7804",
+    "uptimeMs": 259186
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "Survive the rising lava for two minutes on five volcanic islands, ruins and statues, reach the gate with one relic."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "Survive the rising lava for two minutes on five volcanic islands, ruins and statues, reach the gate with one relic.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-bf758e4f",
+      "status": "error(repairing)",
+      "worldVersionBefore": 0,
+      "worldVersionAfter": null,
+      "elapsedMs": 66140,
+      "activity": [],
+      "report": null,
+      "startedAt": "2026-10-03T19:55:51.065Z",
+      "error": "fetch failed"
+    }
+  ],
+  "finishedAt": "2026-10-03T19:56:57.212Z"
+}

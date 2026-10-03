@@ -1,0 +1,198 @@
+{
+  "startedAt": "2026-10-03T19:53:09.061Z",
+  "serverUrl": "http://127.0.0.1:7801",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 0,
+    "hasWorld": false,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7801",
+    "uptimeMs": 99496
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "A 75 second time trial dash across four desert islands with a wide safe route and a narrow shortcut; fast players."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "A 75 second time trial dash across four desert islands with a wide safe route and a narrow shortcut; fast players.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-aa3ab25f",
+      "status": "failed",
+      "worldVersionBefore": 0,
+      "worldVersionAfter": 0,
+      "elapsedMs": 180425,
+      "activity": [
+        {
+          "id": "act-1-must7ft8",
+          "requestId": "req-aa3ab25f",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791057189068,
+          "elapsedMs": 1,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-2-must7ft8",
+          "requestId": "req-aa3ab25f",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791057189068,
+          "elapsedMs": 1,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-3-must7fta",
+          "requestId": "req-aa3ab25f",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791057189070,
+          "elapsedMs": 3,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-4-must9xmj",
+          "requestId": "req-aa3ab25f",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791057305467,
+          "elapsedMs": 116400,
+          "worldVersion": 0,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-5-must9xn5",
+          "requestId": "req-aa3ab25f",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: UNREACHABLE_RELIC[relic_dune_1,bridge_island_2,spawn-0,spawn-1]",
+          "at": 1791057305489,
+          "elapsedMs": 116422,
+          "worldVersion": 0,
+          "codes": [
+            "UNREACHABLE_RELIC"
+          ],
+          "objectIds": [
+            "relic_dune_1",
+            "bridge_island_2",
+            "spawn-0",
+            "spawn-1"
+          ]
+        },
+        {
+          "id": "act-6-mustau9h",
+          "requestId": "req-aa3ab25f",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791057347765,
+          "elapsedMs": 158698,
+          "worldVersion": 0,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-7-mustau9s",
+          "requestId": "req-aa3ab25f",
+          "phase": "repairing",
+          "message": "[direct] repair 2 of 2: UNREACHABLE_RELIC[relic_dune_1,bridge_island_2,spawn-0,spawn-1]",
+          "at": 1791057347776,
+          "elapsedMs": 158709,
+          "worldVersion": 0,
+          "codes": [
+            "UNREACHABLE_RELIC"
+          ],
+          "objectIds": [
+            "relic_dune_1",
+            "bridge_island_2",
+            "spawn-0",
+            "spawn-1"
+          ]
+        },
+        {
+          "id": "act-8-mustbapc",
+          "requestId": "req-aa3ab25f",
+          "phase": "failed",
+          "message": "direct / qwen3.5:4b: [direct] failed: MODEL_TIMEOUT model call timed out after 21292 ms",
+          "at": 1791057369072,
+          "elapsedMs": 180005,
+          "worldVersion": 0,
+          "codes": [
+            "UNREACHABLE_RELIC"
+          ]
+        },
+        {
+          "id": "act-9-mustbape",
+          "requestId": "req-aa3ab25f",
+          "phase": "failed",
+          "message": "Failed: model call timed out after 21292 ms",
+          "at": 1791057369074,
+          "elapsedMs": 180007,
+          "worldVersion": 0,
+          "codes": [
+            "MODEL_TIMEOUT"
+          ]
+        }
+      ],
+      "report": {
+        "reportId": "rep-c773eb4c",
+        "requestId": "req-aa3ab25f",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "failed",
+        "worldVersion": 0,
+        "baseWorldVersion": 0,
+        "summary": "[direct] failed: MODEL_TIMEOUT model call timed out after 21292 ms",
+        "validation": {
+          "attempts": 2,
+          "failedCodes": [
+            "UNREACHABLE_RELIC"
+          ]
+        },
+        "timings": {
+          "requestedAt": 1791057189067,
+          "firstModelResponseMs": 116394,
+          "totalMs": 180001
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 3
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 20
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 9
+          }
+        ],
+        "createdAt": 1791057369072
+      },
+      "startedAt": "2026-10-03T19:53:09.062Z",
+      "error": {
+        "code": "MODEL_TIMEOUT",
+        "message": "model call timed out after 21292 ms"
+      }
+    }
+  ],
+  "finishedAt": "2026-10-03T19:56:09.488Z"
+}

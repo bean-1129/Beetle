@@ -1,0 +1,242 @@
+{
+  "startedAt": "2026-10-03T19:26:55.796Z",
+  "serverUrl": "http://127.0.0.1:7786",
+  "timeoutMs": 300000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 0,
+    "hasWorld": false,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7786",
+    "uptimeMs": 67709
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "King of the hill on a desert arena with four islands, hold the hill for ten seconds"
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "King of the hill on a desert arena with four islands, hold the hill for ten seconds",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-210983b1",
+      "status": "committed",
+      "worldVersionBefore": 0,
+      "worldVersionAfter": 1,
+      "elapsedMs": 31089,
+      "activity": [
+        {
+          "id": "act-b-muss9pvc",
+          "requestId": "req-210983b1",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791055615800,
+          "elapsedMs": 0,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-c-muss9pvc",
+          "requestId": "req-210983b1",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791055615800,
+          "elapsedMs": 0,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-d-muss9pve",
+          "requestId": "req-210983b1",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791055615802,
+          "elapsedMs": 2,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-e-mussa1p4",
+          "requestId": "req-210983b1",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791055631128,
+          "elapsedMs": 15328,
+          "worldVersion": 0,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-f-mussa1pf",
+          "requestId": "req-210983b1",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791055631139,
+          "elapsedMs": 15339,
+          "worldVersion": 0,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-g-mussa1pt",
+          "requestId": "req-210983b1",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: INTERNAL[relic_c]",
+          "at": 1791055631153,
+          "elapsedMs": 15353,
+          "worldVersion": 0,
+          "codes": [
+            "INTERNAL"
+          ],
+          "objectIds": [
+            "relic_c"
+          ]
+        },
+        {
+          "id": "act-h-mussadaz",
+          "requestId": "req-210983b1",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791055646171,
+          "elapsedMs": 30371,
+          "worldVersion": 0,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-i-mussadbb",
+          "requestId": "req-210983b1",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791055646183,
+          "elapsedMs": 30383,
+          "worldVersion": 0,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-j-mussadbj",
+          "requestId": "req-210983b1",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791055646191,
+          "elapsedMs": 30391,
+          "worldVersion": 0,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-k-mussadch",
+          "requestId": "req-210983b1",
+          "phase": "committed",
+          "message": "[direct] committed v1",
+          "at": 1791055646225,
+          "elapsedMs": 30425,
+          "worldVersion": 1,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-l-mussadck",
+          "requestId": "req-210983b1",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] new world \"King of the Hill (Desert)\" with 4 islands and 4 bridges, mode king_of_the_hill",
+          "at": 1791055646228,
+          "elapsedMs": 30428,
+          "worldVersion": 1,
+          "codes": [
+            "INTERNAL"
+          ]
+        },
+        {
+          "id": "act-m-mussadcl",
+          "requestId": "req-210983b1",
+          "phase": "committed",
+          "message": "Committed world version 1",
+          "at": 1791055646229,
+          "elapsedMs": 30429,
+          "worldVersion": 1
+        }
+      ],
+      "report": {
+        "reportId": "rep-6bd2b6a8",
+        "requestId": "req-210983b1",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 1,
+        "baseWorldVersion": 0,
+        "summary": "[direct] new world \"King of the Hill (Desert)\" with 4 islands and 4 bridges, mode king_of_the_hill",
+        "validation": {
+          "attempts": 2,
+          "failedCodes": [
+            "INTERNAL"
+          ]
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791055615800,
+          "firstModelResponseMs": 15323,
+          "validatedMs": 30381,
+          "committedMs": 30423,
+          "totalMs": 30426
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 3
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 9
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 12
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 3
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 11
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 6
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 32
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791055646228
+      },
+      "startedAt": "2026-10-03T19:26:55.797Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T19:27:26.887Z"
+}

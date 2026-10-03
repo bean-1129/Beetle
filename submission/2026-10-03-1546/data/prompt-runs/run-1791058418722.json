@@ -1,0 +1,187 @@
+{
+  "startedAt": "2026-10-03T20:13:38.722Z",
+  "serverUrl": "http://127.0.0.1:7799",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 11,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7799",
+    "uptimeMs": 104710
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "Racing: a lap of a desert ring of islands through checkpoints, fast players."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "Racing: a lap of a desert ring of islands through checkpoints, fast players.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-640cb804",
+      "status": "committed",
+      "worldVersionBefore": 11,
+      "worldVersionAfter": 12,
+      "elapsedMs": 14056,
+      "activity": [
+        {
+          "id": "act-1i-mustxsmf",
+          "requestId": "req-640cb804",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791058418727,
+          "elapsedMs": 0,
+          "worldVersion": 11
+        },
+        {
+          "id": "act-1j-mustxsmf",
+          "requestId": "req-640cb804",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791058418727,
+          "elapsedMs": 0,
+          "worldVersion": 11
+        },
+        {
+          "id": "act-1k-mustxsmg",
+          "requestId": "req-640cb804",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791058418728,
+          "elapsedMs": 1,
+          "worldVersion": 11
+        },
+        {
+          "id": "act-1l-musty2xv",
+          "requestId": "req-640cb804",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058432099,
+          "elapsedMs": 13372,
+          "worldVersion": 11,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-1m-musty2y2",
+          "requestId": "req-640cb804",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791058432106,
+          "elapsedMs": 13379,
+          "worldVersion": 11,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-1n-musty2y8",
+          "requestId": "req-640cb804",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791058432112,
+          "elapsedMs": 13385,
+          "worldVersion": 11,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-1o-musty2yg",
+          "requestId": "req-640cb804",
+          "phase": "committed",
+          "message": "[direct] committed v12",
+          "at": 1791058432120,
+          "elapsedMs": 13393,
+          "worldVersion": 12,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-1p-musty2yj",
+          "requestId": "req-640cb804",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] new world \"Checkpoint Race (checkpoint_race)\" with 7 islands and 7 bridges, mode checkpoint_race, biome desert",
+          "at": 1791058432123,
+          "elapsedMs": 13396,
+          "worldVersion": 12
+        },
+        {
+          "id": "act-1q-musty2yk",
+          "requestId": "req-640cb804",
+          "phase": "committed",
+          "message": "Committed world version 12",
+          "at": 1791058432124,
+          "elapsedMs": 13397,
+          "worldVersion": 12
+        }
+      ],
+      "report": {
+        "reportId": "rep-94739b73",
+        "requestId": "req-640cb804",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 12,
+        "baseWorldVersion": 11,
+        "summary": "[direct] new world \"Checkpoint Race (checkpoint_race)\" with 7 islands and 7 bridges, mode checkpoint_race, biome desert",
+        "validation": {
+          "attempts": 1,
+          "failedCodes": []
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791058418727,
+          "firstModelResponseMs": 13368,
+          "validatedMs": 13378,
+          "committedMs": 13393,
+          "totalMs": 13395
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 6
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 5
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 7
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791058432123
+      },
+      "startedAt": "2026-10-03T20:13:38.723Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T20:13:52.780Z"
+}

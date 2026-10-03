@@ -1,0 +1,228 @@
+{
+  "startedAt": "2026-10-03T19:29:37.761Z",
+  "serverUrl": "http://127.0.0.1:7786",
+  "timeoutMs": 200000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 4,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7786",
+    "uptimeMs": 229675
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "A game like Clash Royale"
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "A game like Clash Royale",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-37ef1a14",
+      "status": "failed",
+      "worldVersionBefore": 4,
+      "worldVersionAfter": 4,
+      "elapsedMs": 39101,
+      "activity": [
+        {
+          "id": "act-1z-mussd6ue",
+          "requestId": "req-37ef1a14",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791055777766,
+          "elapsedMs": 0,
+          "worldVersion": 4
+        },
+        {
+          "id": "act-20-mussd6ue",
+          "requestId": "req-37ef1a14",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791055777766,
+          "elapsedMs": 0,
+          "worldVersion": 4
+        },
+        {
+          "id": "act-21-mussd6ul",
+          "requestId": "req-37ef1a14",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791055777773,
+          "elapsedMs": 7,
+          "worldVersion": 4
+        },
+        {
+          "id": "act-22-mussdk0j",
+          "requestId": "req-37ef1a14",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791055794835,
+          "elapsedMs": 17069,
+          "worldVersion": 4,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-23-mussdk0r",
+          "requestId": "req-37ef1a14",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: BRIDGE_DUPLICATE[bridge-hill-b,bridge-hill-a], UNREACHABLE_RELIC[relic-2,mid1,spawn-0,spawn-1], UNREACHABLE_RELIC[relic-3,mid2,spawn-0,spawn-1]",
+          "at": 1791055794843,
+          "elapsedMs": 17077,
+          "worldVersion": 4,
+          "codes": [
+            "BRIDGE_DUPLICATE",
+            "UNREACHABLE_RELIC",
+            "UNREACHABLE_RELIC"
+          ],
+          "objectIds": [
+            "bridge-hill-b",
+            "bridge-hill-a",
+            "relic-2",
+            "mid1",
+            "spawn-0",
+            "spawn-1",
+            "relic-3",
+            "mid2",
+            "spawn-0",
+            "spawn-1"
+          ]
+        },
+        {
+          "id": "act-24-mussdsje",
+          "requestId": "req-37ef1a14",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791055805882,
+          "elapsedMs": 28116,
+          "worldVersion": 4,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-25-mussdsjm",
+          "requestId": "req-37ef1a14",
+          "phase": "repairing",
+          "message": "[direct] repair 2 of 2: BRIDGE_CROSSES_ISLAND[bridge-mid-hill,mid2]",
+          "at": 1791055805890,
+          "elapsedMs": 28124,
+          "worldVersion": 4,
+          "codes": [
+            "BRIDGE_CROSSES_ISLAND"
+          ],
+          "objectIds": [
+            "bridge-mid-hill",
+            "mid2"
+          ]
+        },
+        {
+          "id": "act-26-musse0zg",
+          "requestId": "req-37ef1a14",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791055816828,
+          "elapsedMs": 39062,
+          "worldVersion": 4,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-27-musse0zq",
+          "requestId": "req-37ef1a14",
+          "phase": "failed",
+          "message": "direct / qwen3.5:4b: [direct] failed: VALIDATION_FAILED rejected after 2 repairs: BRIDGE_CROSSES_ISLAND[bridge-mid-hill,mid2]",
+          "at": 1791055816838,
+          "elapsedMs": 39072,
+          "worldVersion": 4,
+          "codes": [
+            "BRIDGE_DUPLICATE",
+            "UNREACHABLE_RELIC",
+            "BRIDGE_CROSSES_ISLAND"
+          ]
+        },
+        {
+          "id": "act-28-musse0zs",
+          "requestId": "req-37ef1a14",
+          "phase": "failed",
+          "message": "Failed: rejected after 2 repairs: BRIDGE_CROSSES_ISLAND[bridge-mid-hill,mid2]",
+          "at": 1791055816840,
+          "elapsedMs": 39074,
+          "worldVersion": 4,
+          "codes": [
+            "VALIDATION_FAILED"
+          ]
+        }
+      ],
+      "report": {
+        "reportId": "rep-ba3229e6",
+        "requestId": "req-37ef1a14",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "failed",
+        "worldVersion": 4,
+        "baseWorldVersion": 4,
+        "summary": "[direct] failed: VALIDATION_FAILED rejected after 2 repairs: BRIDGE_CROSSES_ISLAND[bridge-mid-hill,mid2]",
+        "validation": {
+          "attempts": 3,
+          "failedCodes": [
+            "BRIDGE_DUPLICATE",
+            "UNREACHABLE_RELIC",
+            "BRIDGE_CROSSES_ISLAND"
+          ]
+        },
+        "timings": {
+          "requestedAt": 1791055777766,
+          "firstModelResponseMs": 17062,
+          "totalMs": 39067
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 6
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 3
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 6
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 3
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 7
+          }
+        ],
+        "createdAt": 1791055816838
+      },
+      "startedAt": "2026-10-03T19:29:37.762Z",
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "message": "rejected after 2 repairs: BRIDGE_CROSSES_ISLAND[bridge-mid-hill,mid2]"
+      }
+    }
+  ],
+  "finishedAt": "2026-10-03T19:30:16.864Z"
+}

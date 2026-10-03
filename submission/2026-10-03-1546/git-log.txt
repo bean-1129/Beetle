@@ -1,0 +1,92 @@
+663d3f6 2026-10-03T15:42:20-05:00 Agent: terrain prompt final wording, gate repair hint
+5114631 2026-10-03T15:40:06-05:00 Status: terrain types landed and measured; docs status lines
+0d4962e 2026-10-03T15:39:53-05:00 Agent: terrain choice from the brief, honest mapping of unsupported mechanics; measured on three briefs
+fc464fe 2026-10-03T15:39:06-05:00 Web: ground fog multiplier 1.15
+59b366e 2026-10-03T15:38:52-05:00 Web: lighter ground fog; results: ground terrain live
+be05c20 2026-10-03T15:37:05-05:00 Web: ground terrain type (heightfield landmass, plateaus, roads, scattered vegetation, biome land colours)
+49af23d 2026-10-03T15:31:22-05:00 Docs: capabilities and honest mapping, terrain types, runbook
+1b86075 2026-10-03T15:30:09-05:00 Status: Ralph loop outcome and measured latency
+934c487 2026-10-03T15:29:52-05:00 Ralph round 1: early simulation step on input (0.55 ms p50 input to tick), renderer resize and polish, brief hints; ground terrain contract and movement rule
+a57fed4 2026-10-03T15:29:28-05:00 Pitch: measured streaming extensions, latency 0.78 ms p50, deck rebuilt
+9510a4a 2026-10-03T15:26:40-05:00 Results: streaming extension verified through OpenClaw mode
+7b6f132 2026-10-03T15:24:57-05:00 Status: streaming acceptance evidence
+cc51b53 2026-10-03T15:24:39-05:00 Streaming: real-server integration tests (4 of 4) and unattended acceptance (21 of 21 on run 3)
+43d9c42 2026-10-03T15:24:32-05:00 World: brief drafts keep the streaming flag
+9521e7a 2026-10-03T15:24:19-05:00 Agent: expansion prompt for automatic extensions, streaming briefs start small, plugin schemas for island ops; measured extensions
+0c0a741 2026-10-03T15:20:09-05:00 Web: per-instance asset variation (islands, bridges, decorations, relics) seeded per object
+2a3de27 2026-10-03T15:18:33-05:00 Pitch: streaming generation with the live 9.5 s extension; competitive row; storyboard shot
+337469f 2026-10-03T15:16:26-05:00 Results and status: streaming generation verified live
+9777089 2026-10-03T15:15:14-05:00 Server: streaming expansion scheduler (frontier trigger, cooldown, in-flight guard), settings route, auto requests
+d26a214 2026-10-03T15:14:26-05:00 World: streaming ops with anchor selection and pull-in, seed2 and grown12 fixtures, 18 streaming tests; limit tests updated
+8d4d241 2026-10-03T15:13:21-05:00 HUD: building-ahead indicator for automatic extensions
+b248798 2026-10-03T15:12:31-05:00 README: patch op list includes island ops
+ef24d3e 2026-10-03T15:12:25-05:00 Director: grow-the-world toggle and auto request tags; docs: streaming generation
+11c6bc4 2026-10-03T15:10:03-05:00 Contracts and world: streaming generation ops (add_island, remove_island), larger world limits, automatic requests, settings route
+740a91a 2026-10-03T14:59:38-05:00 OpenClaw plugin: mode, biome, movement and hazard-rise fields in tool schemas; context raised to 16k
+129486e 2026-10-03T14:52:33-05:00 Web: neuroaesthetics pass (analogous palettes, key light upper left, calm motion, golden-ratio framing, UI contrast)
+43f86ec 2026-10-03T14:49:30-05:00 Docs: measured mode briefs in the deck, README, runbook and storyboard
+04872a3 2026-10-03T14:45:02-05:00 Agent: game mapping prompts measured on 18 briefs including out-of-library requests; preserved state in reports
+71737f4 2026-10-03T14:44:10-05:00 World: decoration offsets normalized with their collision radius
+efc7ef7 2026-10-03T14:39:14-05:00 Server: set_mode restating the mode restarts its clock; 15 adversarial mode tests
+f2a45b9 2026-10-03T14:35:16-05:00 Status: game generator expansion
+43837e6 2026-10-03T14:34:32-05:00 Web: console-style phone pad with sprint, walk, ping and wave; objective strip and cues
+148e3d0 2026-10-03T14:33:19-05:00 Web: biome presets with lava overlays, five new decoration types, rigged players with run cycle, beacons, mode visuals
+4b3fa63 2026-10-03T14:32:51-05:00 Web: mode-aware HUD, overlays, one-prompt landing, director hints and prefill, restraint pass on styles
+12fdd28 2026-10-03T14:29:37-05:00 Tests: survival fixture expectation
+433712a 2026-10-03T14:29:28-05:00 Server: five game modes in the simulation, controller buttons, ping markers, emotes, fixture selection
+ae7cda4 2026-10-03T14:29:21-05:00 World: survival fixture lava rises high enough to submerge bridges
+b329c6c 2026-10-03T14:29:18-05:00 Integration: five game modes verified on a real server with real controllers
+79f8588 2026-10-03T14:27:28-05:00 Docs: game generator framing, mode library, competitive framework, deck rebuilt
+cb6a82b 2026-10-03T14:26:25-05:00 Contracts: controller buttons, markers and emotes; world: sprint and precision speed scale; controller: objective view and cues
+557498b 2026-10-03T14:23:52-05:00 Agent: prompts map any requested game onto a mode and biome; plugin descriptions updated; preserved state in reports
+0996464 2026-10-03T14:23:39-05:00 Web: audio beds for frost, desert and night; mode and biome events
+1961e28 2026-10-03T14:21:20-05:00 World: include modes tests in the package typecheck
+9fd9c7a 2026-10-03T14:21:12-05:00 World: game mode validation, mode and biome normalization, fixtures for race, hill, survival and trial
+6deb800 2026-10-03T14:16:35-05:00 Environment: daemon restart and 27B status
+f896a97 2026-10-03T14:13:44-05:00 Contracts: game modes, biomes, movement speed, rising hazard, new decoration types, mode and biome patch ops
+50c3a3b 2026-10-03T14:09:02-05:00 Submission export 2026-10-03-1409
+aca3e90 2026-10-03T14:08:48-05:00 Results: fresh brief verified through OpenClaw mode
+3ba04df 2026-10-03T14:07:24-05:00 Web: vite client types reference so the root typecheck passes
+b676e23 2026-10-03T14:06:26-05:00 Web: volcanic haze and glow retuned; OpenClaw timeout documented in env example
+3c94219 2026-10-03T14:05:56-05:00 Final status, README presentation section, submission export 14:05
+e0a659c 2026-10-03T14:03:45-05:00 Web: tuned theme exposure, fog and bloom; Q toggles render quality
+5a4a0e7 2026-10-03T14:03:10-05:00 Results: hero transformation verified on the cinematic renderer with two connected players
+dc735ff 2026-10-03T14:00:42-05:00 Web: cinematic environment themes, PBR image-based lighting, post pipeline, cinematic camera, particles
+fc9b39a 2026-10-03T13:56:53-05:00 Web: terrain islands, plank bridges, crystal relics, rune gate, humanoid players with PBR
+b3b82a1 2026-10-03T13:54:38-05:00 Web: cinematic transitions and movement-feel effects module
+62d4354 2026-10-03T13:51:16-05:00 Web: procedural ambient audio and event sounds (gesture gated, off by default)
+26b9126 2026-10-03T13:49:59-05:00 Web: premium minimal HUD, debug overlay behind a toggle, join drawer, director panel glass restyle
+cd79afc 2026-10-03T13:49:58-05:00 Validator: BRIDGE_DUPLICATE rule so alternative routes differ; repair hint; tests
+aed7cfd 2026-10-03T13:49:04-05:00 Acceptance: two-player serene to volcanic transformation script and passing record
+c3129d4 2026-10-03T13:45:57-05:00 Live integration tests: cases 17 and 18 pass with the real model and real OpenClaw
+4437eb8 2026-10-03T13:44:43-05:00 Model selection final: 4B by measured latency, 27B not benchmarked, daemon notes
+74f7b4d 2026-10-03T13:44:31-05:00 Results: OpenClaw mode verified live against the real server
+9b93c8c 2026-10-03T13:43:26-05:00 Agent: shortened OpenClaw tool flow, decoupled OpenClaw timeout, config audit, telemetry off, sanitized evidence
+db76e5b 2026-10-03T13:40:26-05:00 Docs and pitch filled with measured numbers; runbook verified-versus-unrun table
+519c515 2026-10-03T13:40:07-05:00 Dev: scripted walker controller for rehearsals
+cf23b5d 2026-10-03T13:33:44-05:00 Status checkpoint and full rehearsal attempt log
+b388b15 2026-10-03T13:33:13-05:00 Results: validator refusal and repair on the fixture world, undo check
+ad09741 2026-10-03T13:30:50-05:00 Results: fix run 3 table fields
+5523525 2026-10-03T13:30:12-05:00 Results: fresh edits after normalization, 5 of 6 committed
+7723e1f 2026-10-03T13:27:53-05:00 Model selection doc and measured evidence folders (benchmarks, latency, prompt runs, offline proof)
+b39a6bf 2026-10-03T13:22:01-05:00 World: bridge contraction and relic-off-gate normalization; agent: gate and bridge rules plus repair hints
+ce64fb4 2026-10-03T13:19:36-05:00 Web: renderer visual polish (stone islands, plank bridges, water and lava shimmer, relic halos, gate)
+ca1c399 2026-10-03T13:18:39-05:00 Corpus of real model outputs with failure-mode analysis; prompt caps decorations; draft token budget 3072; island separation convergence
+d6d500e 2026-10-03T13:17:21-05:00 Architecture: normalization and security changes documented
+a973308 2026-10-03T13:12:53-05:00 Agent: Ollama client, bounded jobs, direct harness, OpenClaw tool plugin and isolated profile with smoke evidence, benchmark; measured evidence folders
+b000107 2026-10-03T13:09:27-05:00 Build status checkpoint: tests 1 to 16 verified, live edit verified in browser
+5707490 2026-10-03T13:05:31-05:00 World: deterministic island separation in draft normalization; storyboard; corpus validity check
+ce3dcf1 2026-10-03T13:04:34-05:00 Server: request ownership on agent routes, guarded director URL print; contracts: stricter display text
+e3653cf 2026-10-03T13:01:25-05:00 Server adversarial fixes and 17 new tests; latency measurement; security review
+551f66f 2026-10-03T12:56:37-05:00 World: deterministic normalization of model output (name and direction references, offsets, limits); integration tests for cases 8 to 13 and 16
+c13db19 2026-10-03T12:53:12-05:00 Third-party inventory with installed versions and licenses
+98bfd53 2026-10-03T12:52:03-05:00 Web: director, play and controller pages, Babylon renderer with diff-by-id, join QR, keyboard player
+f3ba61f 2026-10-03T12:51:09-05:00 World: adversarial fixes (step clamping and sub-stepping, out-of-bounds, draft id checks) and 23 new tests
+1d7c53e 2026-10-03T12:50:20-05:00 Live-run recorder, fresh prompt set and results, recording and caption tooling
+12b9e48 2026-10-03T12:48:31-05:00 Server: Fastify HTTP, ws protocol, 30 Hz simulation, transactions with proofs, persistence, auth, tests
+8a8a312 2026-10-03T12:46:56-05:00 Pitch: six-slide deck with placeholders, PDF export, fill-in map
+8e10594 2026-10-03T12:45:45-05:00 Packaging: demo export, offline proof tooling, submission checklist
+2bdf9d3 2026-10-03T12:41:42-05:00 World: compiler, walk field, nav grid, validators, playability, patches, fixtures, unit tests
+479f9f2 2026-10-03T12:30:28-05:00 Docs: README, build status, runbook, pitch outline, local-only checklist
+9a8da07 2026-10-03T12:28:29-05:00 Scripts: dev runner, demo readiness check, model probe
+5c72722 2026-10-03T11:55:43-05:00 Baseline: contracts, observability, architecture, environment report, configs

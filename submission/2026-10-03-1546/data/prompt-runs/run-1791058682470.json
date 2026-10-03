@@ -1,0 +1,47 @@
+{
+  "startedAt": "2026-10-03T20:18:02.470Z",
+  "serverUrl": "http://127.0.0.1:7801",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 0,
+    "hasWorld": false,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7801",
+    "uptimeMs": 10609,
+    "settings": {
+      "autoExpand": true
+    }
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "A 75 second time trial dash across four desert islands with a wide safe route and a narrow shortcut; fast players."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "A 75 second time trial dash across four desert islands with a wide safe route and a narrow shortcut; fast players.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-db097f30",
+      "status": "error(planning)",
+      "worldVersionBefore": 0,
+      "worldVersionAfter": null,
+      "elapsedMs": 36093,
+      "activity": [],
+      "report": null,
+      "startedAt": "2026-10-03T20:18:02.471Z",
+      "error": "fetch failed"
+    }
+  ],
+  "finishedAt": "2026-10-03T20:18:38.567Z"
+}

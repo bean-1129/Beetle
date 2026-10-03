@@ -1,0 +1,231 @@
+{
+  "startedAt": "2026-10-03T20:15:32.815Z",
+  "serverUrl": "http://127.0.0.1:7799",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 15,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7799",
+    "uptimeMs": 31794,
+    "settings": {
+      "autoExpand": true
+    }
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "A heist: sneak across a moonlit archipelago, grab the 3 relics from the vault islands and escape through the gate."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "A heist: sneak across a moonlit archipelago, grab the 3 relics from the vault islands and escape through the gate.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-24d6c985",
+      "status": "committed",
+      "worldVersionBefore": 15,
+      "worldVersionAfter": 16,
+      "elapsedMs": 23081,
+      "activity": [
+        {
+          "id": "act-j-musu08nq",
+          "requestId": "req-24d6c985",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791058532822,
+          "elapsedMs": 0,
+          "worldVersion": 15
+        },
+        {
+          "id": "act-k-musu08nr",
+          "requestId": "req-24d6c985",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791058532823,
+          "elapsedMs": 1,
+          "worldVersion": 15
+        },
+        {
+          "id": "act-l-musu08nu",
+          "requestId": "req-24d6c985",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791058532826,
+          "elapsedMs": 4,
+          "worldVersion": 15
+        },
+        {
+          "id": "act-m-musu0iwz",
+          "requestId": "req-24d6c985",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058546115,
+          "elapsedMs": 13293,
+          "worldVersion": 15,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-n-musu0ix5",
+          "requestId": "req-24d6c985",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: BRIDGE_CROSSES_ISLAND[b4,i0]",
+          "at": 1791058546121,
+          "elapsedMs": 13299,
+          "worldVersion": 15,
+          "codes": [
+            "BRIDGE_CROSSES_ISLAND"
+          ],
+          "objectIds": [
+            "b4",
+            "i0"
+          ]
+        },
+        {
+          "id": "act-o-musu0qbc",
+          "requestId": "req-24d6c985",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058555704,
+          "elapsedMs": 22882,
+          "worldVersion": 15,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-p-musu0qbk",
+          "requestId": "req-24d6c985",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791058555712,
+          "elapsedMs": 22890,
+          "worldVersion": 15,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-q-musu0qbq",
+          "requestId": "req-24d6c985",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791058555718,
+          "elapsedMs": 22896,
+          "worldVersion": 15,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-r-musu0qcg",
+          "requestId": "req-24d6c985",
+          "phase": "committed",
+          "message": "[direct] committed v16",
+          "at": 1791058555744,
+          "elapsedMs": 22922,
+          "worldVersion": 16,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-s-musu0qcj",
+          "requestId": "req-24d6c985",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] new world \"Heist on Moonlit Archipelago\" with 4 islands and 3 bridges, mode relic_hunt, biome night",
+          "at": 1791058555747,
+          "elapsedMs": 22925,
+          "worldVersion": 16,
+          "codes": [
+            "BRIDGE_CROSSES_ISLAND"
+          ]
+        },
+        {
+          "id": "act-t-musu0qck",
+          "requestId": "req-24d6c985",
+          "phase": "committed",
+          "message": "Committed world version 16",
+          "at": 1791058555748,
+          "elapsedMs": 22926,
+          "worldVersion": 16
+        }
+      ],
+      "report": {
+        "reportId": "rep-6c0bcb37",
+        "requestId": "req-24d6c985",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 16,
+        "baseWorldVersion": 15,
+        "summary": "[direct] new world \"Heist on Moonlit Archipelago\" with 4 islands and 3 bridges, mode relic_hunt, biome night",
+        "validation": {
+          "attempts": 2,
+          "failedCodes": [
+            "BRIDGE_CROSSES_ISLAND"
+          ]
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791058532822,
+          "firstModelResponseMs": 13287,
+          "validatedMs": 22888,
+          "committedMs": 22919,
+          "totalMs": 22922
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 5
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 7
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 5
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 25
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791058555747
+      },
+      "startedAt": "2026-10-03T20:15:32.817Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T20:15:55.899Z"
+}

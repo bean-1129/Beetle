@@ -1,0 +1,227 @@
+{
+  "startedAt": "2026-10-03T20:07:41.280Z",
+  "serverUrl": "http://127.0.0.1:7799",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 4,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7799",
+    "uptimeMs": 193490
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "A relic hunt adventure across a misty garden archipelago: collect all three relics then open the gate."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "A relic hunt adventure across a misty garden archipelago: collect all three relics then open the gate.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-33cdff5f",
+      "status": "failed",
+      "worldVersionBefore": 4,
+      "worldVersionAfter": 4,
+      "elapsedMs": 48139,
+      "activity": [
+        {
+          "id": "act-16-mustq4th",
+          "requestId": "req-33cdff5f",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791058061285,
+          "elapsedMs": 0,
+          "worldVersion": 4
+        },
+        {
+          "id": "act-17-mustq4th",
+          "requestId": "req-33cdff5f",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791058061285,
+          "elapsedMs": 0,
+          "worldVersion": 4
+        },
+        {
+          "id": "act-18-mustq4ti",
+          "requestId": "req-33cdff5f",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791058061286,
+          "elapsedMs": 1,
+          "worldVersion": 4
+        },
+        {
+          "id": "act-19-mustqgz3",
+          "requestId": "req-33cdff5f",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058077039,
+          "elapsedMs": 15754,
+          "worldVersion": 4,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-1a-mustqgza",
+          "requestId": "req-33cdff5f",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: BRIDGE_CROSSES_ISLAND[b3,i1], BRIDGE_CROSSES_ISLAND[b5,i1]",
+          "at": 1791058077046,
+          "elapsedMs": 15761,
+          "worldVersion": 4,
+          "codes": [
+            "BRIDGE_CROSSES_ISLAND",
+            "BRIDGE_CROSSES_ISLAND"
+          ],
+          "objectIds": [
+            "b3",
+            "i1",
+            "b5",
+            "i1"
+          ]
+        },
+        {
+          "id": "act-1b-mustqtbu",
+          "requestId": "req-33cdff5f",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058093050,
+          "elapsedMs": 31765,
+          "worldVersion": 4,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-1c-mustqtc8",
+          "requestId": "req-33cdff5f",
+          "phase": "repairing",
+          "message": "[direct] repair 2 of 2: BRIDGE_CROSSES_ISLAND[b3,i4], BRIDGE_CROSSES_ISLAND[b5,i1], UNREACHABLE_RELIC[r3,i4,spawn-0,spawn-1]",
+          "at": 1791058093064,
+          "elapsedMs": 31779,
+          "worldVersion": 4,
+          "codes": [
+            "BRIDGE_CROSSES_ISLAND",
+            "BRIDGE_CROSSES_ISLAND",
+            "UNREACHABLE_RELIC"
+          ],
+          "objectIds": [
+            "b3",
+            "i4",
+            "b5",
+            "i1",
+            "r3",
+            "i4",
+            "spawn-0",
+            "spawn-1"
+          ]
+        },
+        {
+          "id": "act-1d-mustr5p9",
+          "requestId": "req-33cdff5f",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058109085,
+          "elapsedMs": 47800,
+          "worldVersion": 4,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-1e-mustr5pn",
+          "requestId": "req-33cdff5f",
+          "phase": "failed",
+          "message": "direct / qwen3.5:4b: [direct] failed: VALIDATION_FAILED rejected after 2 repairs: BRIDGE_CROSSES_ISLAND[b3,i4], BRIDGE_CROSSES_ISLAND[b5,i1]",
+          "at": 1791058109099,
+          "elapsedMs": 47814,
+          "worldVersion": 4,
+          "codes": [
+            "BRIDGE_CROSSES_ISLAND",
+            "UNREACHABLE_RELIC"
+          ]
+        },
+        {
+          "id": "act-1f-mustr5pp",
+          "requestId": "req-33cdff5f",
+          "phase": "failed",
+          "message": "Failed: rejected after 2 repairs: BRIDGE_CROSSES_ISLAND[b3,i4], BRIDGE_CROSSES_ISLAND[b5,i1]",
+          "at": 1791058109101,
+          "elapsedMs": 47816,
+          "worldVersion": 4,
+          "codes": [
+            "VALIDATION_FAILED"
+          ]
+        }
+      ],
+      "report": {
+        "reportId": "rep-8366cc7f",
+        "requestId": "req-33cdff5f",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "failed",
+        "worldVersion": 4,
+        "baseWorldVersion": 4,
+        "summary": "[direct] failed: VALIDATION_FAILED rejected after 2 repairs: BRIDGE_CROSSES_ISLAND[b3,i4], BRIDGE_CROSSES_ISLAND[b5,i1]",
+        "validation": {
+          "attempts": 3,
+          "failedCodes": [
+            "BRIDGE_CROSSES_ISLAND",
+            "UNREACHABLE_RELIC"
+          ]
+        },
+        "timings": {
+          "requestedAt": 1791058061285,
+          "firstModelResponseMs": 15750,
+          "totalMs": 47811
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 5
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 3
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 11
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 6
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 12
+          }
+        ],
+        "createdAt": 1791058109099
+      },
+      "startedAt": "2026-10-03T20:07:41.281Z",
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "message": "rejected after 2 repairs: BRIDGE_CROSSES_ISLAND[b3,i4], BRIDGE_CROSSES_ISLAND[b5,i1]"
+      }
+    }
+  ],
+  "finishedAt": "2026-10-03T20:08:29.421Z"
+}

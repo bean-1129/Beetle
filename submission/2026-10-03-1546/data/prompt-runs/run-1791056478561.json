@@ -1,0 +1,218 @@
+{
+  "startedAt": "2026-10-03T19:41:18.561Z",
+  "serverUrl": "http://127.0.0.1:7786",
+  "timeoutMs": 200000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 9,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7786",
+    "uptimeMs": 445010
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "Survive the rising lava for two minutes on five islands at night"
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "Survive the rising lava for two minutes on five islands at night",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-b668560b",
+      "status": "failed",
+      "worldVersionBefore": 9,
+      "worldVersionAfter": 9,
+      "elapsedMs": 45122,
+      "activity": [
+        {
+          "id": "act-3z-musss7l1",
+          "requestId": "req-b668560b",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791056478565,
+          "elapsedMs": 0,
+          "worldVersion": 9
+        },
+        {
+          "id": "act-40-musss7l1",
+          "requestId": "req-b668560b",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791056478565,
+          "elapsedMs": 0,
+          "worldVersion": 9
+        },
+        {
+          "id": "act-41-musss7l2",
+          "requestId": "req-b668560b",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791056478566,
+          "elapsedMs": 1,
+          "worldVersion": 9
+        },
+        {
+          "id": "act-42-musssj9t",
+          "requestId": "req-b668560b",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791056493713,
+          "elapsedMs": 15148,
+          "worldVersion": 9,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-43-musssja2",
+          "requestId": "req-b668560b",
+          "phase": "repairing",
+          "message": "[direct] repair 1 of 2: UNREACHABLE_RELIC[r3,d1,spawn-0,spawn-1]",
+          "at": 1791056493722,
+          "elapsedMs": 15157,
+          "worldVersion": 9,
+          "codes": [
+            "UNREACHABLE_RELIC"
+          ],
+          "objectIds": [
+            "r3",
+            "d1",
+            "spawn-0",
+            "spawn-1"
+          ]
+        },
+        {
+          "id": "act-44-musssuka",
+          "requestId": "req-b668560b",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791056508346,
+          "elapsedMs": 29781,
+          "worldVersion": 9,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-45-musssukj",
+          "requestId": "req-b668560b",
+          "phase": "repairing",
+          "message": "[direct] repair 2 of 2: OBJECT_NOT_ON_SURFACE[dec2,b1]",
+          "at": 1791056508355,
+          "elapsedMs": 29790,
+          "worldVersion": 9,
+          "codes": [
+            "OBJECT_NOT_ON_SURFACE"
+          ],
+          "objectIds": [
+            "dec2",
+            "b1"
+          ]
+        },
+        {
+          "id": "act-46-musst5ub",
+          "requestId": "req-b668560b",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791056522963,
+          "elapsedMs": 44398,
+          "worldVersion": 9,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-47-musst5ui",
+          "requestId": "req-b668560b",
+          "phase": "failed",
+          "message": "direct / qwen3.5:4b: [direct] failed: VALIDATION_FAILED rejected after 2 repairs: OBJECT_NOT_ON_SURFACE[dec2,b1]",
+          "at": 1791056522970,
+          "elapsedMs": 44405,
+          "worldVersion": 9,
+          "codes": [
+            "UNREACHABLE_RELIC",
+            "OBJECT_NOT_ON_SURFACE"
+          ]
+        },
+        {
+          "id": "act-48-musst5uj",
+          "requestId": "req-b668560b",
+          "phase": "failed",
+          "message": "Failed: rejected after 2 repairs: OBJECT_NOT_ON_SURFACE[dec2,b1]",
+          "at": 1791056522971,
+          "elapsedMs": 44406,
+          "worldVersion": 9,
+          "codes": [
+            "VALIDATION_FAILED"
+          ]
+        }
+      ],
+      "report": {
+        "reportId": "rep-2edd0267",
+        "requestId": "req-b668560b",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "failed",
+        "worldVersion": 9,
+        "baseWorldVersion": 9,
+        "summary": "[direct] failed: VALIDATION_FAILED rejected after 2 repairs: OBJECT_NOT_ON_SURFACE[dec2,b1]",
+        "validation": {
+          "attempts": 3,
+          "failedCodes": [
+            "UNREACHABLE_RELIC",
+            "OBJECT_NOT_ON_SURFACE"
+          ]
+        },
+        "timings": {
+          "requestedAt": 1791056478565,
+          "firstModelResponseMs": 15145,
+          "totalMs": 44404
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 8
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 8
+          },
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 5
+          }
+        ],
+        "createdAt": 1791056522970
+      },
+      "startedAt": "2026-10-03T19:41:18.562Z",
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "message": "rejected after 2 repairs: OBJECT_NOT_ON_SURFACE[dec2,b1]"
+      }
+    }
+  ],
+  "finishedAt": "2026-10-03T19:42:03.685Z"
+}

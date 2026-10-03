@@ -1,0 +1,187 @@
+{
+  "startedAt": "2026-10-03T19:58:33.368Z",
+  "serverUrl": "http://127.0.0.1:7804",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 0,
+    "hasWorld": false,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7804",
+    "uptimeMs": 7883
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "Survive the rising lava for two minutes on five volcanic islands, ruins and statues, reach the gate with one relic."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "Survive the rising lava for two minutes on five volcanic islands, ruins and statues, reach the gate with one relic.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-13d3eef9",
+      "status": "committed",
+      "worldVersionBefore": 0,
+      "worldVersionAfter": 1,
+      "elapsedMs": 24076,
+      "activity": [
+        {
+          "id": "act-1-mustee1o",
+          "requestId": "req-13d3eef9",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791057513372,
+          "elapsedMs": 0,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-2-mustee1p",
+          "requestId": "req-13d3eef9",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791057513373,
+          "elapsedMs": 1,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-3-mustee21",
+          "requestId": "req-13d3eef9",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791057513385,
+          "elapsedMs": 13,
+          "worldVersion": 0
+        },
+        {
+          "id": "act-4-mustevxo",
+          "requestId": "req-13d3eef9",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791057536556,
+          "elapsedMs": 23184,
+          "worldVersion": 0,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-5-mustevyb",
+          "requestId": "req-13d3eef9",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791057536579,
+          "elapsedMs": 23207,
+          "worldVersion": 0,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-6-mustevyp",
+          "requestId": "req-13d3eef9",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791057536593,
+          "elapsedMs": 23221,
+          "worldVersion": 0,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-7-mustevzu",
+          "requestId": "req-13d3eef9",
+          "phase": "committed",
+          "message": "[direct] committed v1",
+          "at": 1791057536634,
+          "elapsedMs": 23262,
+          "worldVersion": 1,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-8-mustevzx",
+          "requestId": "req-13d3eef9",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] new world \"Survival Lava Run (survival)\" with 5 islands and 4 bridges, mode survival",
+          "at": 1791057536637,
+          "elapsedMs": 23265,
+          "worldVersion": 1
+        },
+        {
+          "id": "act-9-mustevzz",
+          "requestId": "req-13d3eef9",
+          "phase": "committed",
+          "message": "Committed world version 1",
+          "at": 1791057536639,
+          "elapsedMs": 23267,
+          "worldVersion": 1
+        }
+      ],
+      "report": {
+        "reportId": "rep-3eaade5a",
+        "requestId": "req-13d3eef9",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 1,
+        "baseWorldVersion": 0,
+        "summary": "[direct] new world \"Survival Lava Run (survival)\" with 5 islands and 4 bridges, mode survival",
+        "validation": {
+          "attempts": 1,
+          "failedCodes": []
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791057513372,
+          "firstModelResponseMs": 23167,
+          "validatedMs": 23196,
+          "committedMs": 23252,
+          "totalMs": 23255
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 6
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 21
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 11
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 39
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 2
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791057536637
+      },
+      "startedAt": "2026-10-03T19:58:33.368Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T19:58:57.445Z"
+}

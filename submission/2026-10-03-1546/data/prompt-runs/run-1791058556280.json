@@ -1,0 +1,190 @@
+{
+  "startedAt": "2026-10-03T20:15:56.280Z",
+  "serverUrl": "http://127.0.0.1:7799",
+  "timeoutMs": 240000,
+  "healthAtStart": {
+    "ok": true,
+    "worldVersion": 16,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://192.168.204.116:7799",
+    "uptimeMs": 55260,
+    "settings": {
+      "autoExpand": true
+    }
+  },
+  "args": {
+    "kind": "brief",
+    "repeat": 1,
+    "prompt": "A 90 second time trial over a lava field: grab every relic and reach the gate before the clock runs out."
+  },
+  "attempts": [
+    {
+      "id": "ADHOC",
+      "kind": "brief",
+      "prompt": "A 90 second time trial over a lava field: grab every relic and reach the gate before the clock runs out.",
+      "expected": "unspecified",
+      "repeat": 1,
+      "requestId": "req-451dd8d6",
+      "status": "committed",
+      "worldVersionBefore": 16,
+      "worldVersionAfter": 17,
+      "elapsedMs": 16063,
+      "activity": [
+        {
+          "id": "act-u-musu0qrj",
+          "requestId": "req-451dd8d6",
+          "phase": "queued",
+          "message": "Brief queued for the agent",
+          "at": 1791058556287,
+          "elapsedMs": 0,
+          "worldVersion": 16
+        },
+        {
+          "id": "act-v-musu0qrk",
+          "requestId": "req-451dd8d6",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791058556288,
+          "elapsedMs": 1,
+          "worldVersion": 16
+        },
+        {
+          "id": "act-w-musu0qrm",
+          "requestId": "req-451dd8d6",
+          "phase": "planning",
+          "message": "[direct] drafting a new world with qwen3.5:4b",
+          "at": 1791058556290,
+          "elapsedMs": 3,
+          "worldVersion": 16
+        },
+        {
+          "id": "act-x-musu12nx",
+          "requestId": "req-451dd8d6",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058571709,
+          "elapsedMs": 15422,
+          "worldVersion": 16,
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-y-musu12o5",
+          "requestId": "req-451dd8d6",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791058571717,
+          "elapsedMs": 15430,
+          "worldVersion": 16,
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-z-musu12oc",
+          "requestId": "req-451dd8d6",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791058571724,
+          "elapsedMs": 15437,
+          "worldVersion": 16,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-10-musu12pa",
+          "requestId": "req-451dd8d6",
+          "phase": "committed",
+          "message": "[direct] committed v17",
+          "at": 1791058571758,
+          "elapsedMs": 15471,
+          "worldVersion": 17,
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-11-musu12pb",
+          "requestId": "req-451dd8d6",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] new world \"Time Trial Lava\" with 4 islands and 4 bridges, mode time_trial, biome volcanic",
+          "at": 1791058571759,
+          "elapsedMs": 15472,
+          "worldVersion": 17
+        },
+        {
+          "id": "act-12-musu12pc",
+          "requestId": "req-451dd8d6",
+          "phase": "committed",
+          "message": "Committed world version 17",
+          "at": 1791058571760,
+          "elapsedMs": 15473,
+          "worldVersion": 17
+        }
+      ],
+      "report": {
+        "reportId": "rep-da355b50",
+        "requestId": "req-451dd8d6",
+        "mode": "direct",
+        "model": "qwen3.5:4b",
+        "outcome": "committed",
+        "worldVersion": 17,
+        "baseWorldVersion": 16,
+        "summary": "[direct] new world \"Time Trial Lava\" with 4 islands and 4 bridges, mode time_trial, biome volcanic",
+        "validation": {
+          "attempts": 1,
+          "failedCodes": []
+        },
+        "playability": {
+          "ok": true,
+          "checks": 5,
+          "failed": 0
+        },
+        "timings": {
+          "requestedAt": 1791058556287,
+          "firstModelResponseMs": 15417,
+          "validatedMs": 15428,
+          "committedMs": 15468,
+          "totalMs": 15469
+        },
+        "toolCalls": [
+          {
+            "tool": "propose_world",
+            "ok": true,
+            "ms": 2
+          },
+          {
+            "tool": "validate_candidate",
+            "ok": true,
+            "ms": 7
+          },
+          {
+            "tool": "run_playability_checks",
+            "ok": true,
+            "ms": 5
+          },
+          {
+            "tool": "commit_candidate",
+            "ok": true,
+            "ms": 32
+          },
+          {
+            "tool": "read_world_state",
+            "ok": true,
+            "ms": 1
+          }
+        ],
+        "preserved": {
+          "players": 0,
+          "collectedRelics": 0,
+          "connections": 0
+        },
+        "createdAt": 1791058571759
+      },
+      "startedAt": "2026-10-03T20:15:56.282Z"
+    }
+  ],
+  "finishedAt": "2026-10-03T20:16:12.346Z"
+}
