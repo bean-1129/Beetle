@@ -1,16 +1,25 @@
 // Authoritative session state: players, invites, controller tokens, relic tombstones, score.
 import { randomBytes } from 'node:crypto';
 import {
-  PLAYER_COLORS, PLAYER_LABELS, type PlayerState, type SessionState, type Vec2,
+  GAME_MODES, PLAYER_COLORS, PLAYER_LABELS, type GameMode, type ObjectiveState, type PlayerState, type SessionState, type Vec2,
 } from '@beetle/contracts';
 import { hex32 } from './clock.ts';
 
 export const INVITE_TTL_MS = 5 * 60 * 1000;
 
+export type HeldButtons = { sprint: boolean; slow: boolean; ping: boolean; emote: boolean };
+export const NO_BUTTONS: Readonly<HeldButtons> = Object.freeze({ sprint: false, slow: false, ping: false, emote: false });
+
 export type PlayerRuntime = {
   axes: { x: number; z: number };
   interact: boolean;
   interactPrev: boolean;
+  /** Buttons held with the last input (older clients send none: all false). */
+  buttons: HeldButtons;
+  pingPrev: boolean;
+  emotePrev: boolean;
+  lastPingAtMs: number;
+  emoteUntilMs: number;
   statusSinceMs: number;
   windowStartMs: number;
   windowCount: number;
@@ -66,7 +75,10 @@ export class SessionStore {
   runtimeOf(player: PlayerState, now: number): PlayerRuntime {
     let rt = this.runtime.get(player.id);
     if (!rt) {
-      rt = { axes: { x: 0, z: 0 }, interact: false, interactPrev: false, statusSinceMs: now, windowStartMs: now, windowCount: 0, droppedInputs: 0 };
+      rt = {
+        axes: { x: 0, z: 0 }, interact: false, interactPrev: false, buttons: { ...NO_BUTTONS }, pingPrev: false, emotePrev: false, lastPingAtMs: 0, emoteUntilMs: 0,
+        statusSinceMs: now, windowStartMs: now, windowCount: 0, droppedInputs: 0,
+      };
       this.runtime.set(player.id, rt);
     }
     return rt;
@@ -175,6 +187,7 @@ export class SessionStore {
     rt.axes = { x: 0, z: 0 };
     rt.interact = false;
     rt.interactPrev = false;
+    rt.buttons = { ...NO_BUTTONS };
     if (player.status === 'active') {
       player.status = 'disconnected';
       rt.statusSinceMs = now;
@@ -199,6 +212,7 @@ export class SessionStore {
     this.state.gateUnlocked = false;
     this.state.won = false;
     this.state.score = 0;
+    delete this.state.objective;
     for (const p of this.state.players) {
       p.respawns = 0;
       p.lavaFalls = 0;
@@ -225,6 +239,9 @@ export class SessionStore {
     this.state.won = saved.won === true;
     this.state.tick = Number.isInteger(saved.tick) && saved.tick > 0 ? saved.tick : 0;
     this.state.elapsedMs = Number.isFinite(saved.elapsedMs) && saved.elapsedMs > 0 ? saved.elapsedMs : 0;
+    const objective = sanitizeObjective(saved.objective);
+    if (objective) this.state.objective = objective;
+    else delete this.state.objective;
     for (const p of saved.players) {
       if (!p || (p.slot !== 0 && p.slot !== 1)) continue;
       const player = this.ensurePlayer(p.slot, 0);
@@ -241,4 +258,33 @@ export class SessionStore {
   snapshot(): SessionState {
     return JSON.parse(JSON.stringify(this.state)) as SessionState;
   }
+}
+
+/** Objective state from a snapshot file: unknown kinds or malformed fields are dropped, never trusted. */
+export function sanitizeObjective(raw: unknown): ObjectiveState | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const o = raw as Partial<ObjectiveState>;
+  if (typeof o.kind !== 'string' || !(GAME_MODES as readonly string[]).includes(o.kind)) return null;
+  const out: ObjectiveState = { kind: o.kind as GameMode };
+  const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+  const remainingSec = num(o.remainingSec);
+  if (remainingSec !== undefined) out.remainingSec = Math.max(0, remainingSec);
+  if (o.lost === true) out.lost = true;
+  else if (o.lost === false) out.lost = false;
+  if (o.holdSec && typeof o.holdSec === 'object') {
+    const hold: Record<string, number> = {};
+    for (const [id, v] of Object.entries(o.holdSec)) {
+      const n = num(v);
+      if (typeof id === 'string' && n !== undefined && n >= 0) hold[id] = n;
+    }
+    out.holdSec = hold;
+  }
+  const holdTarget = num(o.holdTarget);
+  if (holdTarget !== undefined) out.holdTarget = holdTarget;
+  if (o.nextCheckpointId === null || typeof o.nextCheckpointId === 'string') out.nextCheckpointId = o.nextCheckpointId;
+  const relicsRequired = num(o.relicsRequired);
+  if (relicsRequired !== undefined) out.relicsRequired = relicsRequired;
+  const hazardElevation = num(o.hazardElevation);
+  if (hazardElevation !== undefined) out.hazardElevation = hazardElevation;
+  return out;
 }

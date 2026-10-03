@@ -5,6 +5,17 @@ import { fileURLToPath } from 'node:url';
 
 export type StartWorld = 'none' | 'fixture';
 
+/** BEETLE_START_WORLD: 'none', 'fixture' (garden5) or 'fixture:<name>' (any @beetle/world fixture, e.g. fixture:hill4). */
+export function parseStartWorld(raw: string | undefined): { startWorld: StartWorld; fixtureName: string | null } {
+  const value = (raw ?? '').trim().toLowerCase();
+  if (value === 'fixture') return { startWorld: 'fixture', fixtureName: null };
+  if (value.startsWith('fixture:')) {
+    const name = value.slice('fixture:'.length).trim();
+    return { startWorld: 'fixture', fixtureName: name === '' ? null : name };
+  }
+  return { startWorld: 'none', fixtureName: null };
+}
+
 export type ServerConfig = {
   host: string;
   port: number;
@@ -16,6 +27,8 @@ export type ServerConfig = {
   ollamaBaseUrl: string;
   modelName: string;
   startWorld: StartWorld;
+  /** Fixture to load when startWorld is 'fixture' (BEETLE_START_WORLD=fixture:<name>); null means garden5. */
+  fixtureName: string | null;
   /** Directory with the built web client, or null to skip static serving. */
   webDistDir: string | null;
   logRequests: boolean;
@@ -39,7 +52,7 @@ function readOptional(value: string | undefined): string | null {
 }
 
 export function configFromEnv(env: NodeJS.ProcessEnv = process.env): ServerConfig {
-  const startWorldRaw = (env.BEETLE_START_WORLD ?? '').trim().toLowerCase();
+  const start = parseStartWorld(env.BEETLE_START_WORLD);
   return {
     host: readOptional(env.BEETLE_HOST) ?? '0.0.0.0',
     port: readInt(env.BEETLE_PORT, 7700),
@@ -49,7 +62,8 @@ export function configFromEnv(env: NodeJS.ProcessEnv = process.env): ServerConfi
     agentToken: readOptional(env.BEETLE_AGENT_TOKEN),
     ollamaBaseUrl: readOptional(env.OLLAMA_BASE_URL) ?? 'http://127.0.0.1:11434',
     modelName: readOptional(env.BEETLE_MODEL) ?? 'qwen3.5:4b',
-    startWorld: startWorldRaw === 'fixture' ? 'fixture' : 'none',
+    startWorld: start.startWorld,
+    fixtureName: start.fixtureName,
     webDistDir: readOptional(env.BEETLE_WEB_DIST) ?? DEFAULT_WEB_DIST,
     logRequests: (env.BEETLE_LOG_REQUESTS ?? '1') !== '0',
   };

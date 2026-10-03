@@ -2,7 +2,7 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { WORLD_LIMITS, WorldSpecSchema, type SessionState, type WorldSpec } from '@beetle/contracts';
 import { createEventLog, type EventLog } from '@beetle/observability';
-import { buildSessionSummary, fixtureWorld, type LiveContext } from '@beetle/world';
+import { FIXTURE_NAMES, buildSessionSummary, fixtureWorld, type FixtureName, type LiveContext } from '@beetle/world';
 import { isLoopbackUrl } from './auth.ts';
 import { CandidateStore } from './candidates.ts';
 import { systemClock, type Clock } from './clock.ts';
@@ -13,7 +13,7 @@ import { createPersistence } from './persistence.ts';
 import { RequestStore } from './requests.ts';
 import { loadSecrets, type Secrets } from './secrets.ts';
 import { SessionStore } from './session.ts';
-import { Simulation } from './simulation.ts';
+import { Simulation, resolveMode } from './simulation.ts';
 import { WorldStore } from './world-store.ts';
 import { createWsHub, type WsHub } from './ws.ts';
 
@@ -30,8 +30,10 @@ export type BeetleServerOptions = {
   publicUrl?: string | null;
   directorToken?: string;
   agentToken?: string;
-  /** 'fixture' loads garden5 as version 1; a WorldSpec installs that spec; 'none' starts empty. */
+  /** 'fixture' loads garden5 (or fixtureName) as version 1; a WorldSpec installs that spec; 'none' starts empty. */
   startWorld?: 'none' | 'fixture' | WorldSpec;
+  /** Fixture name used with startWorld 'fixture' (overrides BEETLE_START_WORLD=fixture:<name>). */
+  fixtureName?: string;
   /** Load data/snapshots/world-current.json when present (default true; tests usually pass false). */
   loadSnapshot?: boolean;
   tickMode?: 'interval' | 'manual';
@@ -90,6 +92,7 @@ export async function createBeetleServer(opts: BeetleServerOptions = {}): Promis
     webDistDir: opts.webDistDir === undefined ? base.webDistDir : opts.webDistDir,
     logRequests: opts.logRequests ?? base.logRequests,
     startWorld: typeof opts.startWorld === 'string' ? opts.startWorld : base.startWorld,
+    fixtureName: opts.fixtureName ?? base.fixtureName,
   };
   const clock = opts.clock ?? systemClock;
   const tickMode = opts.tickMode ?? 'interval';
@@ -124,11 +127,28 @@ export async function createBeetleServer(opts: BeetleServerOptions = {}): Promis
     }
   } else if (config.startWorld === 'fixture') {
     try {
-      const fixture = fixtureWorld('garden5');
+      const requested = (config.fixtureName ?? 'garden5').trim().toLowerCase();
+      let name: string = requested;
+      let fixture: WorldSpec | null = null;
+      if ((FIXTURE_NAMES as readonly string[]).includes(requested)) {
+        fixture = fixtureWorld(requested as FixtureName);
+      } else {
+        // Not in the published list: still try it (fixtures land in parallel), else fall back to garden5.
+        try {
+          fixture = fixtureWorld(requested as FixtureName);
+        } catch {
+          fixture = null;
+        }
+        if (!fixture) {
+          notes.push(`world: unknown fixture "${requested}"; falling back to garden5`);
+          name = 'garden5';
+          fixture = fixtureWorld('garden5');
+        }
+      }
       const suffix = ' (fixture)';
       const title = fixture.title.endsWith(suffix) ? fixture.title : (fixture.title.slice(0, WORLD_LIMITS.title.maxLength - suffix.length) + suffix);
       world.install({ ...fixture, title }, 1);
-      notes.push('world: fixture garden5 as version 1');
+      notes.push(`world: fixture ${name} as version 1`);
     } catch (err) {
       notes.push(`world: fixture unavailable (${err instanceof Error ? err.message : String(err)}); starting without a world`);
     }
@@ -182,7 +202,14 @@ export async function createBeetleServer(opts: BeetleServerOptions = {}): Promis
     const active = world.current;
     if (!active) return null;
     try {
-      return buildSessionSummary(active.compiled, session.state);
+      const s = buildSessionSummary(active.compiled, session.state);
+      // The world package may already fill these; the server guarantees them either way.
+      if (!s.mode) {
+        const m = resolveMode(active.spec);
+        s.mode = { kind: m.kind, timeLimitSec: m.timeLimitSec, holdSeconds: m.holdSeconds, relicsRequired: m.relicsRequired };
+      }
+      if (!s.biome) s.biome = active.spec.biome;
+      return s;
     } catch {
       return null;
     }
@@ -206,6 +233,7 @@ export async function createBeetleServer(opts: BeetleServerOptions = {}): Promis
     hooks: {
       onTick: (message) => hub.broadcastTick(message),
       onWorld: (message) => hub.broadcastWorld(message),
+      onMarker: (message) => hub.broadcastMarker(message),
       onCommitDeferred: (pending) => {
         const entry = requests.addActivity(pending.candidate.requestId, {
           phase: 'awaiting_safe_commit',
@@ -218,8 +246,11 @@ export async function createBeetleServer(opts: BeetleServerOptions = {}): Promis
     },
   });
   ctx.sim = sim;
-  // Make sure spawn positions are known before any player is placed.
-  if (world.current) sim.ensureCache(world.version, world.current.spec, world.current.compiled);
+  // Make sure spawn positions and the mode state are known before any player is placed or a tick is sent.
+  if (world.current) {
+    sim.ensureCache(world.version, world.current.spec, world.current.compiled);
+    sim.ensureMode(clock.now());
+  }
 
   const app = Fastify({ logger: false, trustProxy: false, bodyLimit: 1024 * 1024 });
   const hub = createWsHub(ctx);

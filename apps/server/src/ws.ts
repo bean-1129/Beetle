@@ -5,8 +5,9 @@ import { WebSocket, WebSocketServer, type RawData } from 'ws';
 import {
   ClientMessageSchema, MAX_MESSAGE_BYTES, PROTOCOL_VERSION, ROUTES, SIMULATION,
   type ActivityMessage, type AgentActivity, type ClientMessage, type ControllerStatusMessage, type ErrorMessage,
-  type PongMessage, type ServerMessage, type TickMessage, type WelcomeMessage, type WorldMessage,
+  type MarkerMessage, type PongMessage, type ServerMessage, type TickMessage, type WelcomeMessage, type WorldMessage,
 } from '@beetle/contracts';
+import { NO_BUTTONS } from './session.ts';
 import { safeEqual } from './auth.ts';
 import type { ServerContext } from './context.ts';
 
@@ -33,6 +34,8 @@ export type WsHub = {
   broadcastTick(message: TickMessage): void;
   broadcastWorld(message: WorldMessage): void;
   broadcastActivity(entries: AgentActivity[]): void;
+  /** Team beacon from a controller ping: shown on display and director sockets. */
+  broadcastMarker(message: MarkerMessage): void;
   broadcastControllers(): void;
   /** Closes every socket bound to the player (4002) after its controller token was replaced. */
   revokePlayerSockets(playerId: string): number;
@@ -154,6 +157,7 @@ export function createWsHub(ctx: HubContext): WsHub {
       rt.axes = { x: 0, z: 0 };
       rt.interact = false;
       rt.interactPrev = false;
+      rt.buttons = { ...NO_BUTTONS };
     }
     for (const other of connections) {
       if (other !== conn && other.playerId === player.id) {
@@ -225,6 +229,9 @@ export function createWsHub(ctx: HubContext): WsHub {
     player.lastInputAtMs = now;
     rt.axes = { x: clamp(msg.axes.x), z: clamp(msg.axes.z) };
     rt.interact = msg.interact;
+    // Buttons are optional (older controllers): absent means none held. Schema-validated upstream; booleans only.
+    const b = msg.buttons;
+    rt.buttons = { sprint: b?.sprint === true, slow: b?.slow === true, ping: b?.ping === true, emote: b?.emote === true };
   }
 
   function handleMessage(conn: Conn, data: RawData, isBinary: boolean): void {
@@ -390,6 +397,12 @@ export function createWsHub(ctx: HubContext): WsHub {
       if (!entries.length) return;
       const msg: ActivityMessage = { type: 'activity', entries };
       const json = JSON.stringify(msg);
+      for (const conn of connections) {
+        if (conn.role === 'display' || conn.role === 'director') send(conn, json);
+      }
+    },
+    broadcastMarker(message: MarkerMessage) {
+      const json = JSON.stringify(message);
       for (const conn of connections) {
         if (conn.role === 'display' || conn.role === 'director') send(conn, json);
       }
