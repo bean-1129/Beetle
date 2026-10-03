@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { DECORATION_TYPES, HAZARD_KINDS, SCHEMA_VERSION, WORLD_LIMITS } from './limits.ts';
-import { IdSchema, Finite, LocalVec2Schema, SafeText } from './world.ts';
+import { BIOMES, DECORATION_TYPES, GAME_MODES, HAZARD_KINDS, MODE_LIMITS, SCHEMA_VERSION, WORLD_LIMITS } from './limits.ts';
+import { IdSchema, Finite, LocalVec2Schema, ModeSchema, SafeText } from './world.ts';
 
 const L = WORLD_LIMITS.localOffset;
 const widthSchema = Finite.min(WORLD_LIMITS.bridge.minWidth).max(WORLD_LIMITS.bridge.maxWidth);
@@ -15,9 +15,12 @@ export const PatchOpSchema = z.discriminatedUnion('op', [
   z.object({ op: z.literal('remove_decoration'), id: IdSchema }).strict(),
   z.object({ op: z.literal('move_relic'), id: IdSchema, islandId: IdSchema, localPosition: LocalVec2Schema }).strict(),
   z.object({ op: z.literal('set_title'), title: SafeText(WORLD_LIMITS.title.maxLength) }).strict(),
+  z.object({ op: z.literal('set_mode'), mode: ModeSchema }).strict(),
+  z.object({ op: z.literal('set_biome'), biome: z.enum(BIOMES) }).strict(),
+  z.object({ op: z.literal('set_movement'), speed: Finite.min(MODE_LIMITS.movementSpeed.min).max(MODE_LIMITS.movementSpeed.max) }).strict(),
 ]);
 export type PatchOp = z.infer<typeof PatchOpSchema>;
-export const PATCH_OP_NAMES = ['add_bridge', 'remove_bridge', 'set_hazard', 'add_decoration', 'move_decoration', 'remove_decoration', 'move_relic', 'set_title'] as const;
+export const PATCH_OP_NAMES = ['add_bridge', 'remove_bridge', 'set_hazard', 'add_decoration', 'move_decoration', 'remove_decoration', 'move_relic', 'set_title', 'set_mode', 'set_biome', 'set_movement'] as const;
 
 // Model-facing: what the model produces for an edit request.
 export const PatchDraftSchema = z.object({
@@ -57,6 +60,9 @@ export const PATCH_DRAFT_JSON_SCHEMA = {
           { type: 'object', additionalProperties: false, required: ['op', 'id'], properties: { op: { const: 'remove_decoration' }, id: { type: 'string' } } },
           { type: 'object', additionalProperties: false, required: ['op', 'id', 'islandId', 'localPosition'], properties: { op: { const: 'move_relic' }, id: { type: 'string' }, islandId: { type: 'string' }, localPosition: localPos } },
           { type: 'object', additionalProperties: false, required: ['op', 'title'], properties: { op: { const: 'set_title' }, title: { type: 'string', maxLength: WORLD_LIMITS.title.maxLength } } },
+          { type: 'object', additionalProperties: false, required: ['op', 'mode'], properties: { op: { const: 'set_mode' }, mode: { type: 'object', additionalProperties: false, required: ['kind'], properties: { kind: { type: 'string', enum: [...GAME_MODES] }, timeLimitSec: { type: 'integer', minimum: 20, maximum: 600 }, holdSeconds: { type: 'integer', minimum: 3, maximum: 60 }, relicsRequired: { type: 'integer', minimum: 1, maximum: 3 }, orderedCheckpoints: { type: 'boolean' } } } } },
+          { type: 'object', additionalProperties: false, required: ['op', 'biome'], properties: { op: { const: 'set_biome' }, biome: { type: 'string', enum: [...BIOMES] } } },
+          { type: 'object', additionalProperties: false, required: ['op', 'speed'], properties: { op: { const: 'set_movement' }, speed: { type: 'number', minimum: 3, maximum: 7 } } },
         ],
       },
     },

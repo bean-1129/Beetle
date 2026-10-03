@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { SIMULATION } from './limits.ts';
 import type { WorldSpec } from './world.ts';
-import type { PlayerStatus } from './session.ts';
+import type { PlayerStatus, ObjectiveState } from './session.ts';
 import type { ValidationCode } from './validation.ts';
 
 // ---------- WebSocket: client -> server (validated server-side with these schemas) ----------
@@ -41,6 +41,7 @@ export type TickMessage = {
   relics: Record<string, 'present' | 'collected'>;
   gate: { unlocked: boolean; won: boolean };
   score: number;
+  objective?: ObjectiveState; // mode-dependent objective state (timer, hold, next checkpoint, hazard elevation)
   lastInputSeq?: number; // for controllers: last seq the server applied for this player
 };
 export type WorldMessage = {

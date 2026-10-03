@@ -145,6 +145,25 @@ export function applyPatch(
         note('title');
         break;
       }
+      case 'set_mode': {
+        if ((op.mode.relicsRequired ?? 1) > out.relics.length) {
+          issues.push(issue('MODE_INVALID', `ops[${i}] set_mode: relicsRequired ${op.mode.relicsRequired} exceeds the ${out.relics.length} relics in the world`, ['mode'], ev()));
+          break;
+        }
+        out.mode = { ...op.mode };
+        note('mode');
+        break;
+      }
+      case 'set_biome': {
+        out.biome = op.biome;
+        note('biome');
+        break;
+      }
+      case 'set_movement': {
+        out.movement = { speed: op.speed };
+        note('movement');
+        break;
+      }
       default: {
         const never: never = op;
         issues.push(issue('UNKNOWN_OPERATION', `ops[${i}]: unsupported op ${JSON.stringify(never)}`, [], ev()));

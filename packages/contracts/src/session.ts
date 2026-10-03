@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { CompassName } from './geometry.ts';
+import type { GameMode } from './limits.ts';
 
 export const PLAYER_STATUSES = ['active', 'falling', 'respawning', 'disconnected'] as const;
 export type PlayerStatus = (typeof PLAYER_STATUSES)[number];
@@ -37,6 +38,19 @@ export type SessionState = {
   gateUnlocked: boolean;
   won: boolean;
   score: number;
+  /** Mode-dependent objective state; absent fields mean not applicable. */
+  objective?: ObjectiveState;
+};
+
+export type ObjectiveState = {
+  kind: GameMode;
+  remainingSec?: number;      // time_trial, survival
+  lost?: boolean;             // timer expired (time_trial, survival)
+  holdSec?: Record<string, number>; // king_of_the_hill: seconds each player has held the zone
+  holdTarget?: number;        // king_of_the_hill
+  nextCheckpointId?: string | null; // checkpoint_race
+  relicsRequired?: number;    // relic_hunt
+  hazardElevation?: number;   // survival: current plane elevation
 };
 
 /** Compact summary the agent reads. Never includes tokens or raw positions beyond a surface id. */
@@ -50,6 +64,8 @@ export type SessionSummary = {
   gateUnlocked: boolean;
   won: boolean;
   score: number;
+  mode?: { kind: GameMode; timeLimitSec?: number | null; holdSeconds?: number; relicsRequired?: number };
+  biome?: string;
   islands: { id: string; name: string; compass: CompassName; bridgeIds: string[] }[];
 };
 

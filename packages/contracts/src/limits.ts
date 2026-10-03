@@ -55,7 +55,7 @@ export const SCORING = {
   lavaFallPenalty: 1,
 } as const;
 
-export const DECORATION_TYPES = ['tree', 'rock', 'lantern', 'pillar', 'bush', 'shrine'] as const;
+export const DECORATION_TYPES = ['tree', 'rock', 'lantern', 'pillar', 'bush', 'shrine', 'tower', 'ruin', 'crystal', 'mushroom', 'statue'] as const;
 export type DecorationType = (typeof DECORATION_TYPES)[number];
 export const DECORATION_RADIUS: Record<DecorationType, number> = {
   tree: 0.7,
@@ -64,9 +64,25 @@ export const DECORATION_RADIUS: Record<DecorationType, number> = {
   pillar: 0.5,
   bush: 0.55,
   shrine: 1.0,
+  tower: 1.3,
+  ruin: 1.1,
+  crystal: 0.6,
+  mushroom: 0.5,
+  statue: 0.7,
 };
 
-export const BIOMES = ['garden'] as const;
+export const BIOMES = ['garden', 'volcanic', 'frost', 'desert', 'night'] as const;
+export type Biome = (typeof BIOMES)[number];
+/** Game modes the engine implements. The model maps any requested game onto the closest mode and says which. */
+export const GAME_MODES = ['relic_hunt', 'time_trial', 'king_of_the_hill', 'checkpoint_race', 'survival'] as const;
+export type GameMode = (typeof GAME_MODES)[number];
+export const MODE_LIMITS = {
+  timeLimitSec: { min: 20, max: 600, default: 120 },
+  holdSeconds: { min: 3, max: 60, default: 10 },
+  relicsRequired: { min: 1, max: 3 },
+  movementSpeed: { min: 3, max: 7, default: 4.5 },
+  hazardRise: { afterSec: { min: 5, max: 300 }, metersPerSec: { min: 0.01, max: 0.5 }, maxElevation: { min: -2, max: -0.6 } },
+} as const;
 export const HAZARD_KINDS = ['water', 'lava'] as const;
 export type HazardKind = (typeof HAZARD_KINDS)[number];
 export const OBJECTIVE_RULES = ['collect_all_relics_then_enter_gate'] as const;
