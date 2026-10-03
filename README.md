@@ -76,7 +76,7 @@ Common to every mode: 2 to 24 islands (worlds start small and stream in), at mos
 
 Biomes (`BIOMES`): `garden`, `volcanic`, `frost`, `desert`, `night`. The biome is a world field, chosen by the brief and changed live with `set_biome`; the hazard kind is separate (`set_hazard`). Serene (garden, water) and volcanic (lava) rendering is verified in the browser with two moving players (docs/ACCEPTANCE.md); the biome presets for frost, desert and night are implemented and the frost hill fixture was verified in the browser at 32 fps in the software-rendered pane (BUILD_STATUS.md, renderer row); desert and night have no separate browser check recorded. Decoration types (11): tree, rock, lantern, pillar, bush, shrine, tower, ruin, crystal, mushroom, statue.
 
-Live patch ops: `add_bridge`, `remove_bridge`, `set_hazard`, `add_decoration`, `move_decoration`, `remove_decoration`, `move_relic`, `set_title`, `set_mode`, `set_biome`, `set_movement` (packages/contracts/src/patch.ts), at most 12 ops per patch.
+Live patch ops: `add_bridge`, `remove_bridge`, `set_hazard`, `add_decoration`, `move_decoration`, `remove_decoration`, `move_relic`, `set_title`, `set_mode`, `set_biome`, `set_movement`, `add_island`, `remove_island` (packages/contracts/src/patch.ts), at most 16 ops per patch.
 
 Example briefs and where they land:
 
