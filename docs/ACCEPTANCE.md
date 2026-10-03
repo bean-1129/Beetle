@@ -117,3 +117,90 @@ Run 2 in detail:
   (A11 to A13), not from the report.
 - The A4 timeout is 240 s and the worker's request deadline is 180 s, so a slow or broken model run ends as a
   `failed` request with its trail in the record, never as a hang.
+
+---
+
+# Acceptance test: streaming generation (the world grows ahead of the player)
+
+`scripts/acceptance-streaming.ts`, records in `data/acceptance/streaming-<unix ms>.json`.
+
+## Exact command
+
+```sh
+export PATH=/home/dell/Beetle/.tools/node/bin:$PATH
+npx tsx scripts/acceptance-streaming.ts --port 7820   # port must be 7820..7829; refuses a busy port
+```
+
+Ollama must be serving `qwen3.5:4b` (override with `BEETLE_MODEL` / `OLLAMA_BASE_URL`). Exit code 0 only when every
+check passes.
+
+## What the script does
+
+1. Starts the real server as a child process with `BEETLE_START_WORLD=fixture:seed2` (when the seed2 fixture exists;
+   otherwise it starts garden5 and replaces it with an inline two-island streaming world through a world candidate:
+   propose, validate, commit). Starts the direct-mode worker (`packages/agent/src/main.ts --mode direct`) with a
+   request deadline of 85 s and a model call timeout of 80 s, so a slow model ends as a `failed` request inside the
+   90 s budget instead of hanging. Waits for `/api/health` `agentConnected`.
+2. Joins one controller over HTTP + WebSocket, calibrates axes, collects the relic on the spawn island (score 10).
+3. Extension 1: picks the open side of the player's island (the compass heading furthest from every crossing, at
+   least 60 degrees from any), walks to 2.2 m inside the rim (inside `STREAMING.frontierMeters` = 4) and keeps
+   patrolling along the rim band. Polls `GET /api/director/activity` + `GET /api/director/requests/:id` for a new
+   `auto: true` request, then polls it to a terminal state for up to 90 s from its `createdAt`.
+4. After the commit: compares the last tick before and the first tick at the new version (player id, connected,
+   active, position jump), collected relics and score, `GET /api/world` (new islands, nothing removed, a bridge
+   on both rims, a route from the frontier island), and the bearing of the new islands. Then the player walks onto
+   the new island closest to the heading (reachability on foot).
+5. Extension 2: the same from that new island, after the cooldown (12 s, counted from the later of the previous
+   request's creation and settle).
+6. Writes the JSON record (checks, per-extension timings, the request's activity trail, new islands, reachability,
+   child log tails), prints a PASS/FAIL table, stops the worker and the server. Nothing is retried.
+
+## Assertions
+
+| ID | Check |
+| --- | --- |
+| S0 | the world has `streaming: true` (seed2, or the inline world) |
+| S1 | server healthy and the direct worker connected |
+| S2 | a relic collected before streaming (so preservation is not vacuous) |
+| En.1 | an automatic request appears: `kind` edit, `auto` true, `autoReason.islandId` = the player's island, `playerId` = the player, `direction` within 45 degrees of the heading walked |
+| En.2 | the request reaches `committed` within 90 s of creation |
+| En.3 | world version +1 and equal to the request's `resultWorldVersion` |
+| En.4 | same player ids, player connected and active, position jump across the version change <= 1.0 m |
+| En.5 | collected relics and score unchanged |
+| En.6 | 1 or 2 new islands (`STREAMING.islandsPerExtension`), no island removed |
+| En.7 | every new island has a bridge whose endpoints sit on both rims and a bridge route from the frontier island |
+| En.8 | at least one new island lies within 67.5 degrees of the heading |
+| En.9 | the player walks onto the new island (its `supportId` in the tick) |
+
+## Measured results (3 October 2026, `qwen3.5:4b`, direct mode, world `fixture:seed2`)
+
+The GPU was shared with the other owners' runs during all three runs (about nine other direct workers were attached to
+the same Ollama, GPU at 90 %), so model latency here is contended latency, not the quiet-machine number.
+
+| Run | Record | Result | Ext 1: request to commit | Ext 2: request to commit | Notes |
+| --- | --- | --- | --- | --- | --- |
+| 1 | `data/acceptance/streaming-1791058594225.json` | FAIL (13 of 14) | failed after 30.0 s: `INVALID_SCHEMA`, rejected after 1 repair | 18.3 s, v1 -> v2, islands x2, x3 | ext 2 retried from haven because ext 1 failed |
+| 2 | `data/acceptance/streaming-1791058682994.json` | FAIL (13 of 14) | 65.9 s, v1 -> v2, islands x2, x3 | failed: `MODEL_TIMEOUT` after 80 s (from x2) | |
+| 3 | `data/acceptance/streaming-1791058871606.json` | PASS (21 of 21) | 56.0 s, v1 -> v2, islands x2 (0, -27), x3 (17, -21) | 10.6 s, v2 -> v3, islands x4 (0, -41.3), x5 (13.8, -44.7) | |
+
+Run 3 in detail: the request was created 42 ms after the player reached the rim point on haven (ext 1) and 39 ms
+before reaching it on x2 (ext 2: it fired as the player entered the band); request to the first tick at the new
+version 56.5 s and 11.1 s; position jump across each version change 0.15 m in 33 to 34 ms of walking (no teleport);
+`relic-haven` stayed collected and the score stayed 10 throughout; every new island had a crossing on both rims and a
+route (x5 via x4); the player walked haven -> x2 -> x4. Detection (frontier to request) is fast whenever no cooldown
+applies (-40 to +294 ms after arrival in 5 of 6 extensions); in run 1 extension 2 the request came 11.7 s after arrival
+because the cooldown runs from the failed request's settle. The slow and failing part is entirely the model call.
+
+## Observations worth knowing
+
+- Model reliability is the weak point, not the server: across the three runs 6 automatic requests ran, 4 committed
+  (10.6 s to 65.9 s), 1 failed schema validation after its single repair, 1 hit the 80 s model call timeout. Every
+  failure ended cleanly as a `failed` request, the world stayed at its version, and the next approach (after the
+  cooldown) produced a fresh request.
+- Directions are `compassName` octants (`south`), and the prompt text contains the direction and the island id, e.g.
+  "add one or two new islands beyond island "haven" toward the south ... (use add_island with bridgeFrom "haven")".
+- The integration tests (`tests/integration/streaming.test.ts`, no worker, in-process server on port 0) cover the
+  server side deterministically: no request in the centre, exactly one request at the rim with the right islandId and
+  direction, none on a second approach within the cooldown (after the first was claimed and cancelled, so only the
+  cooldown holds it back), none with `autoExpand` false (and one again after switching it back on), and an
+  `add_island` patch committed while walking keeps the player, relics and score and is reachable on foot.

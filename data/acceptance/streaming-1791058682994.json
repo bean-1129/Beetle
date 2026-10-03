@@ -1,0 +1,509 @@
+{
+  "kind": "acceptance-streaming",
+  "startedAt": 1791058682994,
+  "port": 7821,
+  "model": "qwen3.5:4b",
+  "dataDir": "/tmp/beetle-accept-streaming-JC2JGD",
+  "world": {
+    "source": "fixture:seed2",
+    "initial": {
+      "worldId": "seed2",
+      "version": 1,
+      "islands": [
+        "haven",
+        "grove"
+      ],
+      "bridges": [
+        "bridge-grove"
+      ],
+      "streaming": true
+    }
+  },
+  "limits": {
+    "frontierMeters": 4,
+    "cooldownMs": 12000,
+    "maxIslands": 24,
+    "islandsPerExtension": {
+      "min": 1,
+      "max": 2
+    }
+  },
+  "checks": [
+    {
+      "id": "S0",
+      "name": "streaming world installed",
+      "pass": true,
+      "detail": "seed2 v1, islands [haven, grove], streaming true"
+    },
+    {
+      "id": "S1",
+      "name": "server + direct worker up",
+      "pass": true,
+      "detail": "worker pid 337061, model qwen3.5:4b"
+    },
+    {
+      "id": "S2",
+      "name": "relic collected before streaming",
+      "pass": true,
+      "detail": "relic-haven collected, score 10"
+    },
+    {
+      "id": "E1.1",
+      "name": "extension 1: automatic request created",
+      "pass": true,
+      "detail": "req-14ec0219 kind edit, autoReason {\"islandId\":\"haven\",\"direction\":\"south\",\"playerId\":\"player-0\"}, -40 ms after arrival"
+    },
+    {
+      "id": "E1.2",
+      "name": "extension 1: committed within 90 s",
+      "pass": true,
+      "detail": "request to commit 65883 ms"
+    },
+    {
+      "id": "E1.3",
+      "name": "extension 1: version +1",
+      "pass": true,
+      "detail": "v1 -> v2 (request resultWorldVersion 2)"
+    },
+    {
+      "id": "E1.4",
+      "name": "extension 1: player preserved",
+      "pass": true,
+      "detail": "player-0 connected true, active, (-0.54, -6.80) -> (-0.39, -6.80), jump 0.150 m across 32 ms"
+    },
+    {
+      "id": "E1.5",
+      "name": "extension 1: relics and score preserved",
+      "pass": true,
+      "detail": "collected [relic-haven] (was [relic-haven]), score 10 (was 10)"
+    },
+    {
+      "id": "E1.6",
+      "name": "extension 1: 1 or 2 new islands, nothing removed",
+      "pass": true,
+      "detail": "added [x2 @(0, -27) r7, x3 @(17, -21) r7], removed []"
+    },
+    {
+      "id": "E1.7",
+      "name": "extension 1: new islands reachable",
+      "pass": true,
+      "detail": "x2: 1 bridge(s) reference x2, 1 sit on both rims; route from haven: bridge-haven-x2; x3: 1 bridge(s) reference x3, 1 sit on both rims; route from haven: bridge-haven-x3"
+    },
+    {
+      "id": "E1.8",
+      "name": "extension 1: new islands toward the frontier",
+      "pass": true,
+      "detail": "x2 bearing 270 deg (0 off 270), x3 bearing 309 deg (39 off 270)"
+    },
+    {
+      "id": "E1.9",
+      "name": "extension 1: player walked onto x2",
+      "pass": true,
+      "detail": "supportId x2"
+    },
+    {
+      "id": "E2.1",
+      "name": "extension 2: automatic request created",
+      "pass": true,
+      "detail": "req-16a469b4 kind edit, autoReason {\"islandId\":\"x2\",\"direction\":\"south\",\"playerId\":\"player-0\"}, 294 ms after arrival"
+    },
+    {
+      "id": "E2.2",
+      "name": "extension 2: committed within 90 s",
+      "pass": false,
+      "detail": "status failed after 80344 ms; last activity: planning: [direct] extending the world south of x2 (v2) with qwen3.5:4b | failed: direct / qwen3.5:4b: [direct] failed: MODEL_TIMEOUT model call timed out after 80000 ms | failed: Failed: model call timed out after 80000 ms"
+    }
+  ],
+  "extensions": [
+    {
+      "n": 1,
+      "islandId": "haven",
+      "headingDeg": 270,
+      "frontierPoint": {
+        "x": 1.4999999999999987,
+        "z": -6.8
+      },
+      "versionBefore": 1,
+      "arrivedAt": 1791058685405,
+      "requestSeenAt": 1791058685410,
+      "requestId": "req-14ec0219",
+      "autoReason": {
+        "islandId": "haven",
+        "direction": "south",
+        "playerId": "player-0"
+      },
+      "prompt": "Extend the world: add one or two new islands beyond island \"haven\" toward the south, each 5 to 9 m radius, with a crossing from \"haven\" (use add_island with bridgeFrom \"haven\"), one decoration on each, keep everything else unchanged.",
+      "requestCreatedAt": 1791058685365,
+      "arrivalToRequestMs": -40,
+      "status": "committed",
+      "finishedAt": 1791058751248,
+      "resultWorldVersion": 2,
+      "activity": [
+        {
+          "id": "act-1-musu3id1",
+          "requestId": "req-14ec0219",
+          "phase": "queued",
+          "message": "Extend the world to the south beyond island \"haven\" (queued)",
+          "at": 1791058685365,
+          "elapsedMs": 0,
+          "worldVersion": 1,
+          "auto": true,
+          "autoReason": {
+            "islandId": "haven",
+            "direction": "south",
+            "playerId": "player-0"
+          }
+        },
+        {
+          "id": "act-2-musu3id1",
+          "requestId": "req-14ec0219",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791058685365,
+          "elapsedMs": 0,
+          "worldVersion": 1,
+          "auto": true,
+          "autoReason": {
+            "islandId": "haven",
+            "direction": "south",
+            "playerId": "player-0"
+          }
+        },
+        {
+          "id": "act-3-musu3id8",
+          "requestId": "req-14ec0219",
+          "phase": "planning",
+          "message": "[direct] reading the current world for an extension",
+          "at": 1791058685372,
+          "elapsedMs": 7,
+          "worldVersion": 1,
+          "auto": true,
+          "autoReason": {
+            "islandId": "haven",
+            "direction": "south",
+            "playerId": "player-0"
+          },
+          "tool": "read_world_state"
+        },
+        {
+          "id": "act-4-musu3idc",
+          "requestId": "req-14ec0219",
+          "phase": "planning",
+          "message": "[direct] extending the world south of haven (v1) with qwen3.5:4b",
+          "at": 1791058685376,
+          "elapsedMs": 11,
+          "worldVersion": 1,
+          "auto": true,
+          "autoReason": {
+            "islandId": "haven",
+            "direction": "south",
+            "playerId": "player-0"
+          }
+        },
+        {
+          "id": "act-5-musu4x53",
+          "requestId": "req-14ec0219",
+          "phase": "validating",
+          "message": "[direct] validating the candidate",
+          "at": 1791058751175,
+          "elapsedMs": 65810,
+          "worldVersion": 1,
+          "auto": true,
+          "autoReason": {
+            "islandId": "haven",
+            "direction": "south",
+            "playerId": "player-0"
+          },
+          "tool": "validate_candidate"
+        },
+        {
+          "id": "act-6-musu4x5g",
+          "requestId": "req-14ec0219",
+          "phase": "validating",
+          "message": "[direct] running connectivity and supported-movement checks",
+          "at": 1791058751188,
+          "elapsedMs": 65823,
+          "worldVersion": 1,
+          "auto": true,
+          "autoReason": {
+            "islandId": "haven",
+            "direction": "south",
+            "playerId": "player-0"
+          },
+          "tool": "run_playability_checks"
+        },
+        {
+          "id": "act-7-musu4x5s",
+          "requestId": "req-14ec0219",
+          "phase": "awaiting_safe_commit",
+          "message": "[direct] committing at the next safe tick",
+          "at": 1791058751200,
+          "elapsedMs": 65835,
+          "worldVersion": 1,
+          "auto": true,
+          "autoReason": {
+            "islandId": "haven",
+            "direction": "south",
+            "playerId": "player-0"
+          },
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-8-musu4x6y",
+          "requestId": "req-14ec0219",
+          "phase": "committed",
+          "message": "[direct] committed v2",
+          "at": 1791058751242,
+          "elapsedMs": 65877,
+          "worldVersion": 2,
+          "auto": true,
+          "autoReason": {
+            "islandId": "haven",
+            "direction": "south",
+            "playerId": "player-0"
+          },
+          "tool": "commit_candidate"
+        },
+        {
+          "id": "act-9-musu4x72",
+          "requestId": "req-14ec0219",
+          "phase": "committed",
+          "message": "direct / qwen3.5:4b: [direct] extension: Added two southern islands connected to haven",
+          "at": 1791058751246,
+          "elapsedMs": 65881,
+          "worldVersion": 2,
+          "auto": true,
+          "autoReason": {
+            "islandId": "haven",
+            "direction": "south",
+            "playerId": "player-0"
+          }
+        },
+        {
+          "id": "act-a-musu4x74",
+          "requestId": "req-14ec0219",
+          "phase": "committed",
+          "message": "Committed world version 2",
+          "at": 1791058751248,
+          "elapsedMs": 65883,
+          "worldVersion": 2,
+          "auto": true,
+          "autoReason": {
+            "islandId": "haven",
+            "direction": "south",
+            "playerId": "player-0"
+          }
+        }
+      ],
+      "requestToCommitMs": 65883,
+      "versionSeenAt": 1791058751729,
+      "requestToVersionTickMs": 66364,
+      "versionAfter": 2,
+      "positionJumpM": 0.15000000000000002,
+      "newIslands": [
+        {
+          "id": "x2",
+          "center": {
+            "x": 0,
+            "z": -27
+          },
+          "radius": 7,
+          "bearingDeg": 270,
+          "offHeadingDeg": 0
+        },
+        {
+          "id": "x3",
+          "center": {
+            "x": 17,
+            "z": -21
+          },
+          "radius": 7,
+          "bearingDeg": 309,
+          "offHeadingDeg": 39
+        }
+      ],
+      "reachability": [
+        {
+          "islandId": "x2",
+          "ok": true,
+          "bridges": [
+            "bridge-haven-x2"
+          ],
+          "route": [
+            "haven",
+            "x2"
+          ],
+          "detail": "1 bridge(s) reference x2, 1 sit on both rims; route from haven: bridge-haven-x2"
+        },
+        {
+          "islandId": "x3",
+          "ok": true,
+          "bridges": [
+            "bridge-haven-x3"
+          ],
+          "route": [
+            "haven",
+            "x3"
+          ],
+          "detail": "1 bridge(s) reference x3, 1 sit on both rims; route from haven: bridge-haven-x3"
+        }
+      ],
+      "walkedOnto": "x2"
+    },
+    {
+      "n": 2,
+      "islandId": "x2",
+      "headingDeg": 270,
+      "frontierPoint": {
+        "x": 1.4999999999999991,
+        "z": -31.8
+      },
+      "versionBefore": 2,
+      "arrivedAt": 1791058765886,
+      "requestSeenAt": 1791058766196,
+      "requestId": "req-16a469b4",
+      "autoReason": {
+        "islandId": "x2",
+        "direction": "south",
+        "playerId": "player-0"
+      },
+      "prompt": "Extend the world: add one or two new islands beyond island \"x2\" toward the south, each 5 to 9 m radius, with a crossing from \"x2\" (use add_island with bridgeFrom \"x2\"), one decoration on each, keep everything else unchanged.",
+      "requestCreatedAt": 1791058766180,
+      "arrivalToRequestMs": 294,
+      "status": "failed",
+      "finishedAt": 1791058846190,
+      "activity": [
+        {
+          "id": "act-b-musu58pw",
+          "requestId": "req-16a469b4",
+          "phase": "queued",
+          "message": "Extend the world to the south beyond island \"x2\" (queued)",
+          "at": 1791058766180,
+          "elapsedMs": 0,
+          "worldVersion": 2,
+          "auto": true,
+          "autoReason": {
+            "islandId": "x2",
+            "direction": "south",
+            "playerId": "player-0"
+          }
+        },
+        {
+          "id": "act-c-musu58pw",
+          "requestId": "req-16a469b4",
+          "phase": "planning",
+          "message": "Agent claimed the request",
+          "at": 1791058766180,
+          "elapsedMs": 0,
+          "worldVersion": 2,
+          "auto": true,
+          "autoReason": {
+            "islandId": "x2",
+            "direction": "south",
+            "playerId": "player-0"
+          }
+        },
+        {
+          "id": "act-d-musu58pz",
+          "requestId": "req-16a469b4",
+          "phase": "planning",
+          "message": "[direct] reading the current world for an extension",
+          "at": 1791058766183,
+          "elapsedMs": 3,
+          "worldVersion": 2,
+          "auto": true,
+          "autoReason": {
+            "islandId": "x2",
+            "direction": "south",
+            "playerId": "player-0"
+          },
+          "tool": "read_world_state"
+        },
+        {
+          "id": "act-e-musu58q1",
+          "requestId": "req-16a469b4",
+          "phase": "planning",
+          "message": "[direct] extending the world south of x2 (v2) with qwen3.5:4b",
+          "at": 1791058766185,
+          "elapsedMs": 5,
+          "worldVersion": 2,
+          "auto": true,
+          "autoReason": {
+            "islandId": "x2",
+            "direction": "south",
+            "playerId": "player-0"
+          }
+        },
+        {
+          "id": "act-f-musu6ygc",
+          "requestId": "req-16a469b4",
+          "phase": "failed",
+          "message": "direct / qwen3.5:4b: [direct] failed: MODEL_TIMEOUT model call timed out after 80000 ms",
+          "at": 1791058846188,
+          "elapsedMs": 80008,
+          "worldVersion": 2,
+          "auto": true,
+          "autoReason": {
+            "islandId": "x2",
+            "direction": "south",
+            "playerId": "player-0"
+          }
+        },
+        {
+          "id": "act-g-musu6yge",
+          "requestId": "req-16a469b4",
+          "phase": "failed",
+          "message": "Failed: model call timed out after 80000 ms",
+          "at": 1791058846190,
+          "elapsedMs": 80010,
+          "worldVersion": 2,
+          "auto": true,
+          "autoReason": {
+            "islandId": "x2",
+            "direction": "south",
+            "playerId": "player-0"
+          },
+          "codes": [
+            "MODEL_TIMEOUT"
+          ]
+        }
+      ]
+    }
+  ],
+  "phases": {
+    "start-server": 1,
+    "start-worker": 370,
+    "join": 578,
+    "collect-relic": 882,
+    "extension-1": 1745,
+    "walk-onto-x2": 68905,
+    "extension-2": 73418,
+    "cleanup": 163530
+  },
+  "error": null,
+  "childLogsTail": {
+    "server": "[beetle] world: fixture seed2 as version 1\n[beetle] listening on 127.0.0.1:7821 (http://127.0.0.1:7821); agent token: from environment\n[beetle] director: http://127.0.0.1:7821/director?token=<BEETLE_DIRECTOR_TOKEN from environment>\n[beetle] SIGTERM received, stopping\n",
+    "worker": "2026-10-03T20:18:03.520Z [direct] worker agent-promaxgb10-5ca9-337072 polling http://127.0.0.1:7821 for requests (model qwen3.5:4b)\n2026-10-03T20:18:05.369Z [direct] claimed req-14ec0219 (edit)\n2026-10-03T20:19:11.249Z [direct] req-14ec0219 committed v2 (65876 ms)\n2026-10-03T20:19:26.181Z [direct] claimed req-16a469b4 (edit)\n2026-10-03T20:20:46.186Z [direct] req-16a469b4 job failed: MODEL_TIMEOUT model call timed out after 80000 ms\n2026-10-03T20:20:46.190Z [direct] req-16a469b4 failed MODEL_TIMEOUT: model call timed out after 80000 ms (80005 ms)\n2026-10-03T20:20:46.562Z [direct] stopping after the current job\n2026-10-03T20:20:55.070Z [direct] worker stopped after 2 requests\n"
+  },
+  "healthAtAgent": {
+    "ok": true,
+    "worldVersion": 1,
+    "hasWorld": true,
+    "players": 0,
+    "connectedControllers": 0,
+    "model": {
+      "name": "qwen3.5:4b",
+      "reachable": true,
+      "present": true
+    },
+    "agentConnected": true,
+    "publicUrl": "http://127.0.0.1:7821",
+    "uptimeMs": 360,
+    "settings": {
+      "autoExpand": true
+    }
+  },
+  "finishedAt": 1791058855088,
+  "totalMs": 172094,
+  "pass": false
+}
