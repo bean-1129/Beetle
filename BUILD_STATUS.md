@@ -27,7 +27,7 @@ Legend: implemented = code exists; tested = an automated or recorded manual test
 | Server: HTTP, WebSocket, simulation, transactions, persistence, auth | implemented, tested (38 in-process tests, 23 integration tests on a real server with real sockets) | apps/server; loop body avg 0.04 ms per tick with 2 players and a 16-bridge world |
 | Web: director, play, controller, Babylon renderer | implemented, typechecked, built; verified in the browser against the live server (fixture world renders, keyboard player joins, live edit swaps water to lava and adds a bridge without reset, controller page joins and moves) | apps/web |
 | Agent: Ollama client, jobs, worker, direct harness | implemented, tested (14 unit tests); live briefs and edits verified (docs/RESULTS.md) | packages/agent; direct mode is labelled in every report |
-| OpenClaw tool plugin and isolated profile | implemented, smoke-tested against a fake server; live run against the real server times out before the model call (under diagnosis) | packages/agent/openclaw-plugin, .openclaw-home, packages/agent/SMOKE.md |
+| OpenClaw tool plugin and isolated profile | implemented, tested live against the real server (v2 committed in 20 s) and against a fake server | packages/agent/openclaw-plugin, .openclaw-home, packages/agent/SMOKE.md |
 | Benchmark script | implemented, run for qwen3.5:4b | scripts/benchmark-local.ts, data/benchmarks |
 | Live-run recorder and fresh prompts | implemented, run (docs/RESULTS.md, before normalization) | scripts/run-prompts.ts |
 | Latency measurement | implemented, run | docs/LATENCY.md: WebSocket RTT p50 0.5 ms, input to server tick p50 19 ms (not input to photon) |
@@ -56,7 +56,7 @@ Legend: implemented = code exists; tested = an automated or recorded manual test
 | 14 | malformed model output triggers bounded retries | tested (tests/unit/agent.test.ts: malformed and truncated output, bounded retries, no mutation) |
 | 15 | slow or missing model leaves gameplay responsive, no cloud fallback | tested (deadline ends the job, no fallback host contacted) |
 | 16 | client behind on versions resyncs | tested (resync returns current spec) |
-| 17 | fresh request through real OpenClaw tools with genuine report | partial: OpenClaw's own agent run called all seven Beetle tools over HTTP with the local model against a fake Beetle server in two recorded runs (packages/agent/SMOKE.md); against the real server the embedded run timed out before any model call (13:24 CDT) and is under diagnosis; the direct harness is the labelled fallback |
+| 17 | fresh request through real OpenClaw tools with genuine report | tested live once (13:43 CDT): OpenClaw agent exec with the Beetle plugin read the world, had one patch rejected at the boundary, re-proposed, validated, committed v2 and published the report in 20 s against the real server (docs/RESULTS.md); plus two recorded runs against a fake server (packages/agent/SMOKE.md) |
 | 18 | fresh edit under local-only runtime configuration | tested live (direct mode, loopback model, no cloud route): 5 of 6 fresh edits committed in 2 to 14 s (docs/RESULTS.md run 3); validator refusal and repair demonstrated on the fixture world (DISCONNECTED_GOAL then a new crossing, 3.0 s); fresh brief committed in 14 s; offline (egress-blocked) rehearsal not yet run |
 
 ## Blocked

@@ -271,8 +271,22 @@ This is the validator-refusal case the storyboard needs: the invalid patch never
 | 13:14 | brief (after normalization) | direct | contended | failed: MODEL_TIMEOUT at 90 s per call |
 | 13:20 | brief | direct | quiet | failed after 2 repairs: BRIDGE_LENGTH, BRIDGE_CROSSES_ISLAND, GATE_HIDES_RELIC |
 | 13:22 | brief (after bridge contraction and relic-off-gate normalization) | direct | quiet | committed v1 in 14.0 s (4 islands, 4 bridges) |
-| 13:24 | edit: lava + bridge | openclaw | quiet | failed: OPENCLAW_TIMEOUT, no model call reached the daemon |
+| 13:24 | edit: lava + bridge | openclaw | daemon wedged | failed: OPENCLAW_TIMEOUT, the Ollama daemon had stopped answering chat requests (restarted 13:43) |
+| 13:43 | edit: lava + bridge (fixture) | openclaw | quiet | committed v2 in 20.0 s with real OpenClaw tool calls |
 | 13:28 | six fresh edits (run 3) | direct | quiet | 5 of 6 committed, 2.0 / 8.0 / 14.0 s |
 | 13:32 | edit: remove the only temple bridge (model world, two temple bridges) | direct | quiet | committed v7 in 6.4 s, valid alternative on the first attempt |
 | 13:32 | undo | server | quiet | v8, previous structure restored |
 | 13:32 | edit: remove the only temple bridge (fixture, one temple bridge) | direct | quiet | DISCONNECTED_GOAL refused, repair added a crossing, committed v2 in 3.0 s |
+
+## OpenClaw mode live against the real server (13:43 CDT, port 7783, fixture world, quiet GPU after the daemon restart)
+
+Prompt: "Turn the water into lava and add a bridge to the northern island. Keep our players and collected relics." Worker in `openclaw` mode; OpenClaw 2026.9.8 `agent exec` with the Beetle tool plugin in the isolated profile, model `ollama/qwen3.5:4b`, thinking off, timeout 600 s.
+
+| Elapsed | Phase | Detail |
+|---|---|---|
+| 11.6 s | planning | `read_world_state` called by OpenClaw |
+| 14.8 s | repairing | `propose_patch` rejected at the boundary: `INVALID_SCHEMA` |
+| 18.1 s | validating | second `propose_patch` accepted; validator and connectivity checks pass |
+| 20.0 s | committed | v2: hazard lava, new bridge `bridge-north-new` centre to temple; build report published by the plugin |
+
+Daemon log shows the chat requests from OpenClaw. This is the submission path, verified end to end once against the real server. Earlier at 13:24 the same path timed out because the Ollama daemon had stopped answering chat requests (see "All rehearsal attempts"); the daemon was restarted at 13:43 with a single slot.
