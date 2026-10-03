@@ -477,7 +477,7 @@ const SEC = { sectionTitle: "Beetle pitch" };
   );
 
   s.addNotes(
-    "Walk the four steps: any request, mapped to the closest mode and biome and named, a playable world two phones join, then keep changing it while they play. Read two rows of the mode table, not all five. Say plainly: the library is bounded and growing; the model never writes rules, it picks from the engine. Status at 14:27 CDT: contract, validator, patch ops, server rule per mode, mapping prompt and biome palettes exist in code; BUILD_STATUS.md says what is tested; mode briefs are not measured yet (slide 5)."
+    "Walk the four steps: any request, mapped to the closest mode and biome and named, a playable world two phones join, then keep changing it while they play. Read two rows of the mode table, not all five. Say plainly: the library is bounded and growing; the model never writes rules, it picks from the engine. Status at 14:27 CDT: contract, validator, patch ops, server rule per mode, mapping prompt and biome palettes exist in code; BUILD_STATUS.md says what is tested; mode briefs measured 14:25 to 14:42 CDT, 18 of 18 sensible modes (slide 5)."
   );
 }
 
@@ -720,11 +720,11 @@ const SEC = { sectionTitle: "Beetle pitch" };
   s.addText("Measured local-first results", { placeholder: "title" });
   smallWordmark(s);
 
-  // Rebuilt 2026-10-03 14:26 CDT. Every value is copied from the file named in the card; see docs/pitch/FILL_IN.md.
+  // Rebuilt 2026-10-03 14:50 CDT. Every value is copied from the file named in the card; see docs/pitch/FILL_IN.md.
   const cells = [
     ["MODEL", "qwen3.5:4b, Q4_K_M", "4.7B, 3.4 GB, Ollama 0.35.1 on loopback. qwen3.8:27b not benchmarked: pull failed once, second pull stopped. docs/MODEL_SELECTION.md"],
     ["BRIEF, WARM, QUIET GPU", "26.2 / 26.5 / 27.7 s", "min / p50 / max, 3 runs, first draft valid (bench-...1791049348895.json). 10 s target not met. 14 s once after normalization (RESULTS.md run 3); 33.4 s via OpenClaw."],
-    ["MODE BRIEFS, ONE PROMPT", "not yet measured", "mode, biome and brief-to-commit per request are being appended to docs/RESULTS.md 'Game modes from one prompt'; this card is rebuilt from those rows only."],
+    ["MODE BRIEFS", "18 of 18 right mode", "committed briefs 13.0 to 44.1 s; exact mode missed twice; 8 of 14 final-prompt attempts committed, failures all geometry; mode and biome edits 3.0 s (RESULTS.md 'Game modes from one prompt', direct)."],
     ["COLD / CONTENDED GPU", "23.1 s load; 58 to 214 s", "cold: 23.1 s load in a 54.4 s first draft (probe-run.log). Contended drafts 58.8 to 214.1 s, one edit 45.1 s (bench-...1791050596040.json)."],
     ["EDIT TO COMMIT", "2.0 / 8.0 / 14.0 s", "min / p50 / max, 6 edits, 5 of 6 committed; run 3 after normalization, quiet GPU, direct (run-1791052136845.json). Run 2 before: 2 of 6."],
     ["EDIT WHILE 2 PLAY", "8.0 s, 15 of 15", "acceptance run 2: both controllers walking, lava + bridge committed, relic and score unchanged, sockets open, max tick gap 67 ms (ACCEPTANCE.md)."],
@@ -774,7 +774,7 @@ const SEC = { sectionTitle: "Beetle pitch" };
     });
   });
   s.addText(
-    "Direct-harness timings are labelled [direct] in every report; OpenClaw timings are from the real server after the Ollama daemon restart at 13:43 CDT. Each card names its GPU state because the daemon was shared for most of the day. Mode briefs: not yet measured; the card is filled only from docs/RESULTS.md.",
+    "Direct-harness timings are labelled [direct] in every report; OpenClaw timings are from the real server after the Ollama daemon restart at 13:43 CDT. Each card names its GPU state because the daemon was shared for most of the day. Mode briefs were measured at 14:25 to 14:42 CDT in direct mode with no controllers connected (docs/RESULTS.md).",
     {
       x: 0.5,
       y: 4.66,
@@ -790,7 +790,7 @@ const SEC = { sectionTitle: "Beetle pitch" };
   );
 
   s.addNotes(
-    "Read the cards. Say out loud: the 10 s brief target is not met; a valid brief takes 24 to 28 s warm on a quiet GPU, 14 s was seen once after normalization, 33.4 s through OpenClaw. Edits commit in 2 to 14 s, and 8.0 s with two players moving and nothing reset. Game modes from one prompt are not yet measured; say so rather than guessing. Phones and the offline proof are covered by tests or procedure but not yet measured live. The 27b was never benchmarked."
+    "Read the cards. Say out loud: the 10 s brief target is not met; a valid brief takes 24 to 28 s warm on a quiet GPU, 14 s was seen once after normalization, 33.4 s through OpenClaw. Edits commit in 2 to 14 s, and 8.0 s with two players moving and nothing reset. Game modes from one prompt: the mode was sensible on 18 of 18 briefs and the exact mode was missed twice; committed mode briefs took 13 to 44 s and the failures were geometry, never the mode rule; mode and biome edits on a running world took 3.0 s. Phones and the offline proof are covered by tests or procedure but not yet measured live. The 27b was never benchmarked."
   );
 }
 
