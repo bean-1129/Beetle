@@ -151,6 +151,83 @@ function trial5(): WorldSpec {
 }
 
 /**
+ * FIXTURE seed2: valid streaming starter world (the zone a brief builds around the spawn). Two islands, one bridge:
+ * the haven holds both spawns and one relic; the grove to the north holds two relics and the gate. streaming: true,
+ * so the world grows ahead of players through add_island extensions.
+ */
+function seed2(): WorldSpec {
+  const islands: WorldSpec['islands'] = [
+    { id: 'haven', name: 'Spawn Haven', center: { x: 0, z: 0 }, radius: 9, topElevation: 0 },
+    { id: 'grove', name: 'Whisper Grove', center: { x: 0, z: 24 }, radius: 8, topElevation: 0 },
+  ];
+  return {
+    ...base('seed2', 20202, 'Seed of a Growing World (fixture)', 'garden'),
+    islands,
+    bridges: [link(islands, 'bridge-grove', 'haven', 'grove', 2.4)],
+    spawns: [
+      { id: 'spawn-0', supportingSurfaceId: 'haven', localPosition: { x: -2, z: -2 }, playerSlot: 0 },
+      { id: 'spawn-1', supportingSurfaceId: 'haven', localPosition: { x: 2, z: -2 }, playerSlot: 1 },
+    ],
+    relics: [
+      { id: 'relic-haven', name: 'Seed Relic', supportingSurfaceId: 'haven', localPosition: { x: 0, z: -5 } },
+      { id: 'relic-grove-w', name: 'Leaf Relic', supportingSurfaceId: 'grove', localPosition: { x: -4, z: 0 } },
+      { id: 'relic-grove-e', name: 'Bark Relic', supportingSurfaceId: 'grove', localPosition: { x: 4, z: 0 } },
+    ],
+    gate: { id: 'gate', supportingSurfaceId: 'grove', localPosition: { x: 0, z: 4 }, requiredRelicIds: ['relic-haven', 'relic-grove-w', 'relic-grove-e'] },
+    hazard: { kind: 'water', planeElevation: GEOMETRY.hazardPlaneElevation, policy: hazardPolicyFor('water') },
+    decorations: [
+      { id: 'tree-haven', type: 'tree', supportingSurfaceId: 'haven', localPosition: { x: -5, z: 3 }, rotationDeg: 0, scale: 1 },
+      { id: 'bush-grove', type: 'bush', supportingSurfaceId: 'grove', localPosition: { x: 4, z: 4 }, rotationDeg: 0, scale: 1 },
+    ],
+    streaming: true,
+  };
+}
+
+/**
+ * FIXTURE grown12: valid streaming world after growth, for performance tests. A 4 x 3 grid of islands 22 m apart
+ * (radius 7) joined by every horizontal and vertical neighbour crossing (17 bridges). Spawns on the hub (-11, 0);
+ * relics on three corners; the gate on the fourth corner (a dead end, so it hides nothing).
+ */
+function grown12(): WorldSpec {
+  const xs = [-33, -11, 11, 33];
+  const zs = [-22, 0, 22];
+  const id = (c: number, r: number) => (c === 1 && r === 1 ? 'hub' : `isle-${c}-${r}`);
+  const islands: WorldSpec['islands'] = [];
+  for (let r = 0; r < zs.length; r++) {
+    for (let c = 0; c < xs.length; c++) islands.push({ id: id(c, r), name: c === 1 && r === 1 ? 'Old Hub' : `Grown Isle ${c}-${r}`, center: { x: xs[c], z: zs[r] }, radius: 7, topElevation: 0 });
+  }
+  const bridges: WorldSpec['bridges'] = [];
+  for (let r = 0; r < zs.length; r++) {
+    for (let c = 0; c < xs.length; c++) {
+      if (c + 1 < xs.length) bridges.push(link(islands, `b-h-${c}-${r}`, id(c, r), id(c + 1, r)));
+      if (r + 1 < zs.length) bridges.push(link(islands, `b-v-${c}-${r}`, id(c, r), id(c, r + 1)));
+    }
+  }
+  return {
+    ...base('grown12', 12121, 'A Grown World of Twelve Islands (fixture)', 'garden'),
+    islands,
+    bridges,
+    spawns: [
+      { id: 'spawn-0', supportingSurfaceId: 'hub', localPosition: { x: -2, z: -2 }, playerSlot: 0 },
+      { id: 'spawn-1', supportingSurfaceId: 'hub', localPosition: { x: 2, z: -2 }, playerSlot: 1 },
+    ],
+    relics: [
+      { id: 'relic-ne', name: 'North-East Relic', supportingSurfaceId: id(3, 2), localPosition: { x: 2, z: 2 } },
+      { id: 'relic-se', name: 'South-East Relic', supportingSurfaceId: id(3, 0), localPosition: { x: 2, z: -2 } },
+      { id: 'relic-nw', name: 'North-West Relic', supportingSurfaceId: id(0, 2), localPosition: { x: -2, z: 2 } },
+    ],
+    gate: { id: 'gate', supportingSurfaceId: id(0, 0), localPosition: { x: -2, z: -2 }, requiredRelicIds: ['relic-ne', 'relic-se', 'relic-nw'] },
+    hazard: { kind: 'water', planeElevation: GEOMETRY.hazardPlaneElevation, policy: hazardPolicyFor('water') },
+    decorations: [
+      { id: 'tree-hub', type: 'tree', supportingSurfaceId: 'hub', localPosition: { x: 3, z: 3 }, rotationDeg: 0, scale: 1 },
+      { id: 'rock-ne', type: 'rock', supportingSurfaceId: id(3, 2), localPosition: { x: -3, z: 3 }, rotationDeg: 0, scale: 1 },
+      { id: 'crystal-mid', type: 'crystal', supportingSurfaceId: id(2, 1), localPosition: { x: 3, z: 3 }, rotationDeg: 0, scale: 1 },
+    ],
+    streaming: true,
+  };
+}
+
+/**
  * FIXTURE garden5: valid.
  * Layout (metres, +Z north, +X east):
  *   centre island (0,0) r9 holds both spawns.
@@ -257,6 +334,10 @@ export function fixtureWorld(name: FixtureName = 'garden5'): WorldSpec {
       return survival5();
     case 'trial5':
       return trial5();
+    case 'seed2':
+      return seed2();
+    case 'grown12':
+      return grown12();
     default: {
       const never: never = name;
       throw new Error(`unknown fixture ${String(never)}`);
@@ -264,4 +345,4 @@ export function fixtureWorld(name: FixtureName = 'garden5'): WorldSpec {
   }
 }
 
-export const FIXTURE_NAMES: FixtureName[] = ['garden5', 'garden5-gapped-bridge', 'garden5-gate-hides-relic', 'garden5-blocked-path', 'garden4-no-temple-bridge', 'race5', 'hill4', 'survival5', 'trial5'];
+export const FIXTURE_NAMES: FixtureName[] = ['garden5', 'garden5-gapped-bridge', 'garden5-gate-hides-relic', 'garden5-blocked-path', 'garden4-no-temple-bridge', 'race5', 'hill4', 'survival5', 'trial5', 'seed2', 'grown12'];

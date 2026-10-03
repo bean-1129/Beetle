@@ -1,6 +1,6 @@
 // Case 1: schema rejections and DUPLICATE_ID. Owner: world package.
 import { describe, expect, it } from 'vitest';
-import { PatchDraftSchema, WorldSpecSchema, type WorldSpec } from '@beetle/contracts';
+import { PatchDraftSchema, WORLD_LIMITS, WorldSpecSchema, type WorldSpec } from '@beetle/contracts';
 import { applyPatch, fixtureWorld, validateSpec } from '@beetle/world';
 
 const base = (): WorldSpec => fixtureWorld('garden5');
@@ -35,21 +35,35 @@ describe('case 1: WorldSpecSchema rejections', () => {
     expect(v.issues.every((i) => i.code === 'INVALID_SCHEMA')).toBe(true);
   });
 
-  it('rejects 9 islands', () => {
+  it('rejects 25 islands', () => {
     const s = base();
-    for (let i = 0; i < 4; i++) s.islands.push({ id: `extra-${i}`, center: { x: 40, z: -40 + i * 15 }, radius: 4, topElevation: 0 });
-    expect(s.islands.length).toBe(9);
+    for (let i = 0; s.islands.length < WORLD_LIMITS.islands.max + 1; i++) s.islands.push({ id: `extra-${i}`, center: { x: -50 + (i % 6) * 20, z: i < 6 ? 50 : -50 }, radius: 4, topElevation: 0 });
+    expect(s.islands.length).toBe(25);
     expectReject(s, 'islands');
+    s.islands.pop();
+    expect(WorldSpecSchema.safeParse(s).success).toBe(true);
   });
 
-  it('rejects 17 bridges', () => {
+  it('rejects 49 bridges', () => {
     const s = base();
-    while (s.bridges.length < 17) {
+    while (s.bridges.length < WORLD_LIMITS.bridges.max + 1) {
       const n = s.bridges.length;
       s.bridges.push({ id: `b-${n}`, endpoints: [{ islandId: 'centre', point: { x: 0, z: 9 } }, { islandId: 'temple', point: { x: 0, z: 20 } }], width: 2.4 });
     }
-    expect(s.bridges.length).toBe(17);
+    expect(s.bridges.length).toBe(49);
     expectReject(s, 'bridges');
+    s.bridges.pop();
+    expect(WorldSpecSchema.safeParse(s).success).toBe(true);
+  });
+
+  it('accepts 2 islands (both spawns sharing one) and rejects 1', () => {
+    const two = fixtureWorld('seed2');
+    expect(two.islands).toHaveLength(2);
+    expect(WorldSpecSchema.safeParse(two).success).toBe(true);
+    expect(validateSpec(two).ok).toBe(true);
+    const one = fixtureWorld('seed2');
+    one.islands = one.islands.slice(0, 1);
+    expectReject(one, 'islands');
   });
 
   it('rejects 3 spawns', () => {

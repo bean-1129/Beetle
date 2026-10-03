@@ -3,7 +3,7 @@ import {
   PATCH_OP_NAMES, PatchDraftSchema, SCORING, WORLD_LIMITS, WorldPatchSchema, dist,
   type PatchDraft, type PatchOp, type ValidationIssue, type WorldPatch, type WorldSpec,
 } from '@beetle/contracts';
-import { rimPointToward, round3 } from './geom.ts';
+import { pointSegment, rimPointToward, round3 } from './geom.ts';
 import { issue, zodIssuesToValidation } from './validate.ts';
 import { normalizePatchDraft, type Normalization } from './normalize.ts';
 
@@ -148,36 +148,22 @@ export function applyPatch(
       case 'add_island': {
         if (allIds(out).has(op.id)) { issues.push(issue('DUPLICATE_ID', `ops[${i}] add_island: id "${op.id}" already exists`, [op.id], ev())); break; }
         if (out.islands.length >= WORLD_LIMITS.islands.max) { issues.push(issue('RESOURCE_LIMIT', `ops[${i}] add_island "${op.id}": world already has ${out.islands.length} islands (max ${WORLD_LIMITS.islands.max})`, [op.id], ev({ count: out.islands.length, max: WORLD_LIMITS.islands.max }))); break; }
-        const H = WORLD_LIMITS.bounds.halfExtent;
-        let cx = Math.min(H - op.radius, Math.max(-(H - op.radius), op.center.x));
-        let cz = Math.min(H - op.radius, Math.max(-(H - op.radius), op.center.z));
-        // Deterministic overlap resolution: push the new island away from the nearest existing island until the 1.25 m gap holds.
-        for (let iter = 0; iter < 40; iter++) {
-          let worst: { dx: number; dz: number; depth: number } | null = null;
-          for (const is of out.islands) {
-            const dx = cx - is.center.x; const dz = cz - is.center.z;
-            const d = Math.hypot(dx, dz) || 1e-6;
-            const depth = is.radius + op.radius + 1.25 - d;
-            if (depth > 1e-4 && (!worst || depth > worst.depth)) worst = { dx: dx / d, dz: dz / d, depth };
-          }
-          if (!worst) break;
-          cx = Math.min(H - op.radius, Math.max(-(H - op.radius), cx + worst.dx * worst.depth));
-          cz = Math.min(H - op.radius, Math.max(-(H - op.radius), cz + worst.dz * worst.depth));
-        }
-        const centre = { x: round3(cx), z: round3(cz) };
-        if (centre.x !== op.center.x || centre.z !== op.center.z) normalizations.push({ path: `ops[${i}].center`, from: op.center, to: centre, reason: 'island moved to clear existing islands or the bounds' });
+        if (op.bridgeFrom !== undefined && !islandById.has(op.bridgeFrom)) { issues.push(issue('INVALID_REFERENCE', `ops[${i}] add_island "${op.id}": unknown bridgeFrom island "${op.bridgeFrom}"`, [op.id, op.bridgeFrom], ev())); break; }
+        const placement = placeNewIsland(out.islands, op);
+        const centre = placement.centre;
+        for (const n of placement.notes) normalizations.push({ ...n, path: `ops[${i}].${n.path}` });
         out.islands.push({ id: op.id, name: op.name, center: centre, radius: op.radius, topElevation: 0 });
         note(op.id);
-        // Crossing from an anchor island (given or nearest), as a regular bridge subject to the same validation.
-        const anchorId = op.bridgeFrom ?? out.islands.filter((is) => is.id !== op.id).sort((a, b) => dist(a.center, centre) - dist(b.center, centre))[0]?.id;
-        const anchor = anchorId ? out.islands.find((is) => is.id === anchorId) : undefined;
-        if (!anchor) { issues.push(issue('INVALID_REFERENCE', `ops[${i}] add_island "${op.id}": unknown bridgeFrom island "${op.bridgeFrom}"`, [op.id, String(op.bridgeFrom)], ev())); break; }
-        if (out.bridges.length < WORLD_LIMITS.bridges.max) {
-          const bid = `bridge-${anchor.id}-${op.id}`.slice(0, 32);
-          if (!allIds(out).has(bid)) {
-            const pa = rimPointToward(anchor.center, anchor.radius, centre);
-            const pb = rimPointToward(centre, op.radius, anchor.center);
-            out.bridges.push({ id: bid, endpoints: [{ islandId: anchor.id, point: { x: round3(pa.x), z: round3(pa.z) } }, { islandId: op.id, point: { x: round3(pb.x), z: round3(pb.z) } }], width: DEFAULT_BRIDGE_WIDTH });
+        // Crossing from the chosen anchor island, as a regular bridge subject to the same validation (validator has the final say).
+        const anchor = placement.anchorId ? out.islands.find((is) => is.id === placement.anchorId) : undefined;
+        if (anchor && out.bridges.length < WORLD_LIMITS.bridges.max) {
+          const ids = allIds(out);
+          const stem = `bridge-${anchor.id}-${op.id}`.slice(0, 32);
+          let bid = stem;
+          for (let k = 2; ids.has(bid) && k < 100; k++) bid = `${stem.slice(0, 32 - String(k).length - 1)}-${k}`;
+          if (!ids.has(bid)) {
+            const [pa, pb] = crossingPoints(anchor, { center: centre, radius: op.radius });
+            out.bridges.push({ id: bid, endpoints: [{ islandId: anchor.id, point: pa }, { islandId: op.id, point: pb }], width: DEFAULT_BRIDGE_WIDTH });
             note(bid);
           }
         }
@@ -225,6 +211,110 @@ export function applyPatch(
 
   if (issues.length > 0) return { ok: false, issues };
   return { ok: true, spec: out, changedIds: changed, normalizations };
+}
+
+// ---- add_island placement ----
+type Disc = { id?: string; center: { x: number; z: number }; radius: number };
+const NEW_ISLAND_GAP = 1.25; // rim-to-rim gap kept between a new island and every existing island (validator needs 1.0)
+const PULL_STEP = 0.5;
+const ANCHOR_CANDIDATES = 3;
+
+function clampCentre(x: number, z: number, r: number): { x: number; z: number } {
+  const lim = WORLD_LIMITS.bounds.halfExtent - r;
+  return { x: Math.min(lim, Math.max(-lim, x)), z: Math.min(lim, Math.max(-lim, z)) };
+}
+
+/** Rounded rim points of the straight crossing between two discs, along their centre line (same rule as add_bridge). */
+function crossingPoints(a: Disc, b: Disc): [{ x: number; z: number }, { x: number; z: number }] {
+  const pa = rimPointToward(a.center, a.radius, b.center);
+  const pb = rimPointToward(b.center, b.radius, a.center);
+  return [{ x: round3(pa.x), z: round3(pa.z) }, { x: round3(pb.x), z: round3(pb.z) }];
+}
+
+function clearOfAll(islands: readonly Disc[], c: { x: number; z: number }, r: number): boolean {
+  return islands.every((is) => dist(is.center, c) - is.radius - r >= NEW_ISLAND_GAP - 1e-3);
+}
+
+/** True when the straight crossing anchor -> new disc passes through no third island (the validator's BRIDGE_CROSSES_ISLAND rule). */
+function cleanCrossing(islands: readonly Disc[], anchor: Disc, c: { x: number; z: number }, r: number): boolean {
+  const [pa, pb] = crossingPoints(anchor, { center: c, radius: r });
+  return islands.every((is) => is.id === anchor.id || pointSegment(is.center, pa, pb).dist >= is.radius + 1e-3);
+}
+
+/**
+ * Deterministic placement for add_island:
+ *  1. clamp into the bounds and push away from overlapping islands until the 1.25 m gap holds;
+ *  2. pick the crossing anchor: bridgeFrom (when given) first, then the three nearest islands, preferring the first one
+ *     whose straight crossing passes through no third island;
+ *  3. when the crossing would exceed WORLD_LIMITS.bridge.maxLength, pull the island toward the anchor along the centre
+ *     line (keeping the 1.25 m gap to every island) until it fits.
+ * When nothing yields a clean crossing the first candidate is kept and the validator reports the problem.
+ */
+function placeNewIsland(
+  islands: readonly Disc[],
+  op: { id: string; center: { x: number; z: number }; radius: number; bridgeFrom?: string },
+): { centre: { x: number; z: number }; anchorId: string | undefined; notes: Normalization[] } {
+  const r = op.radius;
+  let { x: cx, z: cz } = clampCentre(op.center.x, op.center.z, r);
+  for (let iter = 0; iter < 40; iter++) {
+    let worst: { dx: number; dz: number; depth: number } | null = null;
+    for (const is of islands) {
+      const dx = cx - is.center.x; const dz = cz - is.center.z;
+      const d = Math.hypot(dx, dz);
+      // Coincident centres: push due east (deterministic) rather than dividing by zero.
+      const ux = d > 1e-6 ? dx / d : 1; const uz = d > 1e-6 ? dz / d : 0;
+      const depth = is.radius + r + NEW_ISLAND_GAP - d;
+      if (depth > 1e-4 && (!worst || depth > worst.depth)) worst = { dx: ux, dz: uz, depth: depth + 1e-3 };
+    }
+    if (!worst) break;
+    ({ x: cx, z: cz } = clampCentre(cx + worst.dx * worst.depth, cz + worst.dz * worst.depth, r));
+  }
+  const pushed = { x: round3(cx), z: round3(cz) };
+  const notes: Normalization[] = [];
+  if (pushed.x !== op.center.x || pushed.z !== op.center.z) notes.push({ path: 'center', from: op.center, to: pushed, reason: 'island moved to clear existing islands or the bounds' });
+  if (islands.length === 0) return { centre: pushed, anchorId: undefined, notes };
+
+  const byNearest = [...islands].sort((a, b) => dist(a.center, pushed) - dist(b.center, pushed) || (a.id ?? '').localeCompare(b.id ?? ''));
+  const anchors: Disc[] = [];
+  const preferred = op.bridgeFrom !== undefined ? islands.find((is) => is.id === op.bridgeFrom) : undefined;
+  if (preferred) anchors.push(preferred);
+  for (const is of byNearest.slice(0, ANCHOR_CANDIDATES)) if (!anchors.includes(is)) anchors.push(is);
+
+  const maxLen = WORLD_LIMITS.bridge.maxLength;
+  type Option = { anchor: Disc; centre: { x: number; z: number }; clean: boolean; pulled: boolean };
+  const optionsFor = (anchor: Disc): Option[] => {
+    const span = dist(anchor.center, pushed) - anchor.radius - r;
+    if (span <= maxLen - 0.01) return [{ anchor, centre: pushed, clean: cleanCrossing(islands, anchor, pushed, r), pulled: false }];
+    // Too long: walk the centre line from the longest allowed crossing toward the anchor until a placement keeps the gap.
+    const out: Option[] = [];
+    const d0 = dist(anchor.center, pushed) || 1;
+    const ux = (pushed.x - anchor.center.x) / d0; const uz = (pushed.z - anchor.center.z) / d0;
+    for (let len = maxLen - 0.05; len >= NEW_ISLAND_GAP; len -= PULL_STEP) {
+      const D = anchor.radius + r + len;
+      const c = clampCentre(anchor.center.x + ux * D, anchor.center.z + uz * D, r);
+      const rc = { x: round3(c.x), z: round3(c.z) };
+      const crossing = dist(anchor.center, rc) - anchor.radius - r;
+      if (crossing > maxLen - 0.01 || crossing < NEW_ISLAND_GAP - 1e-3) continue;
+      if (!clearOfAll(islands, rc, r)) continue;
+      const clean = cleanCrossing(islands, anchor, rc, r);
+      out.push({ anchor, centre: rc, clean, pulled: true });
+      if (clean) break;
+    }
+    return out;
+  };
+  const all: Option[] = [];
+  let chosen: Option | undefined;
+  for (const anchor of anchors) {
+    const opts = optionsFor(anchor);
+    all.push(...opts);
+    chosen = opts.find((o) => o.clean);
+    if (chosen) break;
+  }
+  chosen ??= all[0];
+  if (!chosen) return { centre: pushed, anchorId: anchors[0].id, notes };
+  if (chosen.pulled) notes.push({ path: 'center', from: pushed, to: chosen.centre, reason: `island pulled toward "${chosen.anchor.id}" so its crossing fits within ${maxLen} m` });
+  if (op.bridgeFrom !== undefined && chosen.anchor.id !== op.bridgeFrom) notes.push({ path: 'bridgeFrom', from: op.bridgeFrom, to: chosen.anchor.id, reason: 'crossing anchored on a nearer island so it passes through no other island' });
+  return { centre: chosen.centre, anchorId: chosen.anchor.id, notes };
 }
 
 /** Length of the bridge an add_bridge op would create, for callers that want to pre-check limits. */

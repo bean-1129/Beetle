@@ -64,4 +64,4 @@ export type StepResult = { mover: Mover; events: StepEvent[] };
 
 export type FixtureName =
   | 'garden5' | 'garden5-gapped-bridge' | 'garden5-gate-hides-relic' | 'garden5-blocked-path' | 'garden4-no-temple-bridge'
-  | 'race5' | 'hill4' | 'survival5' | 'trial5';
+  | 'race5' | 'hill4' | 'survival5' | 'trial5' | 'seed2' | 'grown12';

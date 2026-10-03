@@ -129,7 +129,12 @@ describe('case 7: add a bridge to the temple', () => {
     expect(self.ok).toBe(false);
     if (!self.ok) expect(codes(self.issues)).toEqual(['INVALID_REFERENCE']);
     const full = ringWorld16();
-    const limit = applyPatch(full, { summary: 'x', ops: [{ op: 'add_bridge', id: 'b-17', from: 'ring-0', to: 'ring-3' }] });
+    full.bridges = [...full.bridges];
+    while (full.bridges.length < WORLD_LIMITS.bridges.max) {
+      const n = full.bridges.length;
+      full.bridges.push({ ...full.bridges[n % 16], id: `fill-${n}` });
+    }
+    const limit = applyPatch(full, { summary: 'x', ops: [{ op: 'add_bridge', id: 'b-49', from: 'ring-0', to: 'ring-3' }] });
     expect(limit.ok).toBe(false);
     if (!limit.ok) expect(codes(limit.issues)).toEqual(['RESOURCE_LIMIT']);
     const gone = applyPatch(spec, { summary: 'x', ops: [{ op: 'remove_bridge', id: 'nope' }, { op: 'remove_decoration', id: 'nope' }] });

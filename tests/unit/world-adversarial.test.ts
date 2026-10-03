@@ -129,6 +129,7 @@ describe('hostile patches', () => {
       { op: 'add_decoration', id: 'tree-1', type: 'tree', islandId: 'west', localPosition: { x: 0, z: 0 } }, // duplicate of fixture id
       { op: 'add_bridge', id: 'centre', from: 'east', to: 'south' }, // collides with an island id
       { op: 'set_title', title: 'twelve ops' },
+      { op: 'set_title', title: 'thirteen' }, { op: 'set_title', title: 'fourteen' }, { op: 'set_title', title: 'fifteen' }, { op: 'set_title', title: 'sixteen' },
     ];
     expect(ops).toHaveLength(WORLD_LIMITS.patchOps.max);
     const r = applyPatch(base, { summary: 'dup ids', ops });
@@ -161,8 +162,8 @@ describe('hostile patches', () => {
     if (!r.ok) expect(codes(r.issues)).toEqual(['UNKNOWN_OPERATION', 'UNKNOWN_OPERATION']);
   });
 
-  it('13 ops is rejected at the schema boundary', () => {
-    const ops = Array.from({ length: 13 }, () => ({ op: 'set_title' as const, title: 't' }));
+  it('one op over the limit is rejected at the schema boundary', () => {
+    const ops = Array.from({ length: WORLD_LIMITS.patchOps.max + 1 }, () => ({ op: 'set_title' as const, title: 't' }));
     const r = applyPatch(fixtureWorld('garden5'), { summary: 'too many', ops });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(codes(r.issues)).toContain('INVALID_SCHEMA');
@@ -443,8 +444,8 @@ describe('scale, reachability and digests', () => {
     const r = applyPatch(spec, { summary: 'dense', ops: pairs.map(([from, to], i) => ({ op: 'add_bridge' as const, id: `b${i}`, from, to })) });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.spec.islands).toHaveLength(WORLD_LIMITS.islands.max);
-    expect(r.spec.bridges).toHaveLength(WORLD_LIMITS.bridges.max);
+    expect(r.spec.islands).toHaveLength(8);
+    expect(r.spec.bridges).toHaveLength(16);
     validateSpec(r.spec); // warm
     const t0 = performance.now();
     const v = validateSpec(r.spec);

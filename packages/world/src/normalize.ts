@@ -3,6 +3,7 @@
 // (b) writes world coordinates or over-radius offsets into localPosition, (c) exceeds numeric limits the
 // JSON-schema grammar does not enforce. These are mechanical, unambiguous corrections; anything ambiguous is
 // left untouched so the validator reports it. Every change is recorded so the agent and the UI can show it.
+import { pointSegment, rimPointToward } from './geom.ts';
 import { BIOMES, DECORATION_RADIUS, GAME_MODES, MODE_LIMITS, WORLD_LIMITS, compassName, type Biome, type GameMode, type Vec2 } from '@beetle/contracts';
 
 export type Normalization = { path: string; from: unknown; to: unknown; reason: string };
@@ -297,6 +298,50 @@ export function contractLongBridges(islands: IslandLike[], bridges: { from: stri
   }
 }
 
+/** Split bridges that cross a third island into two bridges through it. Deterministic; at most 8 splits. */
+export function rerouteCrossingBridges(bridges: unknown[], islands: IslandLike[], gateIslandId: string | undefined, log: Normalization[]): void {
+  const byId = new Map(islands.map((i) => [i.id, i] as const));
+  const pairKey = (x: string, y: string) => (x < y ? `${x}|${y}` : `${y}|${x}`);
+  const pairs = () => new Set(bridges.map((r) => r as Record<string, unknown>).filter((b) => typeof b?.from === 'string' && typeof b?.to === 'string').map((b) => pairKey(b.from as string, b.to as string)));
+  const ids = new Set(bridges.map((r) => (r as Record<string, unknown>)?.id).filter((x): x is string => typeof x === 'string'));
+  for (let n = 0; n < 8; n++) {
+    let split = false;
+    for (let i = 0; i < bridges.length && !split; i++) {
+      const b = bridges[i] as Record<string, unknown>;
+      if (!b || typeof b.from !== 'string' || typeof b.to !== 'string') continue;
+      const a = byId.get(b.from); const c = byId.get(b.to);
+      if (!a || !c || a === c) continue;
+      const pa = rimPointToward(a.center, a.radius, c.center);
+      const pc = rimPointToward(c.center, c.radius, a.center);
+      const crossed = islands
+        .filter((x) => x !== a && x !== c && pointSegment(x.center, pa, pc).dist < x.radius + 0.5)
+        .sort((x, y) => pointSegment(x.center, pa, pc).t - pointSegment(y.center, pa, pc).t)[0];
+      if (!crossed || crossed.id === gateIslandId || a.id === gateIslandId || c.id === gateIslandId) continue;
+      const existing = pairs();
+      const hasAB = existing.has(pairKey(a.id, crossed.id));
+      const hasBC = existing.has(pairKey(crossed.id, c.id));
+      if (hasAB && hasBC) {
+        log.push({ path: `bridges[${String(b.id)}]`, from: `${a.id}-${c.id}`, to: undefined, reason: `bridge crossed island ${crossed.id}, which already links both ends; dropped` });
+        bridges.splice(i, 1);
+      } else if (hasAB || hasBC) {
+        const to = hasAB ? { from: crossed.id, to: c.id } : { from: a.id, to: crossed.id };
+        log.push({ path: `bridges[${String(b.id)}]`, from: `${a.id}-${c.id}`, to: `${to.from}-${to.to}`, reason: `bridge crossed island ${crossed.id}; rerouted through it` });
+        b.from = to.from; b.to = to.to;
+      } else {
+        if (bridges.length >= WORLD_LIMITS.bridges.max) continue;
+        let id = `${String(b.id)}x`.slice(0, 32);
+        for (let k = 2; ids.has(id); k++) id = `${String(b.id).slice(0, 28)}x${k}`;
+        ids.add(id);
+        log.push({ path: `bridges[${String(b.id)}]`, from: `${a.id}-${c.id}`, to: `${a.id}-${crossed.id}, ${crossed.id}-${c.id}`, reason: `bridge crossed island ${crossed.id}; split into two bridges through it` });
+        b.to = crossed.id;
+        bridges.push({ id, from: crossed.id, to: c.id, ...(b.width !== undefined ? { width: b.width } : {}) });
+      }
+      split = true;
+    }
+    if (!split) break;
+  }
+}
+
 const OBJECT_CLEARANCE = 1.2;
 /** Decorations keep their collision radius plus a margin inside the island; relics, spawns and the gate use OBJECT_CLEARANCE. */
 function clearanceFor(obj: Record<string, unknown>): number {
@@ -389,6 +434,12 @@ export function normalizeDraft(draft: unknown): { draft: unknown; normalizations
       fixRef(b, 'to', `bridges[${i}].to`);
       if (b.width !== undefined) b.width = clampNum(b.width, WORLD_LIMITS.bridge.minWidth, WORLD_LIMITS.bridge.maxWidth, log, `bridges[${i}].width`);
     });
+  }
+  // A straight bridge that passes through a third island (BRIDGE_CROSSES_ISLAND) is split at that island: a to b and
+  // b to c. Never through the gate island, never past the bridge limit, never duplicating a pair.
+  if (Array.isArray(d.bridges) && islands.length > 2) {
+    const gateIsland = d.gate && typeof d.gate === 'object' ? (d.gate as Record<string, unknown>).islandId : undefined;
+    rerouteCrossingBridges(d.bridges as unknown[], islands, typeof gateIsland === 'string' ? gateIsland : undefined, log);
   }
   // A relic on the gate's island would be hidden behind the locked gate (GATE_HIDES_RELIC): move it to the island
   // with the fewest relics among the others, preferring islands that have a bridge. The offset is clamped later.
