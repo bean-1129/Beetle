@@ -253,7 +253,7 @@ A world is either floating islands over a hazard or one continuous landmass. The
 
 - `islands`: floating terrain bodies with undersides, plank bridges, and the water or lava plane below, as described under "Web".
 - `ground`: one continuous landmass. Zones render as raised plateaus and crossings as paths on the ground surface, with no floating undersides and no void between zones. The biome preset (garden, volcanic, frost, desert, night) applies to both.
-- Status at 15:31 CDT: the contract field, `set_terrain` and the movement rule are in the tree; the ground renderer and the prompt rule for choosing terrain are owned by the web and agent owners and are not yet visible in the tree. No ground world is measured in docs/RESULTS.md yet.
+- Status at 15:40 CDT: the ground renderer, the terrain choice in the agent prompt and the set_terrain op are landed; a ground world was committed and rendered live (docs/RESULTS.md, Ground terrain live) and three briefs were measured (docs/RESULTS.md, Terrain choice and honest mapping).
 
 ### Validator unchanged
 

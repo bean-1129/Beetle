@@ -1,6 +1,6 @@
 # Submission checklist
 
-Checked against the filesystem on 2026-10-03 at 13:40 CDT (deadline 15:32 CDT). "Exists" means the file or folder was present at that moment; it says nothing about whether the content is final. Re-check with the command at the bottom before packaging. The deliverable names follow the list in BUILD_STATUS.md.
+Existence checked at 15:41 CDT by the integration owner (script-free refresh).
 
 | # | Deliverable | Where | Exists at time of writing |
 |---|---|---|---|

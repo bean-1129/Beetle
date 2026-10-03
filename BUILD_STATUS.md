@@ -1,6 +1,6 @@
 # BUILD_STATUS
 
-Last updated: 2026-10-03 15:30 CDT. Submission deadline set by the user: 16:30 CDT. Final checkpoint at 16:05, export and push by 16:20.
+Last updated: 2026-10-03 15:41 CDT. Submission deadline set by the user: 16:30 CDT.
 
 Legend: implemented = code exists; tested = an automated or recorded manual test ran and passed; untested = exists, no test run; blocked = cannot proceed without something external; omitted = deliberately cut.
 
@@ -75,6 +75,16 @@ Eight Opus 5.5 genre testers (adventure, racing, arena, race, survival, heist, p
 | Eight different genres | seven of eight genres built at least once across the two rounds (puzzle never committed: the model placed objects off its island twice); mode mapping was right in most and biome was missed twice | data/prompt-runs/run-17910570*.json and run-17910586*.json |
 
 Left for a next round: a quiet-GPU build-time measurement per genre, a frame-rate measurement on the real display, the puzzle genre's placement failures (the clearance normalization added at 14:43 addresses one cause), and the biome omission (prompt wording).
+
+## Terrain types (15:28 to 15:40 CDT)
+
+| Area | Status | Evidence |
+|---|---|---|
+| Contract: WorldSpec.terrain islands or ground, set_terrain op, draft field | implemented, typechecked | packages/contracts |
+| World: ground movement rule (plateau edges block instead of falling), terrain carried through drafts and patches, terrain words normalized | implemented, tested | packages/world |
+| Renderer: continuous heightfield landmass, plateaus at walk height, roads instead of bridges, scattered vegetation, biome land colours, islands look unchanged | implemented, verified in the browser (45 fps in the software pane) | apps/web/src/renderer/ground.ts |
+| Agent: terrain chosen from the brief, ground default unless water or lava is the fun, honest mapping sentence for unsupported mechanics | implemented, measured: "first person shooting game, shoot walking trees" built as "Walking Trees Hunt (relic hunt, no shooting)" on ground in 14.5 s; forest valley relic hunt 14.8 s; desert canyon king of the hill 11.6 s | docs/RESULTS.md |
+| Capability statement | docs/CAPABILITIES.md lists what is built, what is mapped and the roadmap (enemies and combat, per-player views, vehicles) as not done | |
 
 ## Required test cases (section 14)
 
