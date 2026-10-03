@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": [
+    "src",
+    "../../tests/unit/contracts.test.ts",
+    "../../tests/unit/compiler.test.ts",
+    "../../tests/unit/validators.test.ts",
+    "../../tests/unit/movement.test.ts"
+  ]
+}
