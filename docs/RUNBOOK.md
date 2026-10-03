@@ -1,6 +1,6 @@
 # Demo runbook
 
-Updated 2026-10-03 13:40 CDT. Each step is marked with what was verified today on this machine and what remains unrun. "Verified" means it was done and observed today (sources: BUILD_STATUS.md, docs/RESULTS.md, the browser checks against the live server); "unrun" means nobody has done it yet and nothing is claimed for it.
+Updated 2026-10-03 14:22 CDT. Each step is marked with what was verified today on this machine and what remains unrun. "Verified" means it was done and observed today (sources: BUILD_STATUS.md, docs/RESULTS.md, the browser checks against the live server); "unrun" means nobody has done it yet and nothing is claimed for it.
 
 ## Verified today versus unrun
 
@@ -15,9 +15,10 @@ Updated 2026-10-03 13:40 CDT. Each step is marked with what was verified today o
 | Lava swap and new bridge without reset | verified | browser check (BUILD_STATUS.md); E5 in run 2 and the lava edits in run 3 (docs/RESULTS.md) |
 | Validator refusal and repair | verified | DISCONNECTED_GOAL refused at 1.7 s and the repaired patch committed at 3.0 s on garden5; INVALID_REFERENCE then BRIDGE_CROSSES_ISLAND refused and repaired on run 3 E6 (docs/RESULTS.md) |
 | Undo via the API | verified | in tests (BUILD_STATUS.md case 11) and once on the live stack: `POST /api/director/undo` on v7 produced v8, deferred 0 ms (docs/RESULTS.md) |
+| Any game to the closest mode and biome (mode brief, for example king of the hill on frost) | unrun | contract, validator and patch ops implemented (packages/contracts, packages/world); server rule, mapping prompt and biome themes in progress; measured results go to docs/RESULTS.md "Game modes from one prompt" |
 | Two physical phones on the LAN | unrun | needs a person on site; controller behaviour is covered by real-socket integration tests only |
 | Offline rehearsal (route removed, edit still commits) | unrun | only the "before" record exists, data/offline-proof/1791049273707.json; procedure in docs/OFFLINE_PROOF.md |
-| OpenClaw mode live against the real server | unrun | tool calls proven against the fake server only (packages/agent/SMOKE.md); the real-server run times out before any model call and is being diagnosed |
+| OpenClaw mode live against the real server | verified | edit committed v2 in 20.0 s with real OpenClaw tool calls (13:43 CDT), gated integration test committed v2 in 38.9 s, fresh brief committed v1 in 33.4 s (docs/RESULTS.md, BUILD_STATUS.md case 17); the 13:24 timeout was the Ollama daemon, restarted at 13:43 |
 | qwen3.8:27b | unrun | never benchmarked; pull failed once with a digest mismatch, re-downloading (docs/MODEL_SELECTION.md section 6) |
 
 ## Shell setup (every terminal)
@@ -47,6 +48,8 @@ Ollama must already be serving on 127.0.0.1:11434 with `qwen3.5:4b` present (`ol
 4. Conflicting edit: "Remove the only bridge to the temple. Keep the temple reachable." Run it on a world whose temple has exactly one bridge (garden5 does). Show the validator error (DISCONNECTED_GOAL with the gate, temple and spawn ids), the repair attempt, revalidation and commit of the passing patch only. Rehearsal on garden5: refused at 1.7 s, committed at 3.0 s. If the world has two temple bridges the model submits a valid alternative first time (observed: v7 in 6.4 s) and there is nothing to refuse; if the agent's first attempt is already valid, say so on screen and run the separately labelled invalid-patch test instead.
 5. End on the version report: committed version, attempts, validator codes, timings. The caption names the agent mode (direct or OpenClaw, whichever was green at recording time).
 
+6. Optional, only if the take has room inside 120 s: the "any game" shot. Type a second brief on the same stack, "King of the hill on a frozen arena, hold ten seconds." With players connected it is a new world, so send it with `authorizeNewWorld: true` and say "new world" in the caption (players keep ids and connections, positions reset to spawns). Show the agent's summary naming the mode and biome it mapped to (king_of_the_hill, frost, holdSeconds 10) and the measured time from the activity trail. Rehearsal: not yet measured at 14:22 CDT; the time for this brief is recorded in docs/RESULTS.md "Game modes from one prompt" when the agent owner appends it, and the on-screen number comes from that row only. If the section does not exist at recording time, skip this step. Shorter alternative without a reset: the edit "Make it king of the hill, hold ten seconds, and turn the arena to frost" (`set_mode` plus `set_biome` in one patch).
+
 ## If something fails
 
 - Model unreachable: the director shows the specific error and the world stays playable. Fix Ollama, retry the request. Do not switch providers.
@@ -54,7 +57,7 @@ Ollama must already be serving on 127.0.0.1:11434 with `qwen3.5:4b` present (`ol
 - Phone cannot connect: confirm it is on the same LAN as the printed public URL; the venue Wi-Fi may isolate clients. A USB-tethered iPhone uses the tether address (172.20.10.12 observed), see step 4 above. Fallback for recording: the director's keyboard player plus the controller page in a desktop browser, named in the caption.
 - Commit deferred with OCCUPIED_SUPPORT: a player is standing on a bridge the patch removes; move the player, the agent retries within its budget.
 - Brief fails three attempts (observed in 3 of 18 benchmark drafts): keep one pre-drafted world as a fallback and say so on screen.
-- OpenClaw mode not green: record in direct mode (labelled `[direct]` in every trail line and report) and say so in the caption.
+- OpenClaw mode not green (it depends on a healthy Ollama daemon; the 13:24 CDT timeout was the daemon, fixed by a restart): record in direct mode (labelled `[direct]` in every trail line and report) and say so in the caption.
 
 ## Evidence to keep
 

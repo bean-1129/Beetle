@@ -1,10 +1,10 @@
 # Beetle
 
-Change the game without stopping the game.
+Any game, one prompt, then keep changing it while they play.
 
-Beetle is a local AI prototyping teammate for small game studios. A designer writes a brief, a local model composes a playable floating-garden world, two people join from their phones, and the designer keeps editing the world while they play. Every edit is validated by deterministic game logic, repaired by the agent when it fails, and committed as a new world version without disconnecting anyone or resetting progress.
+Beetle turns any game request into a playable 3D game inside a growing library of engine mechanics, then lets the designer change it live while people play. A designer types a brief ("king of the hill on a frozen arena, hold ten seconds", "a relic hunt across lava islands against a two-minute clock"); a local model maps the request onto the closest supported game mode and biome, says which it chose, and composes a playable world; two people join from their phones; the designer keeps editing the mode, the biome, the bridges, the hazard and the pace while they play. Every change is validated by deterministic game code, repaired by the agent when it fails, and committed as a new world version without disconnecting anyone or resetting progress.
 
-Everything runs on one machine. Model inference is Ollama on loopback. The agent runtime is OpenClaw with Beetle-specific tools, plus a clearly labelled in-process direct harness used for the measured runs so far (see "Known limitations"). There is no cloud fallback.
+Everything runs on one machine. Model inference is Ollama on loopback. The agent runtime is OpenClaw with Beetle-specific tools, verified live against the real server; a clearly labelled in-process direct harness is the fallback and is named `[direct]` in every report it produces. There is no cloud fallback. For how Beetle relates to one-prompt game generators, see docs/COMPETITIVE.md.
 
 ## Layout
 
@@ -12,14 +12,14 @@ Everything runs on one machine. Model inference is Ollama on loopback. The agent
 |---|---|
 | apps/web | director, shared display and phone controller pages (React, Vite, Babylon.js) |
 | apps/server | HTTP and WebSocket server, authoritative 30 Hz simulation, world transactions |
-| packages/contracts | zod schemas, limits, validation codes, protocol, routes |
+| packages/contracts | zod schemas, limits (modes, biomes, hazards, decorations), validation codes, protocol, routes |
 | packages/world | world compiler, walk field, nav grid, validators, playability checks, patches, model-output normalization |
 | packages/agent | OpenClaw tool plugin, agent worker, Ollama client, labelled direct harness, SMOKE.md |
 | packages/observability | JSONL events and timing helpers |
-| scripts | dev runner, demo readiness check, benchmark, model probe, prompt runner, latency, offline proof, export, recording |
+| scripts | dev runner, demo readiness check, benchmark, model probe, prompt runner, latency, offline proof, acceptance, export, recording |
 | tests | unit, integration, fixtures (including the real model-output corpus) |
-| docs | environment, architecture, model selection, results, latency, failure modes, security review, local-only checklist, runbook, storyboard, pitch |
-| data | local runtime data: snapshots, events, benchmarks, prompt runs, latency, logs (ignored) |
+| docs | environment, architecture, model selection, results, acceptance, latency, failure modes, security review, local-only checklist, runbook, storyboard, competitive framework, pitch |
+| data | local runtime data: snapshots, events, benchmarks, prompt runs, latency, acceptance, logs (ignored) |
 
 ## Requirements
 
@@ -47,6 +47,7 @@ Ollama must be serving on 127.0.0.1:11434 with the configured model present (`ol
 | `npm run dev -- --prod` | server + agent worker serving the built web app on port 7700 | yes, with the real server and worker (the rehearsal stacks behind docs/RESULTS.md) |
 | `npm run dev` | server + agent worker + Vite dev server with prefixed logs | not run today in this form; the prod form above was used |
 | `npx tsx scripts/run-prompts.ts --ids ...` | sends the fresh prompts from docs/PROMPTS.md to a running stack and records data/prompt-runs/*.json | yes, three runs (docs/RESULTS.md) |
+| `npx tsx scripts/acceptance-volcanic.ts` | unattended end-to-end acceptance: two moving players, live edit to lava plus a bridge, 15 assertions | yes, twice (docs/ACCEPTANCE.md: run 2 passed 15 of 15) |
 | `npx tsx scripts/measure-latency.ts` | controller RTT and input-to-tick on loopback | yes, once (docs/LATENCY.md) |
 | `node scripts/offline-proof.mjs` | records routes, sockets, egress probe and an edit outcome | "before" record only; the egress-blocked rehearsal is not run |
 | `node scripts/export-demo.mjs` | copies the deliverables into submission/<stamp>/ with a manifest | yes, once at 12:44 CDT (stale; re-run before packaging) |
@@ -57,38 +58,71 @@ Ollama must be serving on 127.0.0.1:11434 with the configured model present (`ol
 2. `npm run build` then `npm run dev -- --prod`.
 3. The server prints the director URL once (it carries the director token) when the token is first generated. Open it on the desktop.
 4. In the director panel, press Invite for each player and scan the QR with a phone on the same LAN. A phone tethered over USB must use the tether interface address instead of the Wi-Fi address in the QR (docs/RUNBOOK.md).
-5. Type a brief and submit. Then keep editing while people play.
+5. Type any game brief and submit. The agent names the mode and biome it mapped the request to. Then keep editing while people play.
+
+## Mode library
+
+The engine implements five game modes (`GAME_MODES` in packages/contracts/src/limits.ts). The model never invents rules: it maps any requested game onto the closest supported mode, fills the mode's parameters, and names the mapping in the title when the request is not an exact match ("Tag Arena (king of the hill)"; `MODE_RULE` in packages/agent/src/prompts.ts). Biome synonyms are in the prompt too: snow is frost, dark is night, sand is desert, lava is volcanic. A world without a `mode` field is a relic hunt with every relic required (the original game). Parameter ranges are the contract's `MODE_LIMITS`; the server rule per mode and the validator's cross-field checks are described in docs/ARCHITECTURE.md "Mode library and generator mapping".
+
+| Mode | What players do | Win condition | Parameters (contract ranges) |
+|---|---|---|---|
+| `relic_hunt` | Walk the bridges, collect relics, bring them to the gate | The gate unlocks once `relicsRequired` relics are collected and an active player stands in its trigger zone | `relicsRequired` 1 to 3 (default: all relics in the world) |
+| `time_trial` | The same relic hunt against a clock | Finish the relic hunt before `timeLimitSec` runs out; the objective state carries `remainingSec` and flips `lost` when the timer expires (pickups and the gate stop until a new world or a `set_mode` patch) | `timeLimitSec` 20 to 600 s (default 120), `relicsRequired` 1 to 3 |
+| `king_of_the_hill` | Reach the gate island (the hill, no lock) and stand in the gate zone; the other player tries to do the same. Tag and capture requests map here | The first player whose held time (`holdSec`) reaches `holdSeconds` (`holdTarget` in the objective state); both players accumulate while inside | `holdSeconds` 3 to 60 s (default 10) |
+| `checkpoint_race` | Run through the relics as checkpoints, in order by default, then the gate. Race requests map here | Every checkpoint reached (ordered when `orderedCheckpoints` is true, the default for this mode), then the gate | `orderedCheckpoints` true or false, `relicsRequired` 1 to 3; the validator requires at least 2 relics (MODE_INVALID otherwise) |
+| `survival` | Grab a relic and get to the gate while the hazard plane rises; once it passes -1.0 m every bridge submerges and stops supporting players | Collect `relicsRequired` relics (default 1 in this mode) and reach the gate before `timeLimitSec` ends; `lost` when the timer expires. The objective state carries `remainingSec`, `hazardElevation` and `lost`; the validator requires `hazard.rise` with `maxElevation` above the starting plane | `timeLimitSec` 20 to 600 s (default 120); `hazard.rise`: `afterSec` 5 to 300, `metersPerSec` 0.01 to 0.5, `maxElevation` -2 to -0.6 m (bridges below -1.0 m submerge) |
+
+Common to every mode: 4 to 8 islands, at most 16 bridges, 2 spawns, 3 relics, 1 gate, at most 40 decorations, movement speed 3 to 7 m/s (default 4.5, changed live with `set_movement`), and a hazard of `water` or `lava` under everything.
+
+Biomes (`BIOMES`): `garden`, `volcanic`, `frost`, `desert`, `night`. The biome is a world field, chosen by the brief and changed live with `set_biome`; the hazard kind is separate (`set_hazard`). Serene (garden, water) and volcanic (lava) rendering is verified in the browser (docs/ACCEPTANCE.md); rendering of frost, desert and night is in progress and not yet verified. Decoration types (11): tree, rock, lantern, pillar, bush, shrine, tower, ruin, crystal, mushroom, statue.
+
+Live patch ops: `add_bridge`, `remove_bridge`, `set_hazard`, `add_decoration`, `move_decoration`, `remove_decoration`, `move_relic`, `set_title`, `set_mode`, `set_biome`, `set_movement` (packages/contracts/src/patch.ts), at most 12 ops per patch.
+
+Example briefs and where they land:
+
+| Brief | Mode | Biome, hazard | Parameters the agent fills |
+|---|---|---|---|
+| "Five floating garden islands with a temple to the north, water below" | `relic_hunt` | garden, water | all 3 relics required |
+| "King of the hill on a frozen arena, hold ten seconds" | `king_of_the_hill` | frost, water | `holdSeconds` 10 |
+| "A race through three checkpoints over lava, no shortcuts" | `checkpoint_race` | volcanic, lava | `orderedCheckpoints` true |
+| "Collect the relics before the two-minute bell, desert at night" | `time_trial` | desert or night (the agent picks one and says so), water | `timeLimitSec` 120 |
+| "The flood is coming: stay above the water as it rises" | `survival` | garden, water | `hazard.rise` within the contract ranges |
+
+These examples show the mapping rule, not measured runs. Measured results for mode briefs are appended to docs/RESULTS.md under "Game modes from one prompt" as they are produced; until that section exists, no mode-brief timing is claimed.
 
 ## What works today (2026-10-03, measured on the GB10)
 
-- Brief to a committed, validated world with qwen3.5:4b: 14 s on a quiet GPU in the latest run (docs/RESULTS.md run 3); 24 to 28 s warm in the benchmarks when the first draft is valid, 55 to 61 s with one repair round (docs/MODEL_SELECTION.md).
+- Any brief to a committed, validated world with qwen3.5:4b: 14 s on a quiet GPU in the latest direct run (docs/RESULTS.md run 3); 24 to 28 s warm in the benchmarks when the first draft is valid, 55 to 61 s with one repair round (docs/MODEL_SELECTION.md); 33.4 s to v1 through real OpenClaw tool calls (docs/RESULTS.md, 14:08 CDT). The 10 s target is not met.
+- Mode and biome from one prompt: the contract, validator, patch ops, movement speed and summary fields (packages/contracts, packages/world), the server rule per mode (apps/server/src/simulation.ts), the mapping prompt (packages/agent/src/prompts.ts) and the biome palettes (apps/web/src/renderer/palette.ts) exist in code at 14:27 CDT; what is tested is in BUILD_STATUS.md. Measured mode-brief results: not yet measured (see docs/RESULTS.md "Game modes from one prompt" when it appears).
 - Live edits on a running world: 5 of 6 fresh edits committed in 2.0 / 8.0 / 14.0 s (min / p50 / max) after model-output normalization (docs/RESULTS.md run 3); before normalization 2 of 6.
+- Edit while two players keep moving, without a reset: acceptance run 2 committed lava plus a new bridge in 8.0 s with both controllers walking the whole time, collected relic and score unchanged, both sockets open, max tick gap 67 ms, 15 of 15 checks (docs/ACCEPTANCE.md). Hero transformation on the cinematic renderer committed v2 in 3.2 s with two scripted controllers connected (docs/RESULTS.md, 14:02 CDT).
 - The validator refusing an edit and the agent repairing it within the 2-attempt budget: DISCONNECTED_GOAL refused at 1.7 s and the repaired patch committed at 3.0 s on the fixture world; INVALID_REFERENCE then BRIDGE_CROSSES_ISLAND refused and repaired on run 3 E6 (docs/RESULTS.md). No invalid world was ever committed.
 - Director page, keyboard player, phone controller page (under mobile emulation), lava swap and new bridge without a reset, verified in the browser against the live server (BUILD_STATUS.md).
 - Undo through `POST /api/director/undo` on the live stack (v7 to v8 through the normal validated commit path) and in tests.
 - Controller transport on loopback: WebSocket RTT p50 0.48 ms, input to server tick p50 18.79 ms; not input to photon (docs/LATENCY.md).
 - Deterministic normalization of model output: corpus validity 2 of 30 without it versus 13 of 30 with it (docs/MODEL_FAILURE_MODES.md).
-- OpenClaw: the seven Beetle tools called by qwen3.5:4b through `openclaw agent exec` against a fake Beetle server, twice, ending in a committed v2 and a genuine build report (packages/agent/SMOKE.md).
-- Required test cases 1 to 16 tested, 17 partial, 18 tested live in direct mode (BUILD_STATUS.md).
+- OpenClaw live against the real server: an edit committed v2 in 20.0 s with real tool calls (13:43 CDT), the gated integration test committed v2 in 38.9 s with 7 tool calls and a genuine build report, and a fresh brief committed v1 in 33.4 s (docs/RESULTS.md, BUILD_STATUS.md case 17). Two earlier runs against a fake server are in packages/agent/SMOKE.md.
+- Required test cases 1 to 18 tested; 17 and 18 tested live (BUILD_STATUS.md).
 
 ## Presentation (14:00 CDT pass)
 
 - Procedural terrain islands, plank suspension bridges, crystal relics, rune gate and humanoid players with PBR materials and runtime-generated textures.
-- Two environment themes driven by the world hazard (serene for water, volcanic for lava) with a procedural sky used for image-based lighting, fog, sun, particles and a 2 s blend on every committed hazard change; the theme change is an ordinary validated patch, so players, inventory, score, connections and version history survive it (docs/ACCEPTANCE.md, 15 of 15 checks).
+- Two environment themes driven by the world hazard (serene for water, volcanic for lava) with a procedural sky used for image-based lighting, fog, sun, particles and a 2 s blend on every committed hazard change; the theme change is an ordinary validated patch, so players, inventory, score, connections and version history survive it (docs/ACCEPTANCE.md, 15 of 15 checks). Biome-driven themes for frost, desert and night are in progress and not yet verified.
 - Post pipeline: bloom, ACES tone mapping, FXAA, MSAA, SSAO, god rays, glow and PCF shadows; Q toggles a low-quality mode, C toggles the debug camera; a cinematic follow camera frames both players.
 - Minimal glass HUD with relic gems, objective and agent status; developer readouts behind the backquote key or ?debug=1; optional procedural ambient audio (off by default).
 
 ## Known limitations (2026-10-03)
 
 - The 10 s brief target is not met: 24 to 28 s warm on a quiet GPU when the first draft is valid, 2.4x to 2.8x over (docs/MODEL_SELECTION.md). Cold load adds 23.1 s. Under a contended GPU drafts took 58 to 214 s.
-- OpenClaw mode against the real server times out before any model call and is being diagnosed; every measured number so far comes from the direct harness, labelled `[direct]` in every report (packages/agent/SMOKE.md, BUILD_STATUS.md case 17).
-- qwen3.8:27b was never benchmarked: its pull failed once with a digest mismatch and is re-downloading (docs/MODEL_SELECTION.md section 6).
-- Session continuity with players (players kept, relics kept, reconnects across commits) is covered by integration tests but not yet measured in a live session: no controller was connected during the recorded runs.
+- Mode briefs are not measured yet: how often the agent maps a request to the intended mode, and how long a mode brief takes, will be recorded in docs/RESULTS.md "Game modes from one prompt". Until then only the relic-hunt briefs above are measured.
+- The OpenClaw path depends on a healthy Ollama daemon: at 13:24 CDT it timed out because the daemon had stopped answering chat requests; after the restart at 13:43 it committed (docs/RESULTS.md). Most direct-mode numbers predate that restart and are labelled `[direct]`.
+- qwen3.8:27b was never benchmarked: its first pull failed with a digest mismatch and the second pull was stopped when the daemon had to be restarted (docs/MODEL_SELECTION.md sections 6 and 9).
+- Session continuity with physical phones is not measured: the acceptance test and the integration tests use scripted WebSocket controllers; no phone joined during the session (BUILD_STATUS.md).
 - Two physical phones, the offline (egress-blocked) rehearsal and the demo recording are not done yet (docs/RUNBOOK.md, docs/SUBMISSION.md).
 - About half of first world drafts need a repair or fail: first-attempt validity 9 of 18 drafts, 15 of 18 within two retries (docs/MODEL_SELECTION.md 4.6); failure modes are invented ids, offsets written as world coordinates and truncated JSON (docs/MODEL_FAILURE_MODES.md).
 - Transport is plain HTTP and WebSocket on the team LAN; tokens could be replayed by anyone sniffing the LAN (docs/SECURITY_REVIEW.md). Team chat publishing is not wired (no credentials); reports stay local.
-- No Playwright browser tests; browser checks were manual.
+- No Playwright browser tests; browser checks were manual. Frame rate was observed only in a software-rendered browser pane (3 to 11 fps high quality, 30 to 36 low), not on the demo GPU (BUILD_STATUS.md).
 
 ## Honest measurements
 
-Benchmarks, prompt runs, latency samples and the model-output corpus live in `data/benchmarks/`, `data/prompt-runs/`, `data/latency/` and `tests/fixtures/corpus/`. Numbers quoted anywhere in docs come from those files; see BUILD_STATUS.md for what was and was not tested.
+Benchmarks, prompt runs, latency samples, acceptance records and the model-output corpus live in `data/benchmarks/`, `data/prompt-runs/`, `data/latency/`, `data/acceptance/` and `tests/fixtures/corpus/`. Numbers quoted anywhere in docs come from those files; see BUILD_STATUS.md for what was and was not tested.
