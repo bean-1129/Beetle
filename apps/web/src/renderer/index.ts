@@ -12,6 +12,7 @@ import { DefaultRenderingPipeline } from '@babylonjs/core/PostProcesses/RenderPi
 import { SSAO2RenderingPipeline } from '@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/ssao2RenderingPipeline';
 import { VolumetricLightScatteringPostProcess } from '@babylonjs/core/PostProcesses/volumetricLightScatteringPostProcess';
 import { ImageProcessingConfiguration } from '@babylonjs/core/Materials/imageProcessingConfiguration';
+import { ColorCurves } from '@babylonjs/core/Materials/colorCurves';
 import { GlowLayer } from '@babylonjs/core/Layers/glowLayer';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
 import { CreateGround } from '@babylonjs/core/Meshes/Builders/groundBuilder';
@@ -20,15 +21,15 @@ import { Color3, Color4 } from '@babylonjs/core/Maths/math.color';
 import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { Node } from '@babylonjs/core/node';
 import { GEOMETRY, SIMULATION } from '@beetle/contracts';
-import type { PlayerView, TickMessage, WorldMessage, WorldSpec } from '@beetle/contracts';
+import type { MarkerMessage, ObjectiveState, PlayerView, TickMessage, WorldMessage, WorldSpec } from '@beetle/contracts';
 import { createMaterials } from './materials.ts';
-import { createEnvironment, themeForHazard, type ThemeName } from './environment.ts';
+import { createEnvironment, themeFor, type ThemeName } from './environment.ts';
 import { createParticles } from './particles.ts';
 import { createCameras, type CameraMode } from './camera.ts';
 import * as fx from './effects.ts';
 import {
-  buildBridge, buildDecoration, buildGate, buildIsland, buildPlayer, buildRelic,
-  type Built, type GateBuilt, type IslandBuilt, type PlayerBuilt, type RelicBuilt,
+  buildBridge, buildDecoration, buildGate, buildIsland, buildPlayer, buildRelic, createMarkerPool,
+  type Built, type BridgeBuilt, type GateBuilt, type HoldArc, type IslandBuilt, type PlayerBuilt, type RelicBuilt,
 } from './builders.ts';
 
 export type Quality = 'high' | 'low';
@@ -40,6 +41,8 @@ export type RendererStats = {
 export type BeetleRenderer = {
   applyWorld: (msg: WorldMessage) => void;
   applyTick: (tick: TickMessage) => void;
+  /** Team beacon from a player ping: a light column and pulsing ring at (x, 0, z) until `until` (server clock). */
+  applyMarker: (m: MarkerMessage) => void;
   stats: () => RendererStats;
   resize: () => void;
   dispose: () => void;
@@ -62,6 +65,7 @@ type PlayerEntry = {
   status: PlayerView['status'];
   statusSince: number;
   connected: boolean;
+  flags: Pick<PlayerView, 'sprinting' | 'slow' | 'emote'>;
 };
 
 type Effects = {
@@ -146,6 +150,9 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
   pipeline.imageProcessing.vignetteWeight = 1.6;
   pipeline.imageProcessing.vignetteStretch = 0.5;
   pipeline.imageProcessing.vignetteColor = new Color4(0.02, 0.02, 0.04, 0);
+  const curves = new ColorCurves();
+  pipeline.imageProcessing.colorCurves = curves;
+  pipeline.imageProcessing.colorCurvesEnabled = false;
   pipeline.samples = msaa;
   try { godRays.samples = msaa; } catch { /* not all targets support multisampled post-process textures */ }
 
@@ -199,11 +206,39 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
     ssao.totalStrength = live.ssaoStrength;
   }
 
+  // ---- mode overlays on the post pipeline: time-trial urgency (red vignette pulse) and lost (desaturate) ----
+  let urgency = 0;      // smoothed 0..1
+  let urgencyOn = false;
+  let desat = 0;        // smoothed 0..1
+  let lostOn = false;
+  const vignetteBase = new Color4(0.02, 0.02, 0.04, 0);
+  const vignetteRed = new Color4(0.5, 0.02, 0.02, 0);
+  function applyModePost(now: number, dtMs: number) {
+    const k = Math.min(1, dtMs / 300);
+    const uTarget = urgencyOn ? 1 : 0;
+    const dTarget = lostOn ? 1 : 0;
+    if (Math.abs(uTarget - urgency) < 0.002 && Math.abs(dTarget - desat) < 0.002 && urgency < 0.002 && desat < 0.002) return;
+    urgency += (uTarget - urgency) * k;
+    desat += (dTarget - desat) * k;
+    const pulse = 0.5 + 0.5 * Math.sin(now / 160);
+    const ip = pipeline.imageProcessing;
+    ip.vignetteWeight = env.live.vignetteWeight + urgency * (0.8 + 0.9 * pulse);
+    const red = urgency * (0.55 + 0.45 * pulse);
+    ip.vignetteColor = new Color4(
+      vignetteBase.r + (vignetteRed.r - vignetteBase.r) * red, vignetteBase.g + (vignetteRed.g - vignetteBase.g) * red,
+      vignetteBase.b + (vignetteRed.b - vignetteBase.b) * red, 0,
+    );
+    ip.colorCurvesEnabled = desat > 0.01;
+    curves.globalSaturation = -40 * desat;
+    curves.globalExposure = -8 * desat;
+  }
+
   // ---- world objects, diffed by id ----
   const entries = new Map<string, Entry>();
   let gateEntry: { json: string; built: GateBuilt } | null = null;
   const relicEntries = new Map<string, RelicBuilt>();
   const islandEntries = new Map<string, IslandBuilt>();
+  const bridgeEntries = new Map<string, BridgeBuilt>();
   const nodesById = new Map<string, Node>();
   let spec: WorldSpec | null = null;
   let worldVersion = -1;
@@ -263,7 +298,11 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
     for (const bridge of s.bridges) {
       const key = `bridge:${bridge.id}`;
       wanted.add(key);
-      sync(key, bridge.id, JSON.stringify(bridge), () => buildBridge(scene, mats, bridge));
+      sync(key, bridge.id, JSON.stringify(bridge), () => {
+        const built = buildBridge(scene, mats, bridge);
+        bridgeEntries.set(bridge.id, built);
+        return built;
+      });
     }
     for (const deco of s.decorations) {
       const key = `deco:${deco.id}`;
@@ -301,6 +340,7 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
       changedIds.push(id);
       if (key.startsWith('relic:')) relicEntries.delete(id);
       if (key.startsWith('island:')) islandEntries.delete(id);
+      if (key.startsWith('bridge:')) bridgeEntries.delete(id);
     }
 
     // gate: rebuilt only when its definition changes, state comes from ticks
@@ -322,13 +362,14 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
       }
     }
 
-    // hazard: material/theme blend only, never a mesh change
-    hazardPlane.unfreezeWorldMatrix();
-    hazardPlane.position.y = s.hazard.planeElevation;
-    hazardPlane.freezeWorldMatrix();
+    // hazard: material/theme blend only, never a mesh change. The plane height follows the survival objective.
+    hazardBase = s.hazard.planeElevation;
+    if (!lastTick?.objective || lastTick.objective.hazardElevation === undefined) hazardTarget = hazardBase;
+    if (hazardY === null) { hazardY = hazardTarget; placeHazard(hazardY); }
     mats.setHazardIslands(s);
     particles.setBounds(s);
-    const theme = themeForHazard(s.hazard.kind);
+    particles.setHazardY(hazardY);
+    const theme = themeFor(s.biome, s.hazard.kind);
     if (theme !== env.theme) {
       env.setTheme(theme, now);
       effects.onThemeChange?.(theme);
@@ -340,6 +381,61 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
       env.pulseLight(now);
     }
     effects.onWorldApplied?.(changedIds, nodesById, msg.reason);
+  }
+
+  // ---- hazard plane height (survival rise) ----
+  let hazardBase: number = GEOMETRY.hazardPlaneElevation;
+  let hazardTarget: number = GEOMETRY.hazardPlaneElevation;
+  let hazardY: number | null = null;
+  function placeHazard(y: number) {
+    hazardPlane.unfreezeWorldMatrix();
+    hazardPlane.position.y = y;
+    hazardPlane.freezeWorldMatrix();
+    for (const isl of islandEntries.values()) isl.setHazardY(y);
+    particles.setHazardY(y);
+  }
+
+  // ---- mode visuals ----
+  let objective: ObjectiveState | null = null;
+  let holdShown = false;
+  function applyObjective(tick: TickMessage) {
+    const o = tick.objective ?? null;
+    objective = o;
+    const kind = o?.kind ?? spec?.mode?.kind ?? 'relic_hunt';
+    // checkpoint race: the next relic gets the halo and beam, the others dim
+    const next = kind === 'checkpoint_race' ? (o?.nextCheckpointId ?? null) : null;
+    for (const [id, relic] of relicEntries) relic.setEmphasis(next ? (id === next ? 1 : -1) : 0);
+    // king of the hill: per-player arcs on the ground ring
+    if (kind === 'king_of_the_hill' && o?.holdSec && gateEntry) {
+      const target = Math.max(0.001, o.holdTarget ?? 1);
+      const arcs: HoldArc[] = [...(tick.players ?? [])]
+        .filter((p) => p && typeof p.id === 'string')
+        .sort((a, b) => a.slot - b.slot)
+        .map((p) => ({ color: p.color, frac: (o.holdSec?.[p.id] ?? 0) / target }));
+      gateEntry.built.setHold(arcs);
+      holdShown = true;
+    } else if (holdShown) {
+      gateEntry?.built.setHold(null);
+      holdShown = false;
+    }
+    // survival: the hazard plane rises toward the objective elevation
+    hazardTarget = kind === 'survival' && typeof o?.hazardElevation === 'number' && Number.isFinite(o.hazardElevation) ? o.hazardElevation : hazardBase;
+    // timers: urgency under ten seconds, desaturate when lost
+    urgencyOn = (kind === 'time_trial' || kind === 'survival') && typeof o?.remainingSec === 'number' && o.remainingSec < 10 && !o.lost;
+    lostOn = !!o?.lost;
+  }
+
+  // ---- team beacons ----
+  const markers = createMarkerPool(scene, 6);
+  let serverOffsetMs: number | null = null; // serverMs - performance.now(), from ticks
+  function applyMarker(m: MarkerMessage) {
+    if (!m || !Number.isFinite(m.x) || !Number.isFinite(m.z)) return;
+    const now = performance.now();
+    let untilLocal: number;
+    if (serverOffsetMs !== null && Number.isFinite(m.until)) untilLocal = m.until - serverOffsetMs;
+    else if (Number.isFinite(m.until) && m.until > Date.now() - 60_000 && m.until < Date.now() + 120_000) untilLocal = now + (m.until - Date.now());
+    else untilLocal = now + 6000;
+    markers.spawn(m.x, m.z, typeof m.color === 'string' ? m.color : '#ffd27f', Math.min(now + 60_000, untilLocal));
   }
 
   // ---- players ----
@@ -361,6 +457,7 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
     }
     lastTick = tick;
     lastTickAt = now;
+    if (Number.isFinite(tick.serverMs)) serverOffsetMs = tick.serverMs - now;
     const seen = new Set<string>();
     for (const p of tick.players ?? []) {
       if (!p || typeof p.id !== 'string') continue;
@@ -378,7 +475,7 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
         const built = buildPlayer(scene, mats, p);
         for (const c of built.casters) shadows.addShadowCaster(c, true);
         const s = sampleOf(p, now);
-        entry = { built, json: staticJson, prev: { ...s, t: now - tickIntervalMs }, next: s, status: p.status, statusSince: now, connected: p.connected };
+        entry = { built, json: staticJson, prev: { ...s, t: now - tickIntervalMs }, next: s, status: p.status, statusSince: now, connected: p.connected, flags: { sprinting: p.sprinting, slow: p.slow, emote: p.emote } };
         built.root.position.set(p.x, p.y, p.z);
         players.set(p.id, entry);
         nodesById.set(p.id, built.root);
@@ -391,6 +488,7 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
       }
       if (entry.status !== p.status) { entry.status = p.status; entry.statusSince = now; }
       entry.connected = p.connected;
+      entry.flags.sprinting = p.sprinting; entry.flags.slow = p.slow; entry.flags.emote = p.emote;
       const speed = Math.hypot(Number.isFinite(p.vx) ? p.vx : 0, Number.isFinite(p.vz) ? p.vz : 0);
       effects.onPlayerUpdate?.(p.id, p, speed, gapMs);
     }
@@ -406,6 +504,7 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
       relic.root.setEnabled(state !== 'collected');
     }
     gateEntry?.built.setUnlocked(!!tick.gate?.unlocked);
+    applyObjective(tick);
   }
 
   // ---- per frame ----
@@ -446,7 +545,7 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
       built.label.position.set(x, y + 2.95, z);
       // interpolated ground speed in m/s drives the walk cycle
       const speed = span > 0 ? (Math.hypot(next.x - prev.x, next.z - prev.z) * 1000) / span : 0;
-      built.animate(now, speed, facing, entry.status);
+      built.animate(now, speed, facing, entry.status, entry.flags);
       if (entry.connected && entry.status !== 'disconnected') cameras.addPlayer(x, Math.max(y, 0), z);
     }
 
@@ -461,15 +560,33 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
       cam.target.z + cam.radius * Math.sin(cam.alpha) * sb,
     );
     if (env.update(now, camPos)) applyThemeToPost();
+    applyModePost(now, dt);
     particles.update(env.live);
     mats.animateHazard(now);
+
+    // survival: the hazard plane eases toward the objective height; steam at the skirts while it moves, and
+    // bridges darken and hiss once the plane is above -1.0 m
+    if (hazardY !== null) {
+      const diff = hazardTarget - hazardY;
+      if (Math.abs(diff) > 0.0015) {
+        hazardY += diff * Math.min(1, dt / 600);
+        placeHazard(hazardY);
+      }
+      const raised = Math.max(0, hazardY - hazardBase);
+      const moving = Math.min(1, Math.abs(diff) * 3);
+      const submerged = hazardY > -1.0 ? Math.min(1, 0.35 + (hazardY + 1.0) * 2.5) : 0;
+      particles.setSteam(Math.min(1, moving + (raised > 0.05 ? 0.35 : 0) + submerged * 0.5), submerged > 0);
+      for (const b of bridgeEntries.values()) b.setSubmerged(submerged);
+    }
 
     // island crust rings are enabled by the geometry theme callback (setGeometryTheme), not forced here
     for (const relic of relicEntries.values()) {
       relic.gem.rotation.y += dt * 0.0015;
       relic.gem.position.y = relic.baseY + Math.sin(now / 600 + relic.phase) * 0.15;
+      relic.animate(now, dt);
     }
     gateEntry?.built.animate(now, dt);
+    markers.update(now);
   });
 
   engine.runRenderLoop(() => {
@@ -511,16 +628,23 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
     engine.stopRenderLoop();
     effects.dispose?.();
     cameras.dispose();
+    markers.dispose();
     particles.dispose();
     env.dispose();
     scene.dispose();
     engine.dispose();
   }
 
-  return {
-    applyWorld, applyTick, stats, resize, dispose, setQuality, setCameraMode: cameras.setMode, setTheme,
+  const api: BeetleRenderer = {
+    applyWorld, applyTick, applyMarker, stats, resize, dispose, setQuality, setCameraMode: cameras.setMode, setTheme,
     debug: { engine, scene, get camera() { return cameras.active; } },
   };
+  // console hook: window.__beetle.renderer.applyMarker({ type: 'marker', playerId, color, x, z, until })
+  if (typeof window !== 'undefined') {
+    const w = window as unknown as { __beetle?: Record<string, unknown> };
+    w.__beetle = { ...(w.__beetle ?? {}), renderer: api };
+  }
+  return api;
 }
 
 function shortestAngle(fromDeg: number, toDeg: number): number {

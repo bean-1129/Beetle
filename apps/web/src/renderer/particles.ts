@@ -30,7 +30,7 @@ function makeSoftCircle(scene: Scene): DynamicTexture {
   return tex;
 }
 
-export type ParticleWeights = { fireflies: number; pollen: number; embers: number; ash: number };
+export type ParticleWeights = { fireflies: number; pollen: number; embers: number; ash: number; snow: number; shimmer: number };
 export type Particles = ReturnType<typeof createParticles>;
 
 type Sys = { ps: ParticleSystem; baseRate: number; running: boolean };
@@ -113,7 +113,71 @@ export function createParticles(scene: Scene) {
     ps.addColorGradient(1, new Color4(0.2, 0.17, 0.16, 0));
   }
 
-  const all: Record<keyof ParticleWeights, Sys> = { fireflies, pollen, embers, ash };
+  // --- frost: snow drifting down over the islands ---
+  const snow = make('fx:snow', 420, ParticleSystem.BLENDMODE_STANDARD, 70);
+  {
+    const ps = snow.ps;
+    ps.minSize = 0.06; ps.maxSize = 0.14;
+    ps.minLifeTime = 9; ps.maxLifeTime = 13;
+    ps.minEmitPower = 0.3; ps.maxEmitPower = 0.7;
+    ps.direction1 = new Vector3(-0.35, -1, -0.2); ps.direction2 = new Vector3(0.35, -0.7, 0.2);
+    ps.minEmitBox = new Vector3(-30, 10, -30); ps.maxEmitBox = new Vector3(30, 16, 30);
+    ps.gravity = new Vector3(0, -0.1, 0);
+    ps.addColorGradient(0, new Color4(1, 1, 1, 0));
+    ps.addColorGradient(0.1, new Color4(0.98, 0.99, 1, 0.9));
+    ps.addColorGradient(0.85, new Color4(0.95, 0.97, 1, 0.8));
+    ps.addColorGradient(1, new Color4(0.95, 0.97, 1, 0));
+    ps.minAngularSpeed = -0.5; ps.maxAngularSpeed = 0.5;
+  }
+  // --- desert: sparse heat shimmer motes rising off the ground (additive, nearly transparent) ---
+  const shimmer = make('fx:shimmer', 70, ParticleSystem.BLENDMODE_ADD, 9);
+  {
+    const ps = shimmer.ps;
+    ps.minSize = 0.4; ps.maxSize = 0.9;
+    ps.minLifeTime = 2.5; ps.maxLifeTime = 4.5;
+    ps.minEmitPower = 0.25; ps.maxEmitPower = 0.6;
+    ps.direction1 = new Vector3(-0.1, 1, -0.1); ps.direction2 = new Vector3(0.1, 1, 0.1);
+    ps.minEmitBox = new Vector3(-20, 0.1, -20); ps.maxEmitBox = new Vector3(20, 0.6, 20);
+    ps.gravity = new Vector3(0, 0.05, 0);
+    ps.addColorGradient(0, new Color4(1, 0.95, 0.8, 0));
+    ps.addColorGradient(0.4, new Color4(1, 0.95, 0.8, 0.07));
+    ps.addColorGradient(1, new Color4(1, 0.9, 0.75, 0));
+  }
+  // --- survival: steam where a rising hazard meets island skirts and submerged bridge decks ---
+  const steam = make('fx:steam', 220, ParticleSystem.BLENDMODE_STANDARD, 60);
+  type Segment = { x0: number; z0: number; x1: number; z1: number };
+  const rims: { x: number; z: number; r: number }[] = [];
+  const decks: Segment[] = [];
+  let steamY = -2.5;
+  {
+    const ps = steam.ps;
+    ps.minSize = 0.5; ps.maxSize = 1.3;
+    ps.minLifeTime = 1.4; ps.maxLifeTime = 2.6;
+    ps.minEmitPower = 0.5; ps.maxEmitPower = 1.1;
+    ps.direction1 = new Vector3(-0.2, 1, -0.2); ps.direction2 = new Vector3(0.2, 1.4, 0.2);
+    ps.gravity = new Vector3(0, 0.2, 0);
+    ps.addColorGradient(0, new Color4(0.9, 0.92, 0.95, 0));
+    ps.addColorGradient(0.25, new Color4(0.9, 0.92, 0.95, 0.35));
+    ps.addColorGradient(1, new Color4(0.85, 0.88, 0.92, 0));
+    ps.addSizeGradient(0, 0.5); ps.addSizeGradient(1, 1.6);
+    ps.startPositionFunction = (_w, pos) => {
+      const n = rims.length + decks.length;
+      if (n === 0) { pos.set(0, steamY, 0); return; }
+      const k = Math.floor(Math.random() * n);
+      if (k < rims.length) {
+        const rim = rims[k];
+        const a = Math.random() * Math.PI * 2;
+        const d = rim.r + 0.3 + Math.random() * 1.2;
+        pos.set(rim.x + Math.cos(a) * d, steamY, rim.z + Math.sin(a) * d);
+      } else {
+        const sgm = decks[k - rims.length];
+        const t = Math.random();
+        pos.set(sgm.x0 + (sgm.x1 - sgm.x0) * t + (Math.random() - 0.5) * 1.2, steamY, sgm.z0 + (sgm.z1 - sgm.z0) * t + (Math.random() - 0.5) * 1.2);
+      }
+    };
+  }
+
+  const all: Record<keyof ParticleWeights, Sys> = { fireflies, pollen, embers, ash, snow, shimmer };
 
   /** Emitter boxes follow the islands' bounding box; embers hug the hazard plane. */
   function setBounds(spec: WorldSpec) {
@@ -128,6 +192,28 @@ export function createParticles(scene: Scene) {
     pollen.ps.minEmitBox.set(minX, 0.8, minZ); pollen.ps.maxEmitBox.set(maxX, 4, maxZ);
     embers.ps.minEmitBox.set(minX - 8, hy + 0.1, minZ - 8); embers.ps.maxEmitBox.set(maxX + 8, hy + 0.4, maxZ + 8);
     ash.ps.minEmitBox.set(minX - 10, 16, minZ - 10); ash.ps.maxEmitBox.set(maxX + 10, 24, maxZ + 10);
+    snow.ps.minEmitBox.set(minX - 6, 10, minZ - 6); snow.ps.maxEmitBox.set(maxX + 6, 16, maxZ + 6);
+    shimmer.ps.minEmitBox.set(minX, 0.1, minZ); shimmer.ps.maxEmitBox.set(maxX, 0.6, maxZ);
+    rims.length = 0;
+    for (const i of spec.islands) rims.push({ x: i.center.x, z: i.center.z, r: i.radius + 0.8 });
+    decks.length = 0;
+    for (const b of spec.bridges) decks.push({ x0: b.endpoints[0].point.x, z0: b.endpoints[0].point.z, x1: b.endpoints[1].point.x, z1: b.endpoints[1].point.z });
+    setHazardY(hy);
+  }
+
+  /** Live hazard plane height (survival rise): embers and steam follow it. */
+  function setHazardY(y: number) {
+    steamY = y + 0.05;
+    const e = embers.ps;
+    e.minEmitBox.y = y + 0.1; e.maxEmitBox.y = y + 0.4;
+  }
+
+  /** Steam intensity 0..1 (rim steam while the hazard rises; bridges submerge and hiss). */
+  function setSteam(weight: number, bridgesSubmerged: boolean) {
+    const w = Math.max(0, Math.min(1, weight)) * qualityScale * (bridgesSubmerged ? 1.4 : 1);
+    steam.ps.emitRate = steam.baseRate * w;
+    if (w > 0.01) { if (!steam.running) { steam.ps.start(); steam.running = true; } }
+    else if (steam.running && steam.ps.getActiveCount() === 0) { steam.ps.stop(); steam.running = false; }
   }
 
   /** Weights 0..1 per preset (blended by the environment). Emission fades; live particles age out. */
@@ -148,8 +234,9 @@ export function createParticles(scene: Scene) {
 
   function dispose() {
     for (const s of Object.values(all)) s.ps.dispose(false);
+    steam.ps.dispose(false);
     sprite.dispose();
   }
 
-  return { setBounds, update, setQuality, dispose, systems: all };
+  return { setBounds, setHazardY, setSteam, update, setQuality, dispose, systems: all, steam: steam.ps };
 }

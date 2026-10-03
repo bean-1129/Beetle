@@ -13,22 +13,22 @@ import type { Mesh } from '@babylonjs/core/Meshes/mesh';
 import type { DirectionalLight } from '@babylonjs/core/Lights/directionalLight';
 import type { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight';
 import * as geo from './geometry-materials.ts';
-import { THEMES, type ThemeName, type ThemeParams, themeForHazard } from './palette.ts';
+import { THEMES, THEME_NAMES, type BiomeName, type ThemeName, type ThemeParams, themeForHazard, themeFor, lavaOf, biomeOf } from './palette.ts';
 import type { Materials } from './materials.ts';
 
-export { themeForHazard };
-export type { ThemeName, ThemeParams };
+export { themeForHazard, themeFor, lavaOf, biomeOf, THEME_NAMES };
+export type { ThemeName, ThemeParams, BiomeName };
 
 export const THEME_BLEND_MS = 2000;
 
 const COLOR_KEYS = [
   'skyZenith', 'skyHorizon', 'skyGround', 'sunColor', 'cloudColor', 'cloudUnderGlow', 'hemiColor', 'hemiGround', 'ambient', 'clearColor',
-  'fogColor', 'godRayColor',
+  'fogColor', 'godRayColor', 'waterShallow', 'waterDeep',
 ] as const;
 const NUM_KEYS = [
   'sunDiscSize', 'hazeStrength', 'cloudCover', 'envIntensity', 'sunIntensity', 'hemiIntensity', 'fogDensity', 'exposure', 'contrast',
   'bloomWeight', 'glowIntensity', 'vignetteWeight', 'godRayDensity', 'godRayWeight', 'ssaoStrength', 'hazardMix', 'fireflies', 'pollen',
-  'embers', 'ash',
+  'embers', 'ash', 'moon', 'stars', 'lightBoost', 'snow', 'shimmer',
 ] as const;
 
 function cloneParams(p: ThemeParams): ThemeParams {
@@ -147,13 +147,13 @@ export function createEnvironment(scene: Scene, mats: Materials, sun: Directiona
   const SUN_DISTANCE = 420;
 
   // ---- IBL cube: baked once per theme, blended on the GPU-side texture while a theme change runs ----
-  const faceSets: Record<ThemeName, Uint8Array[]> = {
-    serene: Array.from({ length: 6 }, () => new Uint8Array(FACE_BYTES)),
-    volcanic: Array.from({ length: 6 }, () => new Uint8Array(FACE_BYTES)),
-  };
-  bakeSkyFaces(THEMES.serene, faceSets.serene);
-  bakeSkyFaces(THEMES.volcanic, faceSets.volcanic);
-  const shSets: Record<ThemeName, SphericalHarmonics> = { serene: harmonicsFor(faceSets.serene), volcanic: harmonicsFor(faceSets.volcanic) };
+  const faceSets = {} as Record<ThemeName, Uint8Array[]>;
+  const shSets = {} as Record<ThemeName, SphericalHarmonics>;
+  for (const name of THEME_NAMES) {
+    faceSets[name] = Array.from({ length: 6 }, () => new Uint8Array(FACE_BYTES));
+    bakeSkyFaces(THEMES[name], faceSets[name]);
+    shSets[name] = harmonicsFor(faceSets[name]);
+  }
   const liveFaces = Array.from({ length: 6 }, (_, i) => new Uint8Array(faceSets.serene[i]));
   const liveSH = new SphericalHarmonics();
   const liveSP = new SphericalPolynomial();
@@ -244,6 +244,7 @@ export function createEnvironment(scene: Scene, mats: Materials, sun: Directiona
       cameraPos, sunDir: sunDirV, sunColor: live.sunColor, skyZenith: live.skyZenith, skyHorizon: live.skyHorizon, skyGround: live.skyGround,
       fogColor: live.fogColor, fogDensity: live.fogDensity, sunSize: live.sunDiscSize, haze: live.hazeStrength,
       cloudColor: live.cloudColor, cloudUnderGlow: live.cloudUnderGlow, cloudCover: live.cloudCover,
+      waterShallow: live.waterShallow, waterDeep: live.waterDeep, moon: live.moon, stars: live.stars,
     });
     mats.setHazardMix(live.hazardMix);
     sunMat.emissiveColor.copyFrom(live.sunColor);
@@ -299,6 +300,8 @@ export function createEnvironment(scene: Scene, mats: Materials, sun: Directiona
   const env = {
     live, setTheme, update, applyTheme, pulseLight, dispose, envCube, skyDome, cloudSheet, sunDisc,
     get theme() { return current; },
+    get biome(): BiomeName { return biomeOf(current); },
+    get lava() { return lavaOf(current); },
     get blend() { return blendT; },
     get blending() { return blendStart >= 0; },
   };

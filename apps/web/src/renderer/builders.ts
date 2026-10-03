@@ -17,6 +17,7 @@ import { CreateCapsule } from '@babylonjs/core/Meshes/Builders/capsuleBuilder';
 import { CreatePlane } from '@babylonjs/core/Meshes/Builders/planeBuilder';
 import { CreateTorus } from '@babylonjs/core/Meshes/Builders/torusBuilder';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
+import type { PBRMaterial } from '@babylonjs/core/Materials/PBR/pbrMaterial';
 import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTexture';
 import { PointLight } from '@babylonjs/core/Lights/pointLight';
 import { ParticleSystem } from '@babylonjs/core/Particles/particleSystem';
@@ -26,7 +27,8 @@ import { VertexBuffer } from '@babylonjs/core/Buffers/buffer';
 import type { Scene } from '@babylonjs/core/scene';
 import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh';
 import type { Material } from '@babylonjs/core/Materials/material';
-import { GEOMETRY } from '@beetle/contracts';
+import '@babylonjs/core/Rendering/outlineRenderer'; // side-effect: mesh.renderOverlay for submerged bridges
+import { GEOMETRY, DECORATION_RADIUS } from '@beetle/contracts';
 import type { Bridge, Decoration, Gate, Island, PlayerView, Relic } from '@beetle/contracts';
 import type { Materials } from './materials.ts';
 import { PALETTE, hash01 } from './palette.ts';
@@ -205,7 +207,12 @@ export function buildIsland(scene: Scene, _mats: Materials, island: Island): Isl
 
 // ---------------------------------------------------------------- bridges
 
-export function buildBridge(scene: Scene, _mats: Materials, bridge: Bridge): Built {
+export type BridgeBuilt = Built & {
+  /** 0..1: how far the deck sits under a risen hazard plane (survival). Darkens the deck with an overlay. */
+  setSubmerged: (k: number) => void;
+};
+
+export function buildBridge(scene: Scene, _mats: Materials, bridge: Bridge): BridgeBuilt {
   const gm = geoMaterials(scene);
   const [a, b] = bridge.endpoints;
   const dx = b.point.x - a.point.x;
@@ -310,7 +317,20 @@ export function buildBridge(scene: Scene, _mats: Materials, bridge: Bridge): Bui
   const glass = merge(n('glass'), glassParts, gm.lanternGlass, root);
   freeze(posts, ropes, caps, glass);
   casters.push(posts);
-  return { root, casters, receivers: [plankA, plankB], dispose: disposeRoot(root) };
+  const overlayed = [plankA, plankB, beams, posts, ropes];
+  const dark = new Color3(0.03, 0.08, 0.12);
+  let submerged = 0;
+  function setSubmerged(k: number) {
+    const v = Math.max(0, Math.min(1, k));
+    if (Math.abs(v - submerged) < 0.004) return;
+    submerged = v;
+    for (const m of overlayed) {
+      m.renderOverlay = v > 0.01;
+      m.overlayColor = dark;
+      m.overlayAlpha = v * 0.6;
+    }
+  }
+  return { root, casters, receivers: [plankA, plankB], setSubmerged, dispose: disposeRoot(root) };
 }
 
 // ---------------------------------------------------------------- decorations
@@ -499,13 +519,204 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
       freeze(shrine, glow, halo);
       break;
     }
+    case 'tower': {
+      // stacked tapered stone drums, a crenellated top and a band of glowing arrow slits
+      const R = DECORATION_RADIUS.tower;
+      const drums: Mesh[] = [];
+      let y = 0;
+      const heights = [1.3, 1.2, 1.1];
+      for (let i = 0; i < heights.length; i++) {
+        const h = heights[i];
+        const db = (R * 2 - i * 0.3) * (i === 0 ? 1 : 0.92);
+        const drum = CreateCylinder(n(`drum${i}`), { height: h, diameterBottom: db, diameterTop: db - 0.22, tessellation: 18, subdivisions: 3 }, scene);
+        displaceByNoise(drum, 0.025, 3, nseed + i);
+        drum.position.y = y + h / 2;
+        drums.push(drum);
+        // a course ledge between drums
+        const ledge = CreateCylinder(n(`ledge${i}`), { height: 0.12, diameter: db + 0.08, tessellation: 18 }, scene);
+        ledge.position.y = y + h;
+        drums.push(ledge);
+        y += h;
+      }
+      const topD = R * 2 - 0.9;
+      const merlons = 8;
+      for (let i = 0; i < merlons; i++) {
+        const a = (i / merlons) * Math.PI * 2;
+        const m = CreateBox(n(`merlon${i}`), { width: 0.34, height: 0.4, depth: 0.26 }, scene);
+        m.position.set(Math.cos(a) * (topD / 2 - 0.1), y + 0.2, Math.sin(a) * (topD / 2 - 0.1));
+        m.rotation.y = -a;
+        drums.push(m);
+      }
+      const tower = merge(n('tower'), drums, gm.towerStone, root);
+      const slits = CreateCylinder(n('slits'), { height: 0.5, diameter: R * 2 - 0.3 + 0.02, tessellation: 18 }, scene);
+      slits.material = gm.towerWindow;
+      slits.position.y = 1.3 + 0.6;
+      slits.parent = root;
+      const halo = CreateSphere(n('halo'), { diameter: 2.2, segments: 8 }, scene);
+      halo.material = gm.halo;
+      halo.position.y = 1.9;
+      halo.scaling.y = 0.35;
+      halo.parent = root;
+      casters.push(tower);
+      freeze(tower, slits, halo);
+      break;
+    }
+    case 'ruin': {
+      // broken columns of different heights, a fallen lintel and moss creeping over the bases
+      const parts: Mesh[] = [];
+      const mossParts: Mesh[] = [];
+      const cols = [[-0.6, -0.4, 1.9], [0.65, -0.45, 1.1], [0.1, 0.6, 0.5]] as const;
+      for (let i = 0; i < cols.length; i++) {
+        const [cx, cz, h] = cols[i];
+        const base = CreateBox(n(`rb${i}`), { width: 0.7, height: 0.16, depth: 0.7 }, scene);
+        base.position.set(cx, 0.08, cz);
+        parts.push(base);
+        const shaft = CreateCylinder(n(`rs${i}`), { height: h, diameterBottom: 0.5, diameterTop: 0.44, tessellation: 12, subdivisions: 4 }, scene);
+        displaceByNoise(shaft, 0.03, 4, nseed + i);
+        // jagged break: push the top ring vertices up and down
+        {
+          const pp = shaft.getVerticesData(VertexBuffer.PositionKind)!;
+          for (let k = 0; k < pp.length; k += 3) if (pp[k + 1] > h / 2 - 0.01) pp[k + 1] += (rng() - 0.5) * 0.3;
+          shaft.updateVerticesData(VertexBuffer.PositionKind, pp, false, false);
+        }
+        shaft.position.set(cx, 0.16 + h / 2, cz);
+        shaft.rotation.set((rng() - 0.5) * 0.06, rng() * Math.PI, (rng() - 0.5) * 0.06);
+        parts.push(shaft);
+        const moss = CreateSphere(n(`moss${i}`), { diameter: 0.9, segments: 6 }, scene);
+        moss.position.set(cx + 0.15, 0.1, cz - 0.1);
+        moss.scaling.set(1, 0.3, 0.8);
+        mossParts.push(moss);
+      }
+      const lintel = CreateBox(n('lintel'), { width: 1.9, height: 0.34, depth: 0.42 }, scene);
+      displaceByNoise(lintel, 0.02, 3, nseed + 9);
+      lintel.position.set(0.1, 0.3, 0.1);
+      lintel.rotation.set(0.12, 0.5 + v, 0.18);
+      parts.push(lintel);
+      for (let k = 0; k < 4; k++) {
+        const chunk = CreateIcoSphere(n(`chunk${k}`), { radius: 0.14 + rng() * 0.12, subdivisions: 1, flat: true }, scene);
+        chunk.position.set((rng() - 0.5) * 1.8, 0.08, (rng() - 0.5) * 1.8);
+        chunk.scaling.y = 0.6;
+        parts.push(chunk);
+      }
+      const ruin = merge(n('ruin'), parts, gm.stone, root);
+      const mossM = merge(n('mossM'), mossParts, gm.moss, root);
+      casters.push(ruin);
+      freeze(ruin, mossM);
+      break;
+    }
+    case 'crystal': {
+      // a cluster of emissive shards growing out of a rock base, tinted per biome by the crystal material
+      const shards: Mesh[] = [];
+      const count = 5 + Math.floor(rng() * 3);
+      for (let i = 0; i < count; i++) {
+        const h = 0.7 + rng() * 1.1 * (i === 0 ? 1.3 : 1);
+        const d = 0.18 + rng() * 0.16;
+        const shard = CreateCylinder(n(`shard${i}`), { height: h, diameterBottom: d, diameterTop: 0.02, tessellation: 6 }, scene);
+        const a = rng() * Math.PI * 2;
+        const spread = i === 0 ? 0 : 0.12 + rng() * 0.35;
+        shard.position.set(Math.cos(a) * spread, h / 2 - 0.1, Math.sin(a) * spread);
+        shard.rotation.set(Math.cos(a) * (i === 0 ? 0.05 : 0.25 + rng() * 0.3), rng() * Math.PI, Math.sin(a) * (i === 0 ? 0.05 : 0.25 + rng() * 0.3));
+        shards.push(shard);
+      }
+      const cluster = merge(n('cluster'), shards, gm.crystal, root);
+      const base = CreateIcoSphere(n('base'), { radius: 0.5, subdivisions: 2, flat: true }, scene);
+      displaceByNoise(base, 0.1, 3, nseed);
+      base.material = gm.rock;
+      base.scaling.set(1.1, 0.45, 1.1);
+      base.position.y = 0.05;
+      base.parent = root;
+      const halo = CreateSphere(n('halo'), { diameter: 1.8, segments: 8 }, scene);
+      halo.material = gm.halo;
+      halo.position.y = 0.7;
+      halo.parent = root;
+      casters.push(cluster);
+      freeze(cluster, base, halo);
+      break;
+    }
+    case 'mushroom': {
+      // one tall cap with spots and two small ones; the cap glows softly at night
+      const stems: Mesh[] = [];
+      const caps: Mesh[] = [];
+      const gills: Mesh[] = [];
+      const specs = [[0, 0, 1], [0.42, 0.2, 0.5], [-0.3, 0.35, 0.4]] as const;
+      for (let i = 0; i < specs.length; i++) {
+        const [sx, sz, k] = specs[i];
+        const h = 0.9 * k + 0.1;
+        const stem = CreateCylinder(n(`stem${i}`), { height: h, diameterBottom: 0.3 * k + 0.06, diameterTop: 0.22 * k + 0.04, tessellation: 10, subdivisions: 3 }, scene);
+        displaceByNoise(stem, 0.01, 4, nseed + i);
+        stem.position.set(sx, h / 2, sz);
+        stem.rotation.set((rng() - 0.5) * 0.2, 0, (rng() - 0.5) * 0.2);
+        stems.push(stem);
+        const cap = CreateSphere(n(`cap${i}`), { diameter: 0.9 * k + 0.15, segments: 12, slice: 0.55 }, scene);
+        cap.position.set(sx, h - 0.05, sz);
+        cap.scaling.y = 0.7;
+        caps.push(cap);
+        const gill = CreateDisc(n(`gill${i}`), { radius: (0.9 * k + 0.15) / 2, tessellation: 16 }, scene);
+        gill.rotation.x = Math.PI / 2;
+        gill.position.set(sx, h - 0.06, sz);
+        gills.push(gill);
+      }
+      const stemM = merge(n('stems'), stems, gm.mushroomStem, root);
+      const capM = merge(n('caps'), caps, gm.mushroomCap, root);
+      const gillM = merge(n('gills'), gills, gm.mushroomStem, root);
+      const halo = CreateSphere(n('halo'), { diameter: 1.5, segments: 8 }, scene);
+      halo.material = gm.halo;
+      halo.position.y = 0.95;
+      halo.parent = root;
+      halo.visibility = 0;
+      casters.push(capM, stemM);
+      freeze(stemM, capM, gillM, halo);
+      extra.push(gm.onTheme((_v, w) => { halo.visibility = w.night; }));
+      break;
+    }
+    case 'statue': {
+      // two-step plinth and a stylised hooded figure, hands folded, head bowed
+      const parts: Mesh[] = [];
+      const p1 = CreateBox(n('p1'), { width: 1.3, height: 0.26, depth: 1.3 }, scene);
+      p1.position.y = 0.13;
+      const p2 = CreateBox(n('p2'), { width: 0.95, height: 0.3, depth: 0.95 }, scene);
+      p2.position.y = 0.41;
+      parts.push(p1, p2);
+      const robe = CreateCylinder(n('robe'), { height: 1.5, diameterBottom: 0.8, diameterTop: 0.42, tessellation: 14, subdivisions: 4 }, scene);
+      displaceByNoise(robe, 0.02, 5, nseed);
+      robe.position.y = 0.56 + 0.75;
+      parts.push(robe);
+      const shoulders = CreateSphere(n('shoulders'), { diameter: 0.6, segments: 10 }, scene);
+      shoulders.position.y = 2.02;
+      shoulders.scaling.set(1.1, 0.6, 0.9);
+      parts.push(shoulders);
+      const head = CreateSphere(n('head'), { diameter: 0.3, segments: 10 }, scene);
+      head.position.set(0, 2.24, 0.06);
+      parts.push(head);
+      const hood = CreateCylinder(n('hood'), { height: 0.5, diameterBottom: 0.5, diameterTop: 0.08, tessellation: 12 }, scene);
+      displaceByNoise(hood, 0.015, 5, nseed + 3);
+      hood.position.set(0, 2.42, -0.04);
+      hood.rotation.x = -0.35;
+      parts.push(hood);
+      for (const sx of [-1, 1]) {
+        const arm = segment(n(`arm${sx}`), new Vector3(sx * 0.3, 1.95, 0.05), new Vector3(sx * 0.08, 1.45, 0.26), 0.13, scene, 8);
+        parts.push(arm);
+      }
+      const hands = CreateSphere(n('hands'), { diameter: 0.22, segments: 8 }, scene);
+      hands.position.set(0, 1.42, 0.28);
+      parts.push(hands);
+      const statue = merge(n('statue'), parts, gm.statueStone, root);
+      casters.push(statue);
+      freeze(statue);
+      break;
+    }
   }
   return { root, casters, receivers: [], dispose: disposeRoot(root, extra) };
 }
 
 // ---------------------------------------------------------------- relics
 
-export type RelicBuilt = Built & { gem: Mesh; baseY: number; phase: number };
+export type RelicBuilt = Built & {
+  gem: Mesh; baseY: number; phase: number;
+  /** -1 dims the relic (not the current checkpoint), 0 is normal, 1 marks it as the next checkpoint (halo + beam). */
+  setEmphasis: (e: -1 | 0 | 1) => void;
+  animate: (now: number, dtMs: number) => void;
+};
 
 export function buildRelic(scene: Scene, _mats: Materials, relic: Relic, pos: { x: number; z: number }): RelicBuilt {
   const gm = geoMaterials(scene);
@@ -528,6 +739,16 @@ export function buildRelic(scene: Scene, _mats: Materials, relic: Relic, pos: { 
   halo.material = rm.halo;
   halo.parent = gem;
   halo.isPickable = false;
+  // vertical light beam for the checkpoint race: a tall additive cylinder, hidden until emphasised
+  const beamMat = gm.beam.clone(n('beamMat'));
+  beamMat.emissiveColor = rm.color.clone();
+  beamMat.alpha = 0;
+  const beam = CreateCylinder(n('beam'), { height: 16, diameterBottom: 0.9, diameterTop: 1.6, tessellation: 16 }, scene);
+  beam.material = beamMat;
+  beam.position.y = 8;
+  beam.parent = root;
+  beam.isPickable = false;
+  beam.setEnabled(false);
   // stone pedestal with a carved rim and a soft light pool on top
   const pedestal = CreateCylinder(n('pedestal'), { height: 0.26, diameterBottom: 1.1, diameterTop: 0.9, tessellation: 18 }, scene);
   displaceByNoise(pedestal, 0.012, 5, 311);
@@ -565,15 +786,41 @@ export function buildRelic(scene: Scene, _mats: Materials, relic: Relic, pos: { 
     if (on && !ps.isStarted()) ps.start();
     else if (!on && ps.isStarted()) ps.stop();
   });
+  let emphasis: -1 | 0 | 1 = 0;
+  let emph = 0; // smoothed -1..1
+  const baseRate = ps.emitRate;
+  function setEmphasis(e: -1 | 0 | 1) { emphasis = e; if (e > 0) beam.setEnabled(true); }
+  function animate(now: number, dtMs: number) {
+    const k = Math.min(1, dtMs / 350);
+    emph += (emphasis - emph) * k;
+    const up = Math.max(0, emph);
+    const down = Math.max(0, -emph);
+    const pulse = 0.5 + 0.5 * Math.sin(now / 260);
+    const hs = 1 + up * (0.6 + 0.5 * pulse);
+    halo.scaling.setAll(hs);
+    const vis = 1 - 0.55 * down;
+    gem.visibility = vis; core.visibility = vis; pool.visibility = vis;
+    halo.visibility = 1 - 0.8 * down;
+    ps.emitRate = baseRate * (1 - 0.8 * down) * (1 + 1.5 * up);
+    beamMat.alpha = up * (0.08 + 0.07 * pulse);
+    if (up < 0.01 && beam.isEnabled()) beam.setEnabled(false);
+    else if (up >= 0.01) { beam.rotation.y += dtMs * 0.0004; }
+  }
   return {
-    root, gem, baseY, phase: hash01(relic.id) * Math.PI * 2, casters: [gem], receivers: [],
-    dispose: disposeRoot(root, [() => { scene.onBeforeRenderObservable.remove(obs); ps.dispose(false); }]),
+    root, gem, baseY, phase: hash01(relic.id) * Math.PI * 2, casters: [gem], receivers: [], setEmphasis, animate,
+    dispose: disposeRoot(root, [() => { scene.onBeforeRenderObservable.remove(obs); ps.dispose(false); beamMat.dispose(); }]),
   };
 }
 
 // ---------------------------------------------------------------- gate
 
-export type GateBuilt = Built & { setUnlocked: (unlocked: boolean) => void; animate: (now: number, dtMs: number) => void };
+export type HoldArc = { color: string; frac: number };
+export type GateBuilt = Built & {
+  setUnlocked: (unlocked: boolean) => void;
+  animate: (now: number, dtMs: number) => void;
+  /** King of the hill: a glowing ring on the ground around the trigger that fills with per-player arcs. null hides it. */
+  setHold: (arcs: HoldArc[] | null) => void;
+};
 
 function makeFlame(name: string, scene: Scene, gm: GeoMaterials, emitter: Mesh): ParticleSystem {
   const ps = new ParticleSystem(name, 60, scene);
@@ -689,6 +936,66 @@ export function buildGate(scene: Scene, _mats: Materials, gate: Gate, pos: { x: 
   light.range = 14;
   light.parent = root;
 
+  // hold ring (king of the hill): a ground disc with a DynamicTexture ring, redrawn only when the arcs change
+  const RING_PX = 256;
+  let ringTex: DynamicTexture | null = null;
+  let ringMesh: Mesh | null = null;
+  let ringMat: StandardMaterial | null = null;
+  let ringKey = '';
+  function drawRing(arcs: HoldArc[]) {
+    if (!ringTex) {
+      ringTex = new DynamicTexture(n('holdTex'), { width: RING_PX, height: RING_PX }, scene, false);
+      ringTex.hasAlpha = true;
+      ringMat = new StandardMaterial(n('holdMat'), scene);
+      ringMat.diffuseTexture = ringTex;
+      ringMat.opacityTexture = ringTex;
+      ringMat.emissiveTexture = ringTex;
+      ringMat.emissiveColor = new Color3(1, 1, 1);
+      ringMat.disableLighting = true;
+      ringMat.backFaceCulling = false;
+      const rad = GEOMETRY.gateTriggerRadius + 0.45;
+      ringMesh = CreateDisc(n('holdRing'), { radius: rad, tessellation: 48 }, scene);
+      ringMesh.material = ringMat;
+      ringMesh.rotation.x = Math.PI / 2;
+      ringMesh.position.y = 0.035;
+      ringMesh.parent = root;
+      ringMesh.isPickable = false;
+    }
+    const ctx = ringTex.getContext() as CanvasRenderingContext2D;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, RING_PX, RING_PX);
+    const cx = RING_PX / 2; const cy = RING_PX / 2;
+    const rOuter = RING_PX * 0.47; const rInner = RING_PX * 0.37;
+    const rMid = (rOuter + rInner) / 2; const w = rOuter - rInner;
+    ctx.lineCap = 'butt';
+    ctx.lineWidth = w;
+    ctx.strokeStyle = 'rgba(255, 245, 220, 0.22)';
+    ctx.beginPath(); ctx.arc(cx, cy, rMid, 0, Math.PI * 2); ctx.stroke();
+    // per-player arcs grow from opposite sides so two players never overdraw each other
+    const nArcs = Math.max(1, arcs.length);
+    arcs.forEach((a, i) => {
+      const start = -Math.PI / 2 + (i / nArcs) * Math.PI * 2;
+      const span = Math.max(0, Math.min(1, a.frac)) * (Math.PI * 2) / nArcs;
+      if (span <= 0.001) return;
+      ctx.strokeStyle = /^#[0-9a-fA-F]{6}$/.test(a.color) ? a.color : '#ffd27f';
+      ctx.lineWidth = w * 0.8;
+      ctx.beginPath(); ctx.arc(cx, cy, rMid, start, start + span); ctx.stroke();
+    });
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255, 240, 200, 0.5)';
+    ctx.beginPath(); ctx.arc(cx, cy, rOuter, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, rInner, 0, Math.PI * 2); ctx.stroke();
+    ringTex.update(false);
+  }
+  function setHold(arcs: HoldArc[] | null) {
+    if (!arcs) { ringMesh?.setEnabled(false); ringKey = ''; return; }
+    const key = arcs.map((a) => `${a.color}:${Math.round(Math.max(0, Math.min(1, a.frac)) * 96)}`).join('|');
+    if (key === ringKey && ringMesh) { ringMesh.setEnabled(true); return; }
+    ringKey = key;
+    drawRing(arcs);
+    ringMesh?.setEnabled(true);
+  }
+
   const warm = Color3.FromHexString('#ffb050');
   let unlocked = false;
   let targetLift = 0;
@@ -723,8 +1030,8 @@ export function buildGate(scene: Scene, _mats: Materials, gate: Gate, pos: { x: 
     if (unlocked) keystone.rotation.y += dtMs * 0.0012;
   }
   return {
-    root, casters, receivers: [], setUnlocked, animate,
-    dispose: disposeRoot(root, [() => light.dispose(), () => { for (const f of flames) f.dispose(false); }, () => coneMat.dispose(), () => { stone.emissiveColor.set(0, 0, 0); }]),
+    root, casters, receivers: [], setUnlocked, animate, setHold,
+    dispose: disposeRoot(root, [() => light.dispose(), () => { for (const f of flames) f.dispose(false); }, () => coneMat.dispose(), () => { stone.emissiveColor.set(0, 0, 0); }, () => { ringTex?.dispose(); ringMat?.dispose(); }]),
   };
 }
 
@@ -737,8 +1044,11 @@ export type PlayerBuilt = {
   casters: Mesh[];
   setLabel: (text: string) => void;
   setVisibility: (v: number) => void;
-  /** Walk bob, lean, arm swing, cape sway, falling tumble; speed in m/s, called every frame by index.ts. */
-  animate: (nowMs: number, speed: number, facingDeg: number, status: PlayerView['status']) => void;
+  /**
+   * Walk bob, lean, arm swing, cape sway, falling tumble; speed in m/s, called every frame by index.ts.
+   * `view` (optional) carries the sprint / slow / emote flags of the latest tick.
+   */
+  animate: (nowMs: number, speed: number, facingDeg: number, status: PlayerView['status'], view?: Pick<PlayerView, 'sprinting' | 'slow' | 'emote'> | null) => void;
   dispose: () => void;
 };
 
@@ -747,79 +1057,148 @@ export function buildPlayer(scene: Scene, _mats: Materials, p: PlayerView): Play
   const n = (s: string) => `player:${p.id}:${s}`;
   const root = new TransformNode(`player:${p.id}`, scene);
   const pm = gm.playerMaterials(p.color);
-  const R = GEOMETRY.playerRadius * 0.95;
-  // rig: a pivot at the feet for lean/tumble, the body hangs under it
+  const parts: Mesh[] = [];
+  const casters: Mesh[] = [];
+  // rig: a pivot at the feet for lean/tumble; `upper` (pelvis up) bounces with the stride, legs hang from the rig
   const rig = new TransformNode(n('rig'), scene);
   rig.parent = root;
-  const bodyY = 1.05;
-  const body = CreateCapsule(n('body'), { height: 1.25, radius: R, tessellation: 14, subdivisions: 2, capSubdivisions: 6 }, scene);
-  body.material = pm.body;
-  body.position.y = bodyY;
-  body.parent = rig;
-  const parts: Mesh[] = [body];
-  const head = CreateSphere(n('head'), { diameter: 0.5, segments: 12 }, scene);
+  const hipY = 0.96;
+  const shoulderY = 1.58;
+  const upper = new TransformNode(n('upper'), scene);
+  upper.position.y = hipY;
+  upper.parent = rig;
+
+  // torso: belted tunic (slot colour cloth), shoulder pads, leather belt with a metal buckle (static merges)
+  const tunic = CreateCapsule(n('tunic'), { height: 0.78, radius: 0.27, tessellation: 14, subdivisions: 2, capSubdivisions: 5 }, scene);
+  tunic.position.y = 0.33;
+  tunic.scaling.set(1, 1, 0.78);
+  const padParts: Mesh[] = [];
+  for (const sx of [-1, 1]) {
+    const pad = CreateSphere(n(`pad${sx}`), { diameter: 0.3, segments: 8 }, scene);
+    pad.position.set(sx * 0.3, shoulderY - hipY - 0.02, 0);
+    pad.scaling.set(1, 0.6, 0.85);
+    padParts.push(pad);
+  }
+  const skirt = CreateCylinder(n('skirt'), { height: 0.34, diameterBottom: 0.66, diameterTop: 0.54, tessellation: 14 }, scene);
+  skirt.position.y = 0.02;
+  const cloth = merge(n('cloth'), [tunic, ...padParts, skirt], pm.body, upper);
+  parts.push(cloth); casters.push(cloth);
+  const belt = CreateCylinder(n('belt'), { height: 0.09, diameter: 0.6, tessellation: 14 }, scene);
+  belt.position.y = 0.2;
+  const strap = CreateBox(n('strap'), { width: 0.1, height: 0.5, depth: 0.03 }, scene);
+  strap.position.set(0.12, 0.42, -0.24);
+  strap.rotation.z = 0.25;
+  const leather = merge(n('leather'), [belt, strap], gm.leather, upper);
+  parts.push(leather);
+  const buckle = CreateBox(n('buckle'), { width: 0.12, height: 0.1, depth: 0.04 }, scene);
+  buckle.material = gm.trim;
+  buckle.position.set(0, 0.2, 0.3);
+  buckle.parent = upper;
+  parts.push(buckle);
+
+  // head: neck pivot so it can turn into the direction of travel; hood (slot 0) or crown + jewel (slot 1)
+  const neck = new TransformNode(n('neck'), scene);
+  neck.position.set(0, shoulderY - hipY + 0.06, 0.02);
+  neck.parent = upper;
+  const head = CreateSphere(n('head'), { diameter: 0.4, segments: 12 }, scene);
   head.material = gm.skin;
-  head.position.y = bodyY + 0.95;
-  head.parent = rig;
-  parts.push(head);
-  // legs: two short cylinders so the silhouette reads as a figure
-  const legs: Mesh[] = [];
-  for (const sx of [-1, 1]) {
-    const leg = CreateCylinder(n(`leg${sx}`), { height: 0.5, diameterTop: 0.2, diameterBottom: 0.16, tessellation: 8 }, scene);
-    leg.material = gm.playerBase;
-    leg.position.set(sx * 0.16, 0.25, 0);
-    leg.parent = rig;
-    legs.push(leg);
-    parts.push(leg);
-  }
-  // arms pivot at the shoulders
-  const arms: TransformNode[] = [];
-  for (const sx of [-1, 1]) {
-    const shoulder = new TransformNode(n(`shoulder${sx}`), scene);
-    shoulder.position.set(sx * (R + 0.06), bodyY + 0.45, 0);
-    shoulder.parent = rig;
-    const arm = CreateCylinder(n(`arm${sx}`), { height: 0.75, diameterTop: 0.16, diameterBottom: 0.12, tessellation: 8 }, scene);
-    arm.material = pm.body;
-    arm.position.y = -0.37;
-    arm.parent = shoulder;
-    const hand = CreateSphere(n(`hand${sx}`), { diameter: 0.16, segments: 6 }, scene);
-    hand.material = gm.skin;
-    hand.position.y = -0.76;
-    hand.parent = shoulder;
-    arms.push(shoulder);
-    parts.push(arm, hand);
-  }
-  // cape hangs from the shoulders and trails behind (-Z is behind: facing is +Z in local space)
-  const capePivot = new TransformNode(n('capePivot'), scene);
-  capePivot.position.set(0, bodyY + 0.55, -R * 0.75);
-  capePivot.parent = rig;
-  const cape = CreatePlane(n('cape'), { width: 0.8, height: 1.15 }, scene);
-  cape.material = pm.cape;
-  cape.position.y = -0.575;
-  cape.parent = capePivot;
-  parts.push(cape);
+  head.position.y = 0.22;
+  head.parent = neck;
+  parts.push(head); casters.push(head);
   if (p.slot === 0) {
-    // cloth hood: a soft cone over the head, peak folded back
-    const hood = CreateCylinder(n('hood'), { height: 0.6, diameterBottom: 0.62, diameterTop: 0.1, tessellation: 12 }, scene);
+    const hood = CreateCylinder(n('hood'), { height: 0.56, diameterBottom: 0.56, diameterTop: 0.08, tessellation: 12 }, scene);
     displaceByNoise(hood, 0.02, 5, 17);
     hood.material = gm.hood;
-    hood.position.set(0, bodyY + 1.1, -0.04);
-    hood.rotation.x = -0.25;
-    hood.parent = rig;
+    hood.position.set(0, 0.34, -0.05);
+    hood.rotation.x = -0.28;
+    hood.parent = neck;
     parts.push(hood);
   } else {
-    const crown = CreateTorus(n('crown'), { diameter: 0.5, thickness: 0.07, tessellation: 20 }, scene);
+    const crown = CreateTorus(n('crown'), { diameter: 0.4, thickness: 0.06, tessellation: 20 }, scene);
     crown.material = gm.crown;
-    crown.position.y = bodyY + 1.18;
-    crown.parent = rig;
+    crown.position.y = 0.38;
+    crown.parent = neck;
     parts.push(crown);
-    const jewel = CreatePolyhedron(n('jewel'), { type: 1, size: 0.07 }, scene);
+    const jewel = CreatePolyhedron(n('jewel'), { type: 1, size: 0.06 }, scene);
     jewel.material = gm.relicMaterials(0).core;
-    jewel.position.set(0, bodyY + 1.2, 0.25);
-    jewel.parent = rig;
+    jewel.position.set(0, 0.4, 0.2);
+    jewel.parent = neck;
     parts.push(jewel);
   }
+
+  // arms: shoulder -> upper arm -> elbow -> lower arm + hand
+  type Arm = { shoulder: TransformNode; elbow: TransformNode };
+  const arms: Arm[] = [];
+  for (const sx of [-1, 1]) {
+    const shoulder = new TransformNode(n(`shoulder${sx}`), scene);
+    shoulder.position.set(sx * 0.34, shoulderY - hipY - 0.04, 0);
+    shoulder.parent = upper;
+    const upperArm = CreateCylinder(n(`uarm${sx}`), { height: 0.34, diameterTop: 0.15, diameterBottom: 0.12, tessellation: 8 }, scene);
+    upperArm.material = pm.body;
+    upperArm.position.y = -0.17;
+    upperArm.parent = shoulder;
+    const elbow = new TransformNode(n(`elbow${sx}`), scene);
+    elbow.position.y = -0.34;
+    elbow.parent = shoulder;
+    const lowerArm = CreateCylinder(n(`larm${sx}`), { height: 0.32, diameterTop: 0.12, diameterBottom: 0.1, tessellation: 8 }, scene);
+    lowerArm.material = gm.leggings;
+    lowerArm.position.y = -0.16;
+    lowerArm.parent = elbow;
+    const hand = CreateSphere(n(`hand${sx}`), { diameter: 0.14, segments: 6 }, scene);
+    hand.material = gm.skin;
+    hand.position.y = -0.35;
+    hand.parent = elbow;
+    arms.push({ shoulder, elbow });
+    parts.push(upperArm, lowerArm, hand);
+  }
+
+  // legs: hip -> upper leg -> knee -> lower leg + boot
+  type Leg = { hip: TransformNode; knee: TransformNode };
+  const legs: Leg[] = [];
+  for (const sx of [-1, 1]) {
+    const hip = new TransformNode(n(`hip${sx}`), scene);
+    hip.position.set(sx * 0.15, hipY, 0);
+    hip.parent = rig;
+    const thigh = CreateCylinder(n(`thigh${sx}`), { height: 0.42, diameterTop: 0.2, diameterBottom: 0.16, tessellation: 8 }, scene);
+    thigh.material = gm.leggings;
+    thigh.position.y = -0.21;
+    thigh.parent = hip;
+    const knee = new TransformNode(n(`knee${sx}`), scene);
+    knee.position.y = -0.42;
+    knee.parent = hip;
+    const shin = CreateCylinder(n(`shin${sx}`), { height: 0.4, diameterTop: 0.16, diameterBottom: 0.13, tessellation: 8 }, scene);
+    shin.material = gm.leggings;
+    shin.position.y = -0.2;
+    shin.parent = knee;
+    const boot = CreateBox(n(`boot${sx}`), { width: 0.2, height: 0.14, depth: 0.32 }, scene);
+    boot.material = gm.leather;
+    boot.position.set(0, -0.47, 0.05);
+    boot.parent = knee;
+    legs.push({ hip, knee });
+    parts.push(thigh, shin, boot);
+    casters.push(thigh);
+  }
+
+  // cloak: a short strip of chained segments hanging from the shoulders (-Z is behind: facing is +Z locally)
+  const CLOAK_SEGS = 4;
+  const cloakSeg = 0.3;
+  const cloakPivots: TransformNode[] = [];
+  let cloakParent: TransformNode = upper;
+  for (let i = 0; i < CLOAK_SEGS; i++) {
+    const pivot = new TransformNode(n(`cloak${i}`), scene);
+    pivot.position.set(0, i === 0 ? shoulderY - hipY : -cloakSeg, i === 0 ? -0.24 : 0);
+    pivot.parent = cloakParent;
+    const seg = CreatePlane(n(`cloakSeg${i}`), { width: 0.72 - i * 0.04, height: cloakSeg + 0.02 }, scene);
+    seg.material = pm.cape;
+    seg.position.y = -cloakSeg / 2;
+    seg.parent = pivot;
+    parts.push(seg);
+    cloakPivots.push(pivot);
+    cloakParent = pivot;
+  }
+
   // darker base ring and a soft drop shadow blob
+  const R = GEOMETRY.playerRadius * 0.95;
   const base = CreateTorus(n('base'), { diameter: R * 2 + 0.3, thickness: 0.1, tessellation: 20 }, scene);
   base.material = gm.playerBase;
   base.position.y = 0.05;
@@ -881,40 +1260,190 @@ export function buildPlayer(scene: Scene, _mats: Materials, p: PlayerView): Play
   let lastNow = 0;
   let lean = 0;
   let tumble = 0;
-  function animate(nowMs: number, speed: number, facingDeg: number, status: PlayerView['status']) {
+  let smoothRatio = 0;
+  let settleT = -1;      // ms since the stop-settle started, -1 when idle
+  let lastFacing = 0;
+  let headYaw = 0;
+  let lastStatus: PlayerView['status'] = p.status;
+  let statusAt = 0;
+  const cloakAngles = new Array<number>(CLOAK_SEGS).fill(0);
+  let wave = 0; // smoothed 0..1
+  function animate(nowMs: number, speed: number, facingDeg: number, status: PlayerView['status'], view?: Pick<PlayerView, 'sprinting' | 'slow' | 'emote'> | null) {
     const dt = lastNow > 0 ? Math.min(100, Math.max(0, nowMs - lastNow)) : 16;
     lastNow = nowMs;
-    const ratio = Math.max(0, Math.min(1.3, (Number.isFinite(speed) ? speed : 0) / GEOMETRY.playerSpeed));
-    if (Number.isFinite(facingDeg)) root.rotation.y = (facingDeg * Math.PI) / 180;
-    phase += dt * 0.0105 * (0.25 + ratio);
+    if (status !== lastStatus) { lastStatus = status; statusAt = nowMs; }
+    const sprinting = !!view?.sprinting;
+    const slow = !!view?.slow && !sprinting;
+    wave += ((view?.emote === 'wave' && status === 'active' ? 1 : 0) - wave) * Math.min(1, dt / 140);
+    // interpolated ground speed drives everything; worlds with a high movement speed run past ratio 1.
+    // sprinting pushes the cycle and lean further, slow mode takes short careful steps
+    const rawRatio = Math.max(0, Math.min(1.7, (Number.isFinite(speed) ? speed : 0) / GEOMETRY.playerSpeed));
+    const ratio = sprinting ? Math.min(1.9, rawRatio * 1.15) : slow ? Math.min(0.5, rawRatio) : rawRatio;
+    const prevRatio = smoothRatio;
+    smoothRatio += (ratio - smoothRatio) * Math.min(1, dt / 90);
+    if (prevRatio > 0.3 && smoothRatio < 0.12 && settleT < 0) settleT = 0;
+    if (settleT >= 0) { settleT += dt; if (settleT > 420) settleT = -1; }
+    const stride = (Math.min(1, smoothRatio) + 0.4 * Math.max(0, smoothRatio - 1)) * (slow ? 0.55 : 1);
+    const moving = Math.min(1, smoothRatio * 4);
+
+    if (Number.isFinite(facingDeg)) {
+      root.rotation.y = (facingDeg * Math.PI) / 180;
+      // the head leads into turns: it looks toward where the facing is heading, then relaxes
+      const turn = shortestDeg(lastFacing, facingDeg);
+      lastFacing = facingDeg;
+      const targetYaw = Math.max(-0.7, Math.min(0.7, (turn / Math.max(1, dt)) * 25)) * moving;
+      headYaw += (targetYaw - headYaw) * Math.min(1, dt / 160);
+    }
+    phase += dt * 0.0105 * (0.25 + smoothRatio) * (sprinting ? 1.2 : slow ? 1.3 : 1);
     const swing = Math.sin(phase);
-    const targetLean = status === 'falling' ? 0 : 0.16 * ratio;
+    const cos = Math.cos(phase);
+    const targetLean = status === 'falling' ? 0 : (0.12 * smoothRatio + 0.1 * Math.max(0, smoothRatio - 1)) * (sprinting ? 1.35 : slow ? 0.5 : 1);
     lean += (targetLean - lean) * Math.min(1, dt / 120);
+
+    // bounce: two beats per cycle, scaled by stride, plus idle breathing and the stop-settle dip
+    const breathe = 0.012 * Math.sin(nowMs / 650) * (1 - moving);
+    const settle = settleT >= 0 ? -0.05 * Math.sin((settleT / 420) * Math.PI) * Math.exp(-settleT / 300) : 0;
+    const bounce = Math.abs(swing) * 0.07 * stride + breathe + settle + (status === 'respawning' ? 0.04 * Math.sin(nowMs / 90) : 0);
+    upper.position.y = hipY + bounce;
+    upper.scaling.y = 1 + 0.015 * Math.sin(nowMs / 650) * (1 - moving);
+    neck.rotation.y = headYaw;
+    neck.rotation.x = 0.06 * smoothRatio;
+
     if (status === 'falling') {
       tumble += dt * 0.004;
       rig.rotation.x = tumble;
       rig.rotation.z = Math.sin(tumble * 0.7) * 0.4;
+      // limbs spread
+      for (let i = 0; i < 2; i++) {
+        const sx = i === 0 ? -1 : 1;
+        arms[i].shoulder.rotation.z = sx * 1.3; arms[i].shoulder.rotation.x = -0.6; arms[i].elbow.rotation.x = -0.3;
+        legs[i].hip.rotation.x = -0.5 + 0.3 * i; legs[i].hip.rotation.z = sx * 0.35; legs[i].knee.rotation.x = 0.4;
+      }
     } else {
       tumble = 0;
       rig.rotation.x = lean;
-      rig.rotation.z = Math.sin(phase * 0.5) * 0.03 * ratio;
+      rig.rotation.z = Math.sin(phase * 0.5) * 0.03 * smoothRatio;
+      for (let i = 0; i < 2; i++) {
+        const s = i === 0 ? swing : -swing;
+        const c = i === 0 ? cos : -cos;
+        // legs: hip swing with a knee bend during the forward swing (foot lifts clear of the deck)
+        legs[i].hip.rotation.x = -s * 0.62 * stride;
+        legs[i].hip.rotation.z = 0;
+        legs[i].knee.rotation.x = Math.max(0, c) * 0.95 * stride + 0.04;
+        // arms: counter-swing to the same-side leg, elbow bent more as the run gets faster
+        arms[i].shoulder.rotation.x = s * 0.6 * stride;
+        arms[i].shoulder.rotation.z = (i === 0 ? -1 : 1) * (0.12 + 0.08 * moving);
+        arms[i].elbow.rotation.x = -(0.25 + 0.55 * Math.min(1.3, smoothRatio) + Math.max(0, -s) * 0.3 * stride);
+      }
+      if (wave > 0.01) {
+        // wave: the right arm rises over the shoulder and the forearm swings side to side
+        const a = arms[1];
+        a.shoulder.rotation.x = a.shoulder.rotation.x * (1 - wave) + (-2.6) * wave;
+        a.shoulder.rotation.z = a.shoulder.rotation.z * (1 - wave) + 0.35 * wave;
+        a.elbow.rotation.x = a.elbow.rotation.x * (1 - wave) + (-0.5) * wave;
+        a.elbow.rotation.z = Math.sin(nowMs / 110) * 0.55 * wave;
+      } else if (arms[1].elbow.rotation.z !== 0) {
+        arms[1].elbow.rotation.z = 0;
+      }
     }
-    const bob = Math.abs(swing) * 0.07 * ratio + (status === 'respawning' ? 0.05 * Math.sin(nowMs / 90) : 0);
-    body.position.y = bodyY + bob;
-    head.position.y = bodyY + 0.95 + bob;
-    arms[0].rotation.x = swing * 0.7 * ratio;
-    arms[1].rotation.x = -swing * 0.7 * ratio;
-    arms[0].position.y = arms[1].position.y = bodyY + 0.45 + bob;
-    legs[0].rotation.x = -swing * 0.55 * ratio;
-    legs[1].rotation.x = swing * 0.55 * ratio;
-    capePivot.rotation.x = -(0.25 + 0.55 * ratio + 0.05 * Math.sin(phase * 0.5 + 1));
-    capePivot.rotation.z = Math.sin(phase * 0.5) * 0.08 * ratio;
-    capePivot.position.y = bodyY + 0.55 + bob;
+    // cloak: segments trail behind with speed and sway with the stride (chained, so angles accumulate)
+    const trail = 0.2 + 0.55 * Math.min(1.3, smoothRatio);
+    for (let i = 0; i < CLOAK_SEGS; i++) {
+      const target = -(i === 0 ? trail : 0.18 * trail) - 0.05 * Math.sin(phase * 0.5 + i * 0.9) * (0.3 + smoothRatio);
+      cloakAngles[i] += (target - cloakAngles[i]) * Math.min(1, dt / (120 + i * 60));
+      cloakPivots[i].rotation.x = cloakAngles[i];
+      cloakPivots[i].rotation.z = Math.sin(phase * 0.5 + i * 0.6) * 0.06 * smoothRatio;
+    }
+    // respawn: scale in from the ground over the respawn window
+    if (status === 'respawning') {
+      const f = Math.min(1, (nowMs - statusAt) / GEOMETRY.respawnDurationMs);
+      const e = 1 - (1 - f) * (1 - f);
+      rig.scaling.set(0.35 + 0.65 * e, 0.2 + 0.8 * e, 0.35 + 0.65 * e);
+    } else if (rig.scaling.x !== 1) {
+      rig.scaling.setAll(1);
+    }
   }
   animate(0, 0, 0, p.status);
 
   return {
-    root, parts, label, casters: [body], setLabel, setVisibility, animate,
+    root, parts, label, casters, setLabel, setVisibility, animate,
     dispose: () => { label.dispose(false, true); tex.dispose(); labelMat.dispose(); root.dispose(false, true); },
   };
+}
+
+function shortestDeg(fromDeg: number, toDeg: number): number {
+  let d = (toDeg - fromDeg) % 360;
+  if (d > 180) d -= 360;
+  if (d < -180) d += 360;
+  return d;
+}
+
+// ---------------------------------------------------------------- team beacons (markers)
+
+export type MarkerPool = {
+  /** Show a beacon at (x, 0, z) in `color` until `untilMs` (local performance.now() clock). */
+  spawn: (x: number, z: number, color: string, untilMs: number) => void;
+  update: (now: number) => void;
+  dispose: () => void;
+};
+
+/** A small pool of beacons: a thin vertical light column plus a pulsing ground ring, faded out at `until`. */
+export function createMarkerPool(scene: Scene, size = 6): MarkerPool {
+  const gm = geoMaterials(scene);
+  type Beacon = { root: TransformNode; column: Mesh; ring: Mesh; mat: PBRMaterial; ringMat: PBRMaterial; start: number; until: number; active: boolean };
+  const pool: Beacon[] = [];
+  for (let i = 0; i < size; i++) {
+    const root = new TransformNode(`marker:${i}`, scene);
+    const mat = gm.beam.clone(`marker:${i}:mat`);
+    mat.alpha = 0;
+    const column = CreateCylinder(`marker:${i}:col`, { height: 12, diameterBottom: 0.35, diameterTop: 0.7, tessellation: 12 }, scene);
+    column.material = mat;
+    column.position.y = 6;
+    column.parent = root;
+    column.isPickable = false;
+    const ringMat = gm.holdRing.clone(`marker:${i}:ring`);
+    ringMat.alpha = 0;
+    const ring = CreateTorus(`marker:${i}:torus`, { diameter: 1.6, thickness: 0.12, tessellation: 32 }, scene);
+    ring.material = ringMat;
+    ring.position.y = 0.06;
+    ring.parent = root;
+    ring.isPickable = false;
+    root.setEnabled(false);
+    pool.push({ root, column, ring, mat, ringMat, start: 0, until: 0, active: false });
+  }
+  function spawn(x: number, z: number, color: string, untilMs: number) {
+    const now = performance.now();
+    let b = pool.find((p) => !p.active) ?? pool.reduce((a, p) => (p.until < a.until ? p : a), pool[0]);
+    let col: Color3;
+    try { col = Color3.FromHexString(/^#[0-9a-fA-F]{6}$/.test(color) ? color : '#ffd27f'); } catch { col = Color3.FromHexString('#ffd27f'); }
+    b.mat.emissiveColor.copyFrom(col);
+    b.mat.albedoColor.copyFrom(col);
+    b.ringMat.emissiveColor.copyFrom(col);
+    b.ringMat.albedoColor.copyFrom(col);
+    b.root.position.set(x, 0, z);
+    b.start = now;
+    b.until = Math.max(now + 400, untilMs);
+    b.active = true;
+    b.root.setEnabled(true);
+  }
+  function update(now: number) {
+    for (const b of pool) {
+      if (!b.active) continue;
+      if (now >= b.until) { b.active = false; b.root.setEnabled(false); continue; }
+      const life = b.until - b.start;
+      const fadeIn = Math.min(1, (now - b.start) / 250);
+      const fadeOut = Math.min(1, (b.until - now) / Math.min(900, life * 0.4));
+      const k = fadeIn * fadeOut;
+      const pulse = 0.5 + 0.5 * Math.sin(now / 180);
+      b.mat.alpha = k * (0.12 + 0.08 * pulse);
+      b.ringMat.alpha = k * (0.55 + 0.35 * pulse);
+      const rs = 1 + 0.35 * pulse;
+      b.ring.scaling.set(rs, 1, rs);
+      b.column.rotation.y += 0.01;
+    }
+  }
+  function dispose() {
+    for (const b of pool) { b.mat.dispose(); b.ringMat.dispose(); b.root.dispose(false, true); }
+  }
+  return { spawn, update, dispose };
 }

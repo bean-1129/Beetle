@@ -34,7 +34,7 @@ export type Effects = {
   onWorldApplied(changedIds: string[], nodesById: Map<string, Node>, reason: WorldReason): void;
   /** `speed` is the interpolated ground speed in m/s. */
   onPlayerUpdate(id: string, view: PlayerView, speed: number, dtMs: number): void;
-  onThemeChange(theme: EffectsTheme): void;
+  onThemeChange(theme: EffectsTheme | string): void;
   update(dtMs: number): void;
   dispose(): void;
 };
@@ -712,7 +712,9 @@ export function createEffects(scene: Scene): Effects {
     }
   }
 
-  function onThemeChange(next: EffectsTheme) {
+  function onThemeChange(raw: EffectsTheme | string) {
+    // biome themes map onto the two effect palettes: anything carrying the lava overlay is 'volcanic'
+    const next: EffectsTheme = raw === 'volcanic' || raw.endsWith('_lava') ? 'volcanic' : 'serene';
     if (disposed || next === theme) return;
     theme = next;
     const t = THEME[theme];

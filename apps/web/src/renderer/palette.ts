@@ -37,7 +37,13 @@ export const PALETTE = {
   label: '#f4f7f5',
 } as const;
 
-export type ThemeName = 'serene' | 'volcanic';
+/**
+ * A theme is a biome preset with an optional lava hazard overlay. 'serene' / 'volcanic' are the garden biome with a
+ * water / lava hazard (the original pair); the other biomes carry their lava variant as '<biome>_lava'.
+ */
+export type BiomeName = 'garden' | 'volcanic' | 'frost' | 'desert' | 'night';
+export type ThemeName = 'serene' | 'volcanic' | 'frost' | 'desert' | 'night' | 'frost_lava' | 'desert_lava' | 'night_lava';
+export const THEME_NAMES: readonly ThemeName[] = ['serene', 'volcanic', 'frost', 'desert', 'night', 'frost_lava', 'desert_lava', 'night_lava'];
 
 /**
  * Everything the environment blends between themes. Colours are linear-ish sRGB values picked for ACES tone
@@ -45,6 +51,8 @@ export type ThemeName = 'serene' | 'volcanic';
  */
 export type ThemeParams = {
   name: ThemeName;
+  /** Biome the preset derives from (drives geometry material looks). */
+  biome: BiomeName;
   // sky / IBL
   skyZenith: Color3;
   skyHorizon: Color3;
@@ -56,6 +64,8 @@ export type ThemeParams = {
   cloudUnderGlow: Color3;   // light from below (volcanic: orange)
   cloudCover: number;       // 0..1 density of the cloud layer
   envIntensity: number;     // scene.environmentIntensity for PBR IBL
+  moon: number;             // 0..1: the sun disc is drawn as a moon (pale disc, faint craters), glow damped
+  stars: number;            // 0..1 star field strength in the sky shader
   // lights
   sunDir: { x: number; y: number; z: number };
   sunIntensity: number;
@@ -77,92 +87,317 @@ export type ThemeParams = {
   godRayWeight: number;
   godRayColor: Color3;
   ssaoStrength: number;
-  // hazard surface: 0 = water shader, 1 = lava shader
+  // hazard surface: 0 = water shader, 1 = lava shader; water tints per biome
   hazardMix: number;
+  waterShallow: Color3;
+  waterDeep: Color3;
+  /** Emissive multiplier for lanterns, relics and other small lights (night: stronger). */
+  lightBoost: number;
   // particles
   fireflies: number; // 0..1 weight
   pollen: number;
   embers: number;
   ash: number;
+  snow: number;
+  shimmer: number;
 };
 
-export const THEMES: Record<ThemeName, ThemeParams> = {
-  serene: {
-    name: 'serene',
-    skyZenith: Color3.FromHexString('#2a6fbf'),
-    skyHorizon: Color3.FromHexString('#8cc6e3'),
-    skyGround: Color3.FromHexString('#3f7f9c'),
-    sunColor: Color3.FromHexString('#fff1cf'),
-    sunDiscSize: 0.9975,
-    hazeStrength: 0.4,
-    cloudColor: Color3.FromHexString('#f7f9fb'),
-    cloudUnderGlow: Color3.FromHexString('#d9e4ee'),
-    cloudCover: 0.3,
-    envIntensity: 0.7,
-    sunDir: { x: -0.42, y: -0.78, z: 0.46 },
-    sunIntensity: 1.45,
-    hemiColor: Color3.FromHexString('#bcd4ec'),
-    hemiGround: Color3.FromHexString('#345259'),
-    hemiIntensity: 0.5,
-    ambient: new Color3(0.16, 0.2, 0.23),
-    clearColor: Color3.FromHexString('#78b7cf'),
-    fogColor: Color3.FromHexString('#93c6dc'),
-    fogDensity: 0.0038,
-    exposure: 1.05,
-    contrast: 1.12,
-    bloomWeight: 0.16,
-    glowIntensity: 0.55,
-    vignetteWeight: 1.2,
-    godRayDensity: 0.45,
-    godRayWeight: 0.25,
-    godRayColor: Color3.FromHexString('#ffe9bf'),
-    ssaoStrength: 0.9,
-    hazardMix: 0,
-    fireflies: 1,
-    pollen: 1,
-    embers: 0,
-    ash: 0,
-  },
-  volcanic: {
-    name: 'volcanic',
-    skyZenith: Color3.FromHexString('#1c0f0c'),
-    skyHorizon: Color3.FromHexString('#6e331a'),
-    skyGround: Color3.FromHexString('#24110c'),
-    sunColor: Color3.FromHexString('#ff8a30'),
-    sunDiscSize: 0.996,
-    hazeStrength: 0.7,
-    cloudColor: Color3.FromHexString('#1e1310'),
-    cloudUnderGlow: Color3.FromHexString('#c9501a'),
-    cloudCover: 0.6,
-    envIntensity: 0.5,
-    sunDir: { x: -0.62, y: -0.36, z: 0.7 },
-    sunIntensity: 1.15,
-    hemiColor: Color3.FromHexString('#5a3028'),
-    hemiGround: Color3.FromHexString('#6e2810'),
-    hemiIntensity: 0.45,
-    ambient: new Color3(0.2, 0.11, 0.08),
-    clearColor: Color3.FromHexString('#2c1510'),
-    fogColor: Color3.FromHexString('#4a2416'),
-    fogDensity: 0.0042,
-    exposure: 1.1,
-    contrast: 1.16,
-    bloomWeight: 0.2,
-    glowIntensity: 0.5,
-    vignetteWeight: 1.5,
-    godRayDensity: 0.55,
-    godRayWeight: 0.32,
-    godRayColor: Color3.FromHexString('#ff7a2a'),
-    ssaoStrength: 1.1,
+const hex = (h: string) => Color3.FromHexString(h);
+
+const serene: ThemeParams = {
+  name: 'serene',
+  biome: 'garden',
+  skyZenith: hex('#2a6fbf'),
+  skyHorizon: hex('#8cc6e3'),
+  skyGround: hex('#3f7f9c'),
+  sunColor: hex('#fff1cf'),
+  sunDiscSize: 0.9975,
+  hazeStrength: 0.4,
+  cloudColor: hex('#f7f9fb'),
+  cloudUnderGlow: hex('#d9e4ee'),
+  cloudCover: 0.3,
+  envIntensity: 0.7,
+  moon: 0,
+  stars: 0,
+  sunDir: { x: -0.42, y: -0.78, z: 0.46 },
+  sunIntensity: 1.45,
+  hemiColor: hex('#bcd4ec'),
+  hemiGround: hex('#345259'),
+  hemiIntensity: 0.5,
+  ambient: new Color3(0.16, 0.2, 0.23),
+  clearColor: hex('#78b7cf'),
+  fogColor: hex('#93c6dc'),
+  fogDensity: 0.0038,
+  exposure: 1.05,
+  contrast: 1.12,
+  bloomWeight: 0.16,
+  glowIntensity: 0.55,
+  vignetteWeight: 1.2,
+  godRayDensity: 0.45,
+  godRayWeight: 0.25,
+  godRayColor: hex('#ffe9bf'),
+  ssaoStrength: 0.9,
+  hazardMix: 0,
+  waterShallow: hex('#4fc3e8'),
+  waterDeep: hex('#0f4f7c'),
+  lightBoost: 1,
+  fireflies: 1,
+  pollen: 1,
+  embers: 0,
+  ash: 0,
+  snow: 0,
+  shimmer: 0,
+};
+
+const volcanic: ThemeParams = {
+  name: 'volcanic',
+  biome: 'volcanic',
+  skyZenith: hex('#1c0f0c'),
+  skyHorizon: hex('#6e331a'),
+  skyGround: hex('#24110c'),
+  sunColor: hex('#ff8a30'),
+  sunDiscSize: 0.996,
+  hazeStrength: 0.7,
+  cloudColor: hex('#1e1310'),
+  cloudUnderGlow: hex('#c9501a'),
+  cloudCover: 0.6,
+  envIntensity: 0.5,
+  moon: 0,
+  stars: 0,
+  sunDir: { x: -0.62, y: -0.36, z: 0.7 },
+  sunIntensity: 1.15,
+  hemiColor: hex('#5a3028'),
+  hemiGround: hex('#6e2810'),
+  hemiIntensity: 0.45,
+  ambient: new Color3(0.2, 0.11, 0.08),
+  clearColor: hex('#2c1510'),
+  fogColor: hex('#4a2416'),
+  fogDensity: 0.0042,
+  exposure: 1.1,
+  contrast: 1.16,
+  bloomWeight: 0.2,
+  glowIntensity: 0.5,
+  vignetteWeight: 1.5,
+  godRayDensity: 0.55,
+  godRayWeight: 0.32,
+  godRayColor: hex('#ff7a2a'),
+  ssaoStrength: 1.1,
+  hazardMix: 1,
+  waterShallow: hex('#4fc3e8'),
+  waterDeep: hex('#0f4f7c'),
+  lightBoost: 1.1,
+  fireflies: 0,
+  pollen: 0,
+  embers: 1,
+  ash: 1,
+  snow: 0,
+  shimmer: 0,
+};
+
+// pale blue-white sky, low cold sun, dense cool fog, icy water, falling snow
+const frost: ThemeParams = {
+  name: 'frost',
+  biome: 'frost',
+  skyZenith: hex('#7fa7cf'),
+  skyHorizon: hex('#dfe9f2'),
+  skyGround: hex('#8ea6b8'),
+  sunColor: hex('#f4f0e6'),
+  sunDiscSize: 0.997,
+  hazeStrength: 0.75,
+  cloudColor: hex('#e9eef4'),
+  cloudUnderGlow: hex('#c2cfdc'),
+  cloudCover: 0.5,
+  envIntensity: 0.8,
+  moon: 0,
+  stars: 0,
+  sunDir: { x: -0.7, y: -0.3, z: 0.64 },
+  sunIntensity: 1.1,
+  hemiColor: hex('#d4e2f0'),
+  hemiGround: hex('#6f8597'),
+  hemiIntensity: 0.6,
+  ambient: new Color3(0.2, 0.23, 0.27),
+  clearColor: hex('#c5d6e3'),
+  fogColor: hex('#cfdde8'),
+  fogDensity: 0.0072,
+  exposure: 1.0,
+  contrast: 1.06,
+  bloomWeight: 0.12,
+  glowIntensity: 0.45,
+  vignetteWeight: 1.1,
+  godRayDensity: 0.4,
+  godRayWeight: 0.18,
+  godRayColor: hex('#eef2f8'),
+  ssaoStrength: 0.8,
+  hazardMix: 0,
+  waterShallow: hex('#9fd6e6'),
+  waterDeep: hex('#1f5f80'),
+  lightBoost: 1.05,
+  fireflies: 0,
+  pollen: 0,
+  embers: 0,
+  ash: 0,
+  snow: 1,
+  shimmer: 0,
+};
+
+// warm sand sky, hot high sun, thin dusty haze, turquoise water, sparse heat shimmer
+const desert: ThemeParams = {
+  name: 'desert',
+  biome: 'desert',
+  skyZenith: hex('#3f7fc4'),
+  skyHorizon: hex('#ead8b0'),
+  skyGround: hex('#b08a5a'),
+  sunColor: hex('#fff6dc'),
+  sunDiscSize: 0.998,
+  hazeStrength: 0.55,
+  cloudColor: hex('#fbf6ec'),
+  cloudUnderGlow: hex('#e8d2ad'),
+  cloudCover: 0.12,
+  envIntensity: 0.85,
+  moon: 0,
+  stars: 0,
+  sunDir: { x: -0.25, y: -0.9, z: 0.36 },
+  sunIntensity: 1.9,
+  hemiColor: hex('#e6dcc6'),
+  hemiGround: hex('#8a6a42'),
+  hemiIntensity: 0.5,
+  ambient: new Color3(0.24, 0.21, 0.17),
+  clearColor: hex('#d9c9a4'),
+  fogColor: hex('#e3d2ad'),
+  fogDensity: 0.0026,
+  exposure: 1.08,
+  contrast: 1.14,
+  bloomWeight: 0.14,
+  glowIntensity: 0.45,
+  vignetteWeight: 1.1,
+  godRayDensity: 0.4,
+  godRayWeight: 0.2,
+  godRayColor: hex('#fff0cc'),
+  ssaoStrength: 0.9,
+  hazardMix: 0,
+  waterShallow: hex('#5fe0d0'),
+  waterDeep: hex('#127a86'),
+  lightBoost: 0.9,
+  fireflies: 0,
+  pollen: 0.4,
+  embers: 0,
+  ash: 0,
+  snow: 0,
+  shimmer: 1,
+};
+
+// deep indigo sky with a moon and stars, cool rim light, dense fireflies, stronger lantern/relic glow
+const night: ThemeParams = {
+  name: 'night',
+  biome: 'night',
+  skyZenith: hex('#07091f'),
+  skyHorizon: hex('#1c2550'),
+  skyGround: hex('#0a0e22'),
+  sunColor: hex('#cfdcf5'),
+  sunDiscSize: 0.9985,
+  hazeStrength: 0.35,
+  cloudColor: hex('#141a33'),
+  cloudUnderGlow: hex('#263258'),
+  cloudCover: 0.22,
+  envIntensity: 0.35,
+  moon: 1,
+  stars: 1,
+  sunDir: { x: -0.5, y: -0.6, z: 0.62 },
+  sunIntensity: 0.6,
+  hemiColor: hex('#3a4a7a'),
+  hemiGround: hex('#141a2c'),
+  hemiIntensity: 0.4,
+  ambient: new Color3(0.08, 0.1, 0.16),
+  clearColor: hex('#0c1026'),
+  fogColor: hex('#141c3a'),
+  fogDensity: 0.0048,
+  exposure: 1.0,
+  contrast: 1.18,
+  bloomWeight: 0.3,
+  glowIntensity: 0.85,
+  vignetteWeight: 1.7,
+  godRayDensity: 0.35,
+  godRayWeight: 0.14,
+  godRayColor: hex('#aebcec'),
+  ssaoStrength: 1.0,
+  hazardMix: 0,
+  waterShallow: hex('#1b3b5a'),
+  waterDeep: hex('#050c1a'),
+  lightBoost: 1.8,
+  fireflies: 2.2,
+  pollen: 0,
+  embers: 0,
+  ash: 0,
+  snow: 0,
+  shimmer: 0,
+};
+
+/** Lava hazard overlay on top of a biome: lava surface, crust rings, embers, warm fog and under-lit clouds. */
+export function withLava(base: ThemeParams, name: ThemeName): ThemeParams {
+  const warmFog = hex('#5a2a18');
+  const L = (a: Color3, b: Color3, t: number) => Color3.Lerp(a, b, t);
+  return {
+    ...base,
+    name,
+    skyHorizon: L(base.skyHorizon, hex('#8a4020'), 0.3),
+    skyGround: L(base.skyGround, hex('#24110c'), 0.5),
+    cloudUnderGlow: L(base.cloudUnderGlow, hex('#c9501a'), 0.6),
+    cloudCover: Math.min(1, base.cloudCover + 0.15),
+    hemiGround: L(base.hemiGround, hex('#6e2810'), 0.6),
+    ambient: L(base.ambient, new Color3(0.2, 0.11, 0.08), 0.5),
+    clearColor: L(base.clearColor, warmFog, 0.4),
+    fogColor: L(base.fogColor, warmFog, 0.45),
+    fogDensity: base.fogDensity * 1.1,
+    bloomWeight: base.bloomWeight + 0.04,
+    glowIntensity: base.glowIntensity + 0.05,
+    vignetteWeight: base.vignetteWeight + 0.2,
+    godRayColor: L(base.godRayColor, hex('#ff7a2a'), 0.5),
+    ssaoStrength: base.ssaoStrength + 0.1,
     hazardMix: 1,
-    fireflies: 0,
+    lightBoost: base.lightBoost * 1.05,
     pollen: 0,
     embers: 1,
-    ash: 1,
-  },
+    ash: 0.5,
+    snow: base.snow * 0.4,
+    shimmer: Math.max(base.shimmer, 0.5),
+  };
+}
+
+export const THEMES: Record<ThemeName, ThemeParams> = {
+  serene,
+  volcanic,
+  frost,
+  desert,
+  night,
+  frost_lava: withLava(frost, 'frost_lava'),
+  desert_lava: withLava(desert, 'desert_lava'),
+  night_lava: withLava(night, 'night_lava'),
 };
 
 export function themeForHazard(kind: string): ThemeName {
   return kind === 'lava' ? 'volcanic' : 'serene';
+}
+
+/** Theme for a biome + hazard pair. Unknown biomes fall back to the garden pair. */
+export function themeFor(biome: string | undefined, hazardKind: string): ThemeName {
+  const lava = hazardKind === 'lava';
+  switch (biome) {
+    case 'frost': return lava ? 'frost_lava' : 'frost';
+    case 'desert': return lava ? 'desert_lava' : 'desert';
+    case 'night': return lava ? 'night_lava' : 'night';
+    case 'volcanic': return 'volcanic';
+    default: return lava ? 'volcanic' : 'serene';
+  }
+}
+
+/** 1 when the theme carries the lava hazard overlay. */
+export function lavaOf(theme: ThemeName): number {
+  return theme === 'volcanic' || theme.endsWith('_lava') ? 1 : 0;
+}
+
+/** Biome a theme derives from. */
+export function biomeOf(theme: ThemeName): BiomeName {
+  return THEMES[theme]?.biome ?? 'garden';
 }
 
 /** Deterministic small hash for cosmetic variation (never affects anything authoritative). */

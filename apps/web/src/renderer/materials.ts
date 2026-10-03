@@ -236,6 +236,13 @@ uniform vec3 uSunColor;
 uniform vec3 uSunDir;
 uniform float uSunSize;
 uniform float uHaze;
+uniform float uMoon;
+uniform float uStars;
+float hash13(vec3 p) {
+  p = fract(p * vec3(443.897, 441.423, 437.195));
+  p += dot(p, p.yzx + 19.19);
+  return fract((p.x + p.y) * p.z);
+}
 void main() {
   vec3 d = normalize(vDir);
   float h = d.y;
@@ -249,7 +256,20 @@ void main() {
   col = mix(col, hazeCol, haze);
   float disc = smoothstep(uSunSize, uSunSize + 0.0015, s);
   float glow = pow(max(s, 0.0), 28.0) * 0.6 + pow(max(s, 0.0), 6.0) * 0.14;
-  col += uSunColor * (disc * 5.0 + glow);
+  vec3 sunTerm = uSunColor * (disc * 5.0 + glow);
+  // moon: a pale disc with faint maria (cell noise) and a soft halo; stars: sparse cells above the horizon
+  float maria = 0.75 + 0.25 * hash13(floor(d * 90.0));
+  vec3 moonTerm = uSunColor * (disc * 1.6 * maria + glow * 0.35);
+  col += mix(sunTerm, moonTerm, uMoon);
+  if (uStars > 0.001 && h > 0.0) {
+    vec3 cell = floor(d * 140.0);
+    float r = hash13(cell);
+    float star = step(0.985, r) * (0.5 + 0.5 * hash13(cell + 7.0));
+    vec3 cen = (cell + 0.5) / 140.0;
+    float dist = length(d * 140.0 - cell - 0.5);
+    star *= smoothstep(0.5, 0.1, dist) * smoothstep(0.0, 0.25, h) * (1.0 - disc);
+    col += vec3(0.9, 0.93, 1.0) * star * uStars * 1.6;
+  }
   gl_FragColor = vec4(col, 1.0);
 }`;
 
@@ -377,7 +397,7 @@ export function createMaterials(scene: Scene) {
   // ---- sky dome ----
   const sky = new ShaderMaterial('sky', scene, { vertexSource: SKY_VERTEX, fragmentSource: SKY_FRAGMENT }, {
     attributes: ['position'],
-    uniforms: ['world', 'viewProjection', 'uZenith', 'uHorizon', 'uGround', 'uSunColor', 'uSunDir', 'uSunSize', 'uHaze'],
+    uniforms: ['world', 'viewProjection', 'uZenith', 'uHorizon', 'uGround', 'uSunColor', 'uSunDir', 'uSunSize', 'uHaze', 'uMoon', 'uStars'],
   });
   sky.backFaceCulling = false;
   sky.disableDepthWrite = true;
@@ -388,6 +408,8 @@ export function createMaterials(scene: Scene) {
   sky.setVector3('uSunDir', new Vector3(-0.42, -0.78, 0.46));
   sky.setFloat('uSunSize', 0.9975);
   sky.setFloat('uHaze', 0.5);
+  sky.setFloat('uMoon', 0);
+  sky.setFloat('uStars', 0);
 
   // ---- cloud sheet ----
   const clouds = new ShaderMaterial('clouds', scene, { vertexSource: CLOUD_VERTEX, fragmentSource: CLOUD_FRAGMENT }, {
@@ -445,7 +467,12 @@ export function createMaterials(scene: Scene) {
   function setSceneUniforms(p: {
     cameraPos: Vector3; sunDir: Vector3; sunColor: Color3; skyZenith: Color3; skyHorizon: Color3; skyGround: Color3;
     fogColor: Color3; fogDensity: number; sunSize: number; haze: number; cloudColor: Color3; cloudUnderGlow: Color3; cloudCover: number;
+    waterShallow?: Color3; waterDeep?: Color3; moon?: number; stars?: number;
   }) {
+    if (p.waterShallow) hazard.setColor3('uWaterShallow', p.waterShallow);
+    if (p.waterDeep) hazard.setColor3('uWaterDeep', p.waterDeep);
+    sky.setFloat('uMoon', p.moon ?? 0);
+    sky.setFloat('uStars', p.stars ?? 0);
     hazard.setVector3('uCameraPos', p.cameraPos);
     hazard.setVector3('uSunDir', p.sunDir);
     hazard.setColor3('uSunColor', p.sunColor);
