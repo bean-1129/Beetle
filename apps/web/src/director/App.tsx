@@ -6,7 +6,7 @@ import { takeDirectorToken } from '../shared/token.ts';
 import { useBeetleSocket } from '../shared/use-socket.ts';
 import { createRenderer, type BeetleRenderer } from '../renderer/index.ts';
 import { JoinPanel } from '../shared/JoinPanel.tsx';
-import { Wordmark } from '../shared/Wordmark.tsx';
+import { platformLinks } from '../shared/platform-header.ts';
 import { ActivityTrail } from './ActivityTrail.tsx';
 import { useKeyboardPlayer } from './useKeyboardPlayer.ts';
 import { isFixtureTitle, msLabel, stripFixture } from '../shared/format.ts';
@@ -224,10 +224,31 @@ export function DirectorApp() {
   const modeLabel = world ? modeName(world.spec.mode?.kind) : null;
   const biomeLabel = world ? (world.spec.biome ?? 'garden') : null;
   const lastReport = reports.length ? reports[reports.length - 1] : null;
+  const links = useMemo(() => platformLinks(), []);
   const connLabel = state === 'connected' ? (token ? 'director connected' : 'display only') : state;
 
   return (
-    <div className={`director-layout ${open ? 'panel-open' : 'panel-closed'}`}>
+    <div className={`director-layout bp ${open ? 'panel-open' : 'panel-closed'}`}>
+      <header className="bp-top director-top">
+        <a className="bp-brand" href="/">BEETLE</a>
+        <nav className="bp-switch" aria-label="Choose 2D or 3D">
+          <a href={links.href2d}>2D games</a>
+          <a href={links.href3d} aria-current="page">3D worlds</a>
+        </nav>
+        <div className="bp-spacer" />
+        <button
+          type="button"
+          className="panel-toggle bp-button"
+          aria-expanded={open}
+          aria-controls="director-panel"
+          onClick={() => setOpen((o) => !o)}
+          title="Toggle the panel (Escape)"
+        >
+          {open ? 'Hide panel' : 'Show panel'}
+        </button>
+      </header>
+
+      <div className="director-stage">
       <canvas ref={canvasRef} id="scene" aria-label="Beetle world" />
 
       <div className="scene-overlay">
@@ -239,22 +260,10 @@ export function DirectorApp() {
         </div>
       </div>
 
-      <button
-        type="button"
-        className="panel-toggle"
-        aria-expanded={open}
-        aria-controls="director-panel"
-        onClick={() => setOpen((o) => !o)}
-        title="Toggle the panel (Escape)"
-      >
-        {open ? 'Hide panel' : 'Show panel'}
-      </button>
-
       <aside id="director-panel" className="panel" aria-label="Director panel" aria-hidden={!open} inert={!open ? true : undefined}>
         <header className="panel-header">
-          <Wordmark />
-          <span className="muted small">director</span>
-          <a href="/2d" className="muted small" style={{ marginLeft: 'auto', color: 'inherit', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '0.06em' }} title="Open the Beetle 2D studio">2D studio</a>
+          <h1 className="panel-title">Director</h1>
+          <span className="muted small">3D world</span>
         </header>
 
         {!token && (
@@ -292,7 +301,7 @@ export function DirectorApp() {
               </label>
             )}
             <div className="row">
-              <button type="submit" className="primary" disabled={!token || submitState.busy || !prompt.trim()}>
+              <button type="submit" className="bp-button primary" disabled={!token || submitState.busy || !prompt.trim()}>
                 {submitState.busy ? 'Sending' : kind === 'brief' ? 'Build world' : 'Apply edit'}
               </button>
               <span className="muted small">v{world?.version ?? 0}{world ? `, ${stripFixture(title)}` : ', no world'}</span>
@@ -390,9 +399,9 @@ export function DirectorApp() {
           <p className="muted small">Joins as a controller from this page. WASD or arrows move, E or Space interact. Keys are ignored while typing in a field.</p>
           <div className="row">
             {kb.state.phase === 'active' ? (
-              <button type="button" onClick={kb.stop}>Leave</button>
+              <button type="button" className="bp-button" onClick={kb.stop}>Leave</button>
             ) : (
-              <button type="button" onClick={() => { void kb.start(); }} disabled={!token || kb.state.phase === 'joining'}>
+              <button type="button" className="bp-button" onClick={() => { void kb.start(); }} disabled={!token || kb.state.phase === 'joining'}>
                 {kb.state.phase === 'joining' ? 'Joining' : 'Join as keyboard player'}
               </button>
             )}
@@ -430,7 +439,7 @@ export function DirectorApp() {
         <section className="panel-section">
           <h2 className="section-title">Undo</h2>
           <div className="row">
-            <button type="button" onClick={doUndo} disabled={!token || undoState.busy || !hasWorld}>{undoState.busy ? 'Undoing' : 'Undo last commit'}</button>
+            <button type="button" className="bp-button" onClick={doUndo} disabled={!token || undoState.busy || !hasWorld}>{undoState.busy ? 'Undoing' : 'Undo last commit'}</button>
             <span className="muted small">Previous spec, re-validated with live players, committed as a new version.</span>
           </div>
           {undoState.result && <div className="note">{undoState.result}</div>}
@@ -440,6 +449,7 @@ export function DirectorApp() {
           {connLabel} | WebSocket RTT {rttMs === null ? 'n/a' : `${Math.round(rttMs)} ms`} | tick age {stats.tickAgeMs === null ? 'no ticks' : `${Math.round(stats.tickAgeMs)} ms`} | {Math.round(stats.fps)} fps
         </footer>
       </aside>
+      </div>
     </div>
   );
 }
