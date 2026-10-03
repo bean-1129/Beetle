@@ -56,8 +56,8 @@ Legend: implemented = code exists; tested = an automated or recorded manual test
 | 14 | malformed model output triggers bounded retries | tested (tests/unit/agent.test.ts: malformed and truncated output, bounded retries, no mutation) |
 | 15 | slow or missing model leaves gameplay responsive, no cloud fallback | tested (deadline ends the job, no fallback host contacted) |
 | 16 | client behind on versions resyncs | tested (resync returns current spec) |
-| 17 | fresh request through real OpenClaw tools with genuine report | tested live once (13:43 CDT): OpenClaw agent exec with the Beetle plugin read the world, had one patch rejected at the boundary, re-proposed, validated, committed v2 and published the report in 20 s against the real server (docs/RESULTS.md); plus two recorded runs against a fake server (packages/agent/SMOKE.md) |
-| 18 | fresh edit under local-only runtime configuration | tested live (direct mode, loopback model, no cloud route): 5 of 6 fresh edits committed in 2 to 14 s (docs/RESULTS.md run 3); validator refusal and repair demonstrated on the fixture world (DISCONNECTED_GOAL then a new crossing, 3.0 s); fresh brief committed in 14 s; offline (egress-blocked) rehearsal not yet run |
+| 17 | fresh request through real OpenClaw tools with genuine report | tested live twice: manual run (v2 in 20 s, docs/RESULTS.md) and the gated integration test tests/integration/live-agent.test.ts with BEETLE_LIVE_MODEL=1 BEETLE_LIVE_OPENCLAW=1 (committed v2 in 38.9 s, 7 tool calls, validation attempts 3 with INVALID_SCHEMA and DUPLICATE_ID rejected at the boundary, genuine build report); plus two recorded runs against a fake server (packages/agent/SMOKE.md) |
+| 18 | fresh edit under local-only runtime configuration | tested live: gated integration test (direct mode) committed lava plus a new northern bridge with preserved players in 14.3 s; 5 of 6 fresh edits committed in 2 to 14 s (docs/RESULTS.md run 3); validator refusal and repair demonstrated (DISCONNECTED_GOAL, 3.0 s); offline (egress-blocked) rehearsal not yet run |
 
 ## Blocked
 

@@ -290,3 +290,10 @@ Prompt: "Turn the water into lava and add a bridge to the northern island. Keep 
 | 20.0 s | committed | v2: hazard lava, new bridge `bridge-north-new` centre to temple; build report published by the plugin |
 
 Daemon log shows the chat requests from OpenClaw. This is the submission path, verified end to end once against the real server. Earlier at 13:24 the same path timed out because the Ollama daemon had stopped answering chat requests (see "All rehearsal attempts"); the daemon was restarted at 13:43 with a single slot.
+
+## Gated live integration tests (13:44 CDT, tests/integration/live-agent.test.ts, BEETLE_LIVE_MODEL=1 BEETLE_LIVE_OPENCLAW=1)
+
+| Case | Mode | Result | Timings |
+|---|---|---|---|
+| 18 | direct | committed: lava, new bridge to the northern island, players preserved | 14.3 s wall |
+| 17 | openclaw | committed v2 through the real OpenClaw tools; report: 7 tool calls, validation attempts 3 (INVALID_SCHEMA, DUPLICATE_ID rejected at the boundary), first model response 8.2 s, validated 32.2 s, committed 34.3 s | 38.9 s wall |
