@@ -287,10 +287,26 @@ export async function registerRoutes(app: FastifyInstance, ctx: ServerContext): 
     return { ok: true };
   });
 
+
+  /**
+   * Agent routes may not attribute candidates or reports to a request that has been cancelled or already finished.
+   * Unknown ids are allowed (candidates carry the id only for bookkeeping; tests and the benchmark use synthetic ids),
+   * but activity is only ever attached to a request that exists and is still open (see the reports route).
+   */
+  function requireOpenRequest(requestId: string, reply: FastifyReply): boolean {
+    const r = ctx.requests.get(requestId);
+    if (r && (r.status === 'cancelled' || r.finishedAt !== undefined)) {
+      reply.code(409).send({ issues: [{ code: 'UNSUPPORTED_OPERATION', message: `request "${requestId}" is closed (${r.status})`, objectIds: [requestId] }] });
+      return false;
+    }
+    return true;
+  }
+
   app.post(ROUTES.agentProposeWorld, async (req, reply) => {
     if (!requireAgent(req, reply)) return reply;
     const body = ProposeWorldBodySchema.safeParse(req.body ?? {});
     if (!body.success) return invalid(reply, body.error);
+    if (!requireOpenRequest(body.data.requestId, reply)) return reply;
     const staged = ctx.candidates.stageWorld(body.data.requestId, body.data.spec, ctx.world.version, ctx.clock.now());
     if (!staged.ok) {
       ctx.events.emit({ name: 'candidate.rejected', requestId: body.data.requestId, worldVersion: ctx.world.version, outcome: 'fail', codes: staged.issues.map((i) => i.code).slice(0, 8), data: { kind: 'world' } });
@@ -305,6 +321,7 @@ export async function registerRoutes(app: FastifyInstance, ctx: ServerContext): 
     if (!requireAgent(req, reply)) return reply;
     const body = ProposePatchBodySchema.safeParse(req.body ?? {});
     if (!body.success) return invalid(reply, body.error);
+    if (!requireOpenRequest(body.data.requestId, reply)) return reply;
     const active = ctx.world.current;
     if (!active) {
       return reply.code(409).send({ issues: [{ code: 'UNSUPPORTED_OPERATION', message: 'there is no world to patch; propose a world first', objectIds: [] }] });
@@ -376,6 +393,7 @@ export async function registerRoutes(app: FastifyInstance, ctx: ServerContext): 
     if (!requireAgent(req, reply)) return reply;
     const body = ReportBodySchema.safeParse(req.body ?? {});
     if (!body.success) return invalid(reply, body.error);
+    if (!requireOpenRequest(body.data.requestId, reply)) return reply;
     const now = ctx.clock.now();
     const report: BuildReport = {
       reportId: shortId('rep'),
@@ -391,10 +409,14 @@ export async function registerRoutes(app: FastifyInstance, ctx: ServerContext): 
       durationMs: report.timings.totalMs, data: { reportId: report.reportId, mode: report.mode, attempts: report.validation.attempts, toolCalls: report.toolCalls.length },
     });
     const phase: AgentPhase = report.outcome === 'committed' ? 'committed' : report.outcome === 'failed' ? 'failed' : 'cancelled';
-    const entry = ctx.requests.addActivity(report.requestId, {
-      phase, message: `${report.mode} / ${report.model}: ${report.summary}`.slice(0, 400), codes: report.validation.failedCodes,
-    }, report.worldVersion);
-    ctx.hub.broadcastActivity([entry]);
+    // Only a request that exists and is still open gets an activity entry; a report naming an unknown or closed id is stored but never shown as that request's outcome.
+    const owner = ctx.requests.get(report.requestId);
+    if (owner && owner.status !== 'cancelled' && owner.finishedAt === undefined) {
+      const entry = ctx.requests.addActivity(report.requestId, {
+        phase, message: `${report.mode} / ${report.model}: ${report.summary}`.slice(0, 400), codes: report.validation.failedCodes,
+      }, report.worldVersion);
+      ctx.hub.broadcastActivity([entry]);
+    }
     return { reportId: report.reportId };
   });
 

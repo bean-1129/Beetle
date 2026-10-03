@@ -28,7 +28,13 @@ async function main(): Promise<void> {
     ? `agent token: ${relative && !relative.startsWith('..') ? relative : secretsPath}`
     : 'agent token: from environment';
   console.log(`[beetle] listening on ${server.config.host}:${info.port} (${info.url}); ${secretsNote}`);
-  console.log(`[beetle] director: ${info.publicUrl}/director?token=${server.tokens.director}`);
+  // The director URL carries the token: print it only when the token was just generated into the secrets file,
+  // or when explicitly asked, so screen recordings and redirected logs do not capture a long-lived secret.
+  if (server.secrets.sources.director === 'file' || process.env.BEETLE_PRINT_DIRECTOR_URL === '1') {
+    console.log(`[beetle] director: ${info.publicUrl}/director?token=${server.tokens.director}`);
+  } else {
+    console.log(`[beetle] director: ${info.publicUrl}/director?token=<BEETLE_DIRECTOR_TOKEN from environment>`);
+  }
 
   let stopping = false;
   const shutdown = (signal: string) => {

@@ -9,7 +9,8 @@ const L = WORLD_LIMITS.localOffset;
 export const IdSchema = z.string().regex(/^[a-z][a-z0-9_-]{0,31}$/, 'id must be lowercase slug, max 32 chars');
 export const Finite = z.number().finite();
 // Display-only text: no control characters. Never used as a path or code.
-export const SafeText = (max: number) => z.string().max(max).regex(/^[^\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]*$/);
+// Display-only text: no control characters, no bidi or zero-width characters (HUD spoofing). Never used as a path or code.
+export const SafeText = (max: number) => z.string().max(max).regex(/^[^\u0000-\u001F\u007F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]*$/);
 
 export const Vec2Schema = z.object({ x: Finite.min(-H).max(H), z: Finite.min(-H).max(H) }).strict();
 export const LocalVec2Schema = z.object({ x: Finite.min(-L).max(L), z: Finite.min(-L).max(L) }).strict();
