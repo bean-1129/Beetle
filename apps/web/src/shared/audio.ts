@@ -9,11 +9,14 @@
  *   user gesture (click / keydown), and nothing is audible until
  *   `setEnabled(true)`. While disabled the AudioContext is suspended so the
  *   graph costs nothing.
- * - Two ambient beds ("serene", "volcanic") crossfade via `setTheme`.
+ * - Five ambient beds ("serene", "volcanic", "frost", "desert", "night")
+ *   crossfade via `setTheme`. Serene and volcanic are built with the graph;
+ *   the other beds are built lazily the first time they are selected.
  * - One-shot events (`onEvent`) are scheduled on the AudioContext clock.
  * - CPU stays low: a few dozen long-lived nodes, sparse short-lived nodes for
  *   one-shots and ambient details, and a 150 ms look-ahead scheduler. There is
- *   no per-frame work and no per-frame allocation.
+ *   no per-frame work and no per-frame allocation. Ambient details are only
+ *   scheduled for beds that are audible (current theme or mid-crossfade).
  *
  * Usage (HUD):
  *   const audio = createAudio();
@@ -25,7 +28,7 @@
  *   audio.onEvent('relic');
  */
 
-export type AudioTheme = 'serene' | 'volcanic';
+export type AudioTheme = 'serene' | 'volcanic' | 'frost' | 'desert' | 'night';
 
 export type AudioEventName =
   | 'relic'
@@ -35,7 +38,14 @@ export type AudioEventName =
   | 'fall'
   | 'respawn'
   | 'request_queued'
-  | 'request_failed';
+  | 'request_failed'
+  | 'checkpoint'
+  | 'tick_warning'
+  | 'hill_tick'
+  | 'lost'
+  | 'biome_change';
+
+const THEMES: readonly AudioTheme[] = ['serene', 'volcanic', 'frost', 'desert', 'night'];
 
 export interface BeetleAudio {
   /** Create or resume the AudioContext. Call from a click / keydown handler. */
@@ -82,6 +92,24 @@ interface VolcanicBed {
   emberNext: number;
 }
 
+interface FrostBed {
+  out: GainNode;
+  /** Shared low-pass for ice crack clicks. */
+  crackFilter: BiquadFilterNode;
+  creakNext: number;
+}
+
+interface DesertBed {
+  out: GainNode;
+  cryNext: number;
+}
+
+interface NightBed {
+  out: GainNode;
+  cricketNext: number;
+  hootNext: number;
+}
+
 interface Graph {
   ctx: AC;
   master: GainNode;
@@ -91,6 +119,10 @@ interface Graph {
   noise: NoiseBank;
   serene: SereneBed;
   volcanic: VolcanicBed;
+  /** Lazily built beds (null until first selected). */
+  frost: FrostBed | null;
+  desert: DesertBed | null;
+  night: NightBed | null;
 }
 
 function clamp01(v: number): number {
@@ -209,6 +241,29 @@ function lfo(ctx: AC, hz: number, depth: number, target: AudioParam, type: Oscil
 function anchor(param: AudioParam, now: number): void {
   param.cancelScheduledValues(now);
   param.setValueAtTime(param.value, now);
+}
+
+/**
+ * Advance a sparse-event scheduler. When `active`, fires `fire(at)` for every
+ * due time before `horizon` and returns the next due time; when inactive,
+ * pushes the next due time past the horizon so nothing fires.
+ */
+function scheduleSparse(
+  next: number,
+  active: boolean,
+  now: number,
+  horizon: number,
+  first: readonly [number, number],
+  gap: readonly [number, number],
+  fire: (at: number) => void,
+): number {
+  if (!active) return Math.max(next, horizon);
+  let at = next < now ? now + rand(first[0], first[1]) : next;
+  while (at < horizon) {
+    fire(at);
+    at += rand(gap[0], gap[1]);
+  }
+  return at;
 }
 
 interface ToneOpts {
@@ -424,6 +479,143 @@ export function createAudio(): BeetleAudio {
     return { out, emberFilter, emberNext: 0 };
   }
 
+  function buildFrost(g: Graph): FrostBed {
+    const { ctx } = g;
+    const out = ctx.createGain();
+    out.gain.value = 0;
+    out.connect(g.bedBus);
+    sendToReverb(g, out, 0.14);
+
+    // Thin high wind: white noise through a wandering high-pass, slow gusts.
+    const wind = startLoop(ctx, g.noise.white, 0.3);
+    const windFilter = ctx.createBiquadFilter();
+    windFilter.type = 'highpass';
+    windFilter.frequency.value = 1500;
+    windFilter.Q.value = 0.5;
+    const windGain = ctx.createGain();
+    windGain.gain.value = 0.045;
+    wind.connect(windFilter);
+    windFilter.connect(windGain);
+    windGain.connect(out);
+    lfo(ctx, 0.07, 500, windFilter.frequency);
+    lfo(ctx, 0.037, 0.022, windGain.gain);
+
+    // Whistling resonances: two narrow band-passes on the wind whose centre
+    // frequencies sweep slowly and whose levels breathe in and out of phase.
+    const whistle = (centre: number, sweepHz: number, sweepDepth: number, levelHz: number): void => {
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = centre;
+      bp.Q.value = 16;
+      const level = ctx.createGain();
+      level.gain.value = 0.16;
+      windFilter.connect(bp);
+      bp.connect(level);
+      level.connect(out);
+      lfo(ctx, sweepHz, sweepDepth, bp.frequency);
+      lfo(ctx, levelHz, 0.12, level.gain);
+    };
+    whistle(1900, 0.023, 650, 0.031);
+    whistle(2750, 0.016, 900, 0.019);
+
+    // Ice cracks: tight clicks through a shared low-pass.
+    const crackFilter = ctx.createBiquadFilter();
+    crackFilter.type = 'lowpass';
+    crackFilter.frequency.value = 1100;
+    crackFilter.Q.value = 1.2;
+    const crackGain = ctx.createGain();
+    crackGain.gain.value = 0.3;
+    crackFilter.connect(crackGain);
+    crackGain.connect(out);
+
+    return { out, crackFilter, creakNext: 0 };
+  }
+
+  function buildDesert(g: Graph): DesertBed {
+    const { ctx } = g;
+    const out = ctx.createGain();
+    out.gain.value = 0;
+    out.connect(g.bedBus);
+    sendToReverb(g, out, 0.05);
+
+    // Dry wind: pink noise through a high-pass that wanders, slow gusts.
+    const wind = startLoop(ctx, g.noise.pink, 0.9);
+    const windFilter = ctx.createBiquadFilter();
+    windFilter.type = 'highpass';
+    windFilter.frequency.value = 650;
+    windFilter.Q.value = 0.6;
+    const windGain = ctx.createGain();
+    windGain.gain.value = 0.15;
+    wind.connect(windFilter);
+    windFilter.connect(windGain);
+    windGain.connect(out);
+    lfo(ctx, 0.05, 280, windFilter.frequency);
+    lfo(ctx, 0.029, 0.06, windGain.gain);
+
+    // Sand hiss: high-passed white noise with a slow LFO so it drifts in waves.
+    const sand = startLoop(ctx, g.noise.white, 1.2);
+    const sandFilter = ctx.createBiquadFilter();
+    sandFilter.type = 'highpass';
+    sandFilter.frequency.value = 5600;
+    const sandGain = ctx.createGain();
+    sandGain.gain.value = 0.022;
+    sand.connect(sandFilter);
+    sandFilter.connect(sandGain);
+    sandGain.connect(out);
+    lfo(ctx, 0.11, 0.012, sandGain.gain);
+    lfo(ctx, 0.017, 0.008, sandGain.gain);
+
+    return { out, cryNext: 0 };
+  }
+
+  function buildNight(g: Graph): NightBed {
+    const { ctx } = g;
+    const out = ctx.createGain();
+    out.gain.value = 0;
+    out.connect(g.bedBus);
+    sendToReverb(g, out, 0.12);
+
+    // Deep quiet bed: brown noise through a very low low-pass, plus a faint
+    // sub drone that drifts.
+    const deep = startLoop(ctx, g.noise.brown, 0.4);
+    const deepFilter = ctx.createBiquadFilter();
+    deepFilter.type = 'lowpass';
+    deepFilter.frequency.value = 120;
+    deepFilter.Q.value = 0.7;
+    const deepGain = ctx.createGain();
+    deepGain.gain.value = 0.2;
+    deep.connect(deepFilter);
+    deepFilter.connect(deepGain);
+    deepGain.connect(out);
+    lfo(ctx, 0.031, 0.06, deepGain.gain);
+
+    const drone = ctx.createOscillator();
+    drone.type = 'sine';
+    drone.frequency.value = 55;
+    const droneGain = ctx.createGain();
+    droneGain.gain.value = 0.05;
+    drone.connect(droneGain);
+    droneGain.connect(out);
+    drone.start();
+    lfo(ctx, 0.07, 0.9, drone.frequency);
+
+    // Soft breeze: pink noise through a low low-pass, barely moving.
+    const breeze = startLoop(ctx, g.noise.pink, 1.4);
+    const breezeFilter = ctx.createBiquadFilter();
+    breezeFilter.type = 'lowpass';
+    breezeFilter.frequency.value = 360;
+    breezeFilter.Q.value = 0.6;
+    const breezeGain = ctx.createGain();
+    breezeGain.gain.value = 0.1;
+    breeze.connect(breezeFilter);
+    breezeFilter.connect(breezeGain);
+    breezeGain.connect(out);
+    lfo(ctx, 0.047, 130, breezeFilter.frequency);
+    lfo(ctx, 0.019, 0.05, breezeGain.gain);
+
+    return { out, cricketNext: 0, hootNext: 0 };
+  }
+
   function waterLap(g: Graph, t: number): void {
     noiseBurst(g, g.serene.out, t, {
       buffer: g.noise.white,
@@ -483,6 +675,166 @@ export function createAudio(): BeetleAudio {
     }
   }
 
+  /** Frost: a short low filtered noise groan with a few tight cracks in it. */
+  function iceCreak(g: Graph, t: number): void {
+    const f = g.frost;
+    if (!f) return;
+    const pan = rand(-0.7, 0.7);
+    noiseBurst(g, f.out, t, {
+      buffer: g.noise.brown,
+      filter: 'bandpass',
+      freq: rand(260, 520),
+      sweepTo: rand(90, 170),
+      sweepSeconds: rand(0.15, 0.3),
+      q: 4,
+      attack: 0.006,
+      hold: rand(0.02, 0.06),
+      release: rand(0.12, 0.32),
+      peak: rand(0.14, 0.3),
+      pan,
+      reverb: 0.3,
+    });
+    const cracks = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < cracks; i++) emberClick(g, t + rand(0, 0.14), rand(0.2, 0.5), f.crackFilter);
+  }
+
+  /** Desert: a distant two-note descending cry with a raspy FM edge. */
+  function hawkCry(g: Graph, t: number): void {
+    const d = g.desert;
+    if (!d) return;
+    const { ctx } = g;
+    const voice = ctx.createGain();
+    voice.gain.value = rand(0.018, 0.034);
+    let tail: AudioNode = voice;
+    if (typeof ctx.createStereoPanner === 'function') {
+      const p = ctx.createStereoPanner();
+      p.pan.value = rand(-0.8, 0.8);
+      voice.connect(p);
+      tail = p;
+    }
+    tail.connect(d.out);
+    sendToReverb(g, tail, 0.65);
+
+    const f0 = rand(2100, 2700);
+    const carrier = ctx.createOscillator();
+    carrier.type = 'sine';
+    // Note 1: quick rise then a long fall; note 2: starts lower and falls further.
+    carrier.frequency.setValueAtTime(f0 * 0.9, t);
+    carrier.frequency.exponentialRampToValueAtTime(f0, t + 0.08);
+    carrier.frequency.exponentialRampToValueAtTime(f0 * 0.72, t + 0.55);
+    carrier.frequency.setValueAtTime(f0 * 0.78, t + 0.64);
+    carrier.frequency.exponentialRampToValueAtTime(f0 * 0.5, t + 1.2);
+    const mod = ctx.createOscillator();
+    mod.type = 'sine';
+    mod.frequency.value = rand(140, 200);
+    const modDepth = ctx.createGain();
+    modDepth.gain.value = rand(60, 120);
+    mod.connect(modDepth);
+    modDepth.connect(carrier.frequency);
+    const amp = ctx.createGain();
+    envelope(amp.gain, t, 0.06, 0.22, 0.26, 1);
+    const end = envelope(amp.gain, t + 0.64, 0.05, 0.2, 0.36, 0.8);
+    carrier.connect(amp);
+    amp.connect(voice);
+    carrier.start(t);
+    mod.start(t);
+    carrier.stop(end + 0.03);
+    mod.stop(end + 0.03);
+  }
+
+  /** Night: a cluster of fast FM blips from one cricket. */
+  function cricketCluster(g: Graph, t: number): void {
+    const n = g.night;
+    if (!n) return;
+    const { ctx } = g;
+    const voice = ctx.createGain();
+    voice.gain.value = rand(0.01, 0.022);
+    let tail: AudioNode = voice;
+    if (typeof ctx.createStereoPanner === 'function') {
+      const p = ctx.createStereoPanner();
+      p.pan.value = rand(-0.9, 0.9);
+      voice.connect(p);
+      tail = p;
+    }
+    tail.connect(n.out);
+    sendToReverb(g, tail, 0.12);
+
+    const carrier = ctx.createOscillator();
+    carrier.type = 'sine';
+    carrier.frequency.value = rand(3900, 4700);
+    const mod = ctx.createOscillator();
+    mod.type = 'sine';
+    mod.frequency.value = rand(38, 56);
+    const modDepth = ctx.createGain();
+    modDepth.gain.value = rand(500, 900);
+    mod.connect(modDepth);
+    modDepth.connect(carrier.frequency);
+    const amp = ctx.createGain();
+    amp.gain.value = SILENT;
+    const count = 5 + Math.floor(Math.random() * 9);
+    const spacing = rand(0.04, 0.062);
+    let at = t;
+    for (let i = 0; i < count; i++) {
+      amp.gain.setValueAtTime(SILENT, at);
+      amp.gain.linearRampToValueAtTime(1, at + 0.006);
+      amp.gain.exponentialRampToValueAtTime(SILENT, at + 0.03);
+      at += spacing;
+    }
+    carrier.connect(amp);
+    amp.connect(voice);
+    carrier.start(t);
+    mod.start(t);
+    carrier.stop(at + 0.05);
+    mod.stop(at + 0.05);
+  }
+
+  /** Night: two soft hoots, a sine with slow vibrato through a dark low-pass. */
+  function owlHoot(g: Graph, t: number): void {
+    const n = g.night;
+    if (!n) return;
+    const { ctx } = g;
+    const dark = ctx.createBiquadFilter();
+    dark.type = 'lowpass';
+    dark.frequency.value = 720;
+    const voice = ctx.createGain();
+    voice.gain.value = rand(0.035, 0.06);
+    dark.connect(voice);
+    let tail: AudioNode = voice;
+    if (typeof ctx.createStereoPanner === 'function') {
+      const p = ctx.createStereoPanner();
+      p.pan.value = rand(-0.7, 0.7);
+      voice.connect(p);
+      tail = p;
+    }
+    tail.connect(n.out);
+    sendToReverb(g, tail, 0.6);
+
+    const base = rand(300, 370);
+    const hoot = (freq: number, at: number, hold: number): number => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const vib = ctx.createOscillator();
+      vib.type = 'sine';
+      vib.frequency.value = rand(4.5, 6);
+      const vibDepth = ctx.createGain();
+      vibDepth.gain.value = freq * 0.016;
+      vib.connect(vibDepth);
+      vibDepth.connect(osc.frequency);
+      const amp = ctx.createGain();
+      const end = envelope(amp.gain, at, 0.07, hold, 0.24, 1);
+      osc.connect(amp);
+      amp.connect(dark);
+      osc.start(at);
+      vib.start(at);
+      osc.stop(end + 0.03);
+      vib.stop(end + 0.03);
+      return end;
+    };
+    const first = hoot(base, t, 0.16);
+    hoot(base * 0.94, first + 0.12, 0.3);
+  }
+
   function bedActive(name: AudioTheme, now: number): boolean {
     return theme === name || now < blendEnd;
   }
@@ -520,6 +872,29 @@ export function createAudio(): BeetleAudio {
       }
     } else {
       v.emberNext = Math.max(v.emberNext, horizon);
+    }
+
+    const f = g.frost;
+    if (f) {
+      f.creakNext = scheduleSparse(f.creakNext, bedActive('frost', now), now, horizon, [1, 5], [4, 14], (at) =>
+        iceCreak(g, at),
+      );
+    }
+
+    const d = g.desert;
+    if (d) {
+      d.cryNext = scheduleSparse(d.cryNext, bedActive('desert', now), now, horizon, [8, 25], [22, 55], (at) =>
+        hawkCry(g, at),
+      );
+    }
+
+    const n = g.night;
+    if (n) {
+      const active = bedActive('night', now);
+      n.cricketNext = scheduleSparse(n.cricketNext, active, now, horizon, [0.3, 2], [1.4, 4.5], (at) =>
+        cricketCluster(g, at),
+      );
+      n.hootNext = scheduleSparse(n.hootNext, active, now, horizon, [10, 30], [25, 60], (at) => owlHoot(g, at));
     }
   }
 
@@ -593,7 +968,7 @@ export function createAudio(): BeetleAudio {
   function playFall(g: Graph, t: number): void {
     tone(g, g.fxBus, t, { type: 'triangle', freq: 820, glideTo: 140, glideSeconds: 0.55, attack: 0.02, hold: 0.1, release: 0.45, peak: 0.13 });
     const impact = t + 0.52;
-    if (theme === 'serene') {
+    if (theme === 'serene' || theme === 'night') {
       noiseBurst(g, g.fxBus, impact, {
         buffer: g.noise.white,
         filter: 'bandpass',
@@ -606,6 +981,46 @@ export function createAudio(): BeetleAudio {
         reverb: 0.35,
       });
       tone(g, g.fxBus, impact, { freq: 190, glideTo: 70, glideSeconds: 0.12, attack: 0.004, release: 0.18, peak: 0.2 });
+    } else if (theme === 'frost') {
+      // Ice: bright shatter plus a couple of cracks.
+      noiseBurst(g, g.fxBus, impact, {
+        buffer: g.noise.white,
+        filter: 'highpass',
+        freq: 3200,
+        q: 0.8,
+        attack: 0.006,
+        hold: 0.04,
+        release: 0.5,
+        peak: 0.24,
+        reverb: 0.4,
+      });
+      tone(g, g.fxBus, impact, { freq: 160, glideTo: 60, glideSeconds: 0.1, attack: 0.004, release: 0.16, peak: 0.18 });
+      if (g.frost) {
+        for (let i = 0; i < 3; i++) emberClick(g, impact + rand(0.01, 0.2), rand(0.3, 0.7), g.frost.crackFilter);
+      }
+    } else if (theme === 'desert') {
+      // Sand: a dull thud and a short dusty hiss.
+      noiseBurst(g, g.fxBus, impact, {
+        buffer: g.noise.pink,
+        filter: 'lowpass',
+        freq: 700,
+        q: 0.7,
+        attack: 0.01,
+        hold: 0.06,
+        release: 0.45,
+        peak: 0.3,
+        reverb: 0.1,
+      });
+      noiseBurst(g, g.fxBus, impact + 0.03, {
+        buffer: g.noise.white,
+        filter: 'highpass',
+        freq: 5000,
+        attack: 0.02,
+        hold: 0.1,
+        release: 0.35,
+        peak: 0.05,
+      });
+      tone(g, g.fxBus, impact, { freq: 120, glideTo: 55, glideSeconds: 0.12, attack: 0.004, release: 0.2, peak: 0.2 });
     } else {
       noiseBurst(g, g.fxBus, impact, {
         buffer: g.noise.white,
@@ -650,6 +1065,127 @@ export function createAudio(): BeetleAudio {
     tone(g, mute, t + 0.19, { type: 'triangle', freq: 174.61, attack: 0.01, hold: 0.1, release: 0.18, peak: 0.22 });
   }
 
+  /** Rising two-note confirm, brighter than relic (triangle + 2nd/3rd partials, a sparkle on the top note). */
+  function playCheckpoint(g: Graph, t: number): void {
+    const chime = (freq: number, at: number, amp: number): void => {
+      tone(g, g.fxBus, at, { type: 'triangle', freq, attack: 0.003, hold: 0.02, release: 0.5, peak: 0.19 * amp, reverb: 0.35 });
+      tone(g, g.fxBus, at, { freq: freq * 2, attack: 0.002, release: 0.25, peak: 0.07 * amp, reverb: 0.3 });
+      tone(g, g.fxBus, at, { freq: freq * 3, attack: 0.002, release: 0.12, peak: 0.025 * amp });
+    };
+    chime(1567.98, t, 0.9); // G6
+    chime(2349.32, t + 0.11, 1); // D7, a fifth above
+    noiseBurst(g, g.fxBus, t + 0.11, {
+      buffer: g.noise.white,
+      filter: 'highpass',
+      freq: 6500,
+      attack: 0.004,
+      hold: 0.01,
+      release: 0.12,
+      peak: 0.04,
+      reverb: 0.3,
+    });
+  }
+
+  /** A short, constant-pitch clock tick: a click through a band-pass plus a tiny wooden body. */
+  function playTickWarning(g: Graph, t: number): void {
+    const { ctx } = g;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 2600;
+    bp.Q.value = 2.5;
+    bp.connect(g.fxBus);
+    const src = ctx.createBufferSource();
+    src.buffer = g.noise.click;
+    const amp = ctx.createGain();
+    amp.gain.value = 0.7;
+    src.connect(amp);
+    amp.connect(bp);
+    src.start(t);
+    src.stop(t + 0.05);
+    tone(g, g.fxBus, t, { type: 'triangle', freq: 1046.5, attack: 0.001, hold: 0.008, release: 0.045, peak: 0.1 });
+  }
+
+  /** A soft pulsing hum blip: a low triangle with fast tremolo, through a dark low-pass. */
+  function playHillTick(g: Graph, t: number): void {
+    const { ctx } = g;
+    const dark = ctx.createBiquadFilter();
+    dark.type = 'lowpass';
+    dark.frequency.value = 650;
+    dark.Q.value = 0.9;
+    dark.connect(g.fxBus);
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.value = 164.81; // E3
+    const amp = ctx.createGain();
+    const end = envelope(amp.gain, t, 0.02, 0.1, 0.16, 0.12);
+    const trem = ctx.createOscillator();
+    trem.type = 'sine';
+    trem.frequency.value = 17;
+    const tremDepth = ctx.createGain();
+    tremDepth.gain.value = 0.055;
+    trem.connect(tremDepth);
+    tremDepth.connect(amp.gain);
+    osc.connect(amp);
+    amp.connect(dark);
+    sendToReverb(g, amp, 0.15);
+    osc.start(t);
+    trem.start(t);
+    osc.stop(end + 0.05);
+    trem.stop(end + 0.05);
+    tone(g, dark, t, { freq: 329.63, attack: 0.03, hold: 0.06, release: 0.12, peak: 0.03 });
+  }
+
+  /** A low descending three-note phrase with a long reverb tail. */
+  function playLost(g: Graph, t: number): void {
+    const { ctx } = g;
+    const dark = ctx.createBiquadFilter();
+    dark.type = 'lowpass';
+    dark.frequency.value = 900;
+    dark.Q.value = 0.7;
+    dark.connect(g.fxBus);
+    const notes = [220, 185, 146.83]; // A3 F#3 D3
+    notes.forEach((freq, i) => {
+      const last = i === notes.length - 1;
+      const at = t + i * 0.38;
+      tone(g, dark, at, {
+        type: 'triangle',
+        freq,
+        attack: 0.03,
+        hold: last ? 0.5 : 0.22,
+        release: last ? 1.4 : 0.35,
+        peak: 0.16,
+        reverb: 0.85,
+      });
+      tone(g, g.fxBus, at, {
+        freq: freq / 2,
+        attack: 0.04,
+        hold: last ? 0.5 : 0.22,
+        release: last ? 1.2 : 0.3,
+        peak: 0.07,
+        reverb: 0.5,
+      });
+    });
+  }
+
+  /** An airy upward sweep like commit, but longer and softer, with a faint high shimmer. */
+  function playBiomeChange(g: Graph, t: number): void {
+    noiseBurst(g, g.fxBus, t, {
+      buffer: g.noise.white,
+      filter: 'bandpass',
+      freq: 180,
+      sweepTo: 3600,
+      sweepSeconds: 1.1,
+      q: 1.4,
+      attack: 0.4,
+      hold: 0.25,
+      release: 1.0,
+      peak: 0.09,
+      reverb: 0.55,
+    });
+    tone(g, g.fxBus, t + 0.3, { freq: 1318.51, attack: 0.5, hold: 0.3, release: 1.2, peak: 0.03, reverb: 0.8 });
+    tone(g, g.fxBus, t + 0.3, { freq: 1975.53, detune: 5, attack: 0.6, hold: 0.3, release: 1.2, peak: 0.02, reverb: 0.8 });
+  }
+
   // ------------------------------------------------------------------ graph
 
   function applyMaster(rampSeconds = 0.15): void {
@@ -666,12 +1202,36 @@ export function createAudio(): BeetleAudio {
     if (!g) return;
     const now = g.ctx.currentTime;
     const dur = Math.max(0.02, blendSeconds);
-    const sereneTarget = theme === 'serene' ? 1 : 0;
-    anchor(g.serene.out.gain, now);
-    g.serene.out.gain.linearRampToValueAtTime(sereneTarget, now + dur);
-    anchor(g.volcanic.out.gain, now);
-    g.volcanic.out.gain.linearRampToValueAtTime(1 - sereneTarget, now + dur);
+    for (const name of THEMES) {
+      const target = name === theme ? 1 : 0;
+      // Beds that were never built and are not being faded in stay unbuilt.
+      const out = bedOut(g, name, target === 1);
+      if (!out) continue;
+      anchor(out.gain, now);
+      out.gain.linearRampToValueAtTime(target, now + dur);
+    }
     blendEnd = now + dur;
+  }
+
+  /** Output gain of a bed; builds lazily-constructed beds when `create` is set. */
+  function bedOut(g: Graph, name: AudioTheme, create: boolean): GainNode | null {
+    switch (name) {
+      case 'serene':
+        return g.serene.out;
+      case 'volcanic':
+        return g.volcanic.out;
+      case 'frost':
+        if (!g.frost && create) g.frost = buildFrost(g);
+        return g.frost ? g.frost.out : null;
+      case 'desert':
+        if (!g.desert && create) g.desert = buildDesert(g);
+        return g.desert ? g.desert.out : null;
+      case 'night':
+        if (!g.night && create) g.night = buildNight(g);
+        return g.night ? g.night.out : null;
+      default:
+        return null;
+    }
   }
 
   function build(ctx: AC): Graph {
@@ -707,7 +1267,7 @@ export function createAudio(): BeetleAudio {
       click: makeClickBuffer(ctx),
     };
 
-    const partial = { ctx, master, bedBus, fxBus, reverb, noise } as Graph;
+    const partial = { ctx, master, bedBus, fxBus, reverb, noise, frost: null, desert: null, night: null } as Graph;
     partial.serene = buildSerene(partial);
     partial.volcanic = buildVolcanic(partial);
     return partial;
@@ -805,7 +1365,7 @@ export function createAudio(): BeetleAudio {
   }
 
   function setTheme(next: AudioTheme, blendSeconds: number = DEFAULT_BLEND_SECONDS): void {
-    if (next !== 'serene' && next !== 'volcanic') return;
+    if (!THEMES.includes(next)) return;
     theme = next;
     applyTheme(Number.isFinite(blendSeconds) ? blendSeconds : DEFAULT_BLEND_SECONDS);
   }
@@ -843,6 +1403,21 @@ export function createAudio(): BeetleAudio {
         break;
       case 'request_failed':
         playRequestFailed(g, t);
+        break;
+      case 'checkpoint':
+        playCheckpoint(g, t);
+        break;
+      case 'tick_warning':
+        playTickWarning(g, t);
+        break;
+      case 'hill_tick':
+        playHillTick(g, t);
+        break;
+      case 'lost':
+        playLost(g, t);
+        break;
+      case 'biome_change':
+        playBiomeChange(g, t);
         break;
       default:
         break;
