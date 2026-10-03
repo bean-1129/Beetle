@@ -432,3 +432,7 @@ the whole time (nvidia-smi 72 to 91 % busy before our calls), so the model wait 
 ## Streaming extension through OpenClaw mode (15:26 CDT, port 7781, seed2, OpenClaw worker)
 
 A scripted player walked east on haven; the server raised the automatic request; OpenClaw's agent run read the world, staged "Add two new islands east of haven with decorations and bridges from haven", the validator and connectivity checks passed, and v2 committed 49.3 s after the trigger (islands island-east1 and island-east2). The play HUD showed "Beetle is building ahead to the east" during the request. Submission path verified for streaming as well as briefs and edits.
+
+## Ground terrain, live (15:38 CDT, port 7781)
+
+A set_terrain ground patch on the seed2 world committed as v2 ("Misty Forest Valley") through the validated path. The play page rendered one continuous landmass with a stone road to the temple plateau and scattered trees, no islands and no water, at 45 fps in the software-rendered browser pane. Switching back to islands restores the floating look (renderer check by the ground owner).
