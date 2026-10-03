@@ -31,20 +31,17 @@ The machine timezone is America/Chicago, not America/New_York. All deadline math
 |---|---|---|
 | Node | 24.21.0 | .tools/node/bin |
 | npm | 11.19.0 | .tools/node/bin |
-| OpenClaw | 2026.9.8 (fc23bc8) | .tools/npm-global/bin/openclaw |
 | Ollama | 0.35.1 | .tools/ollama/bin/ollama, server bound to 127.0.0.1:11434; restarted at 13:43 CDT with OLLAMA_NUM_PARALLEL=1 OLLAMA_FLASH_ATTENTION=1 OLLAMA_KEEP_ALIVE=1h after the daemon stopped answering chat requests; this model architecture ignores parallel slots (daemon log) |
 | Python | system python3 | used only for scripts, not product inference |
 
-Note: the earlier setup ran `npm config set prefix .tools/npm-global --location=user`, which changed the user npmrc prefix for global installs. OpenClaw's install scripts (esbuild, koffi, protobufjs, openclaw postinstall) were blocked by npm allow-scripts; see BUILD_STATUS.md for whether that needed a rerun.
 
 ## Models
 
 | Tag | Size | Status at inspection |
 |---|---|---|
-| qwen3.5:4b | 3.39 GB | pulling, 78 percent, ~5 MB/s |
-| qwen3.8:27b | 17.74 GB | not present: the first pull ended in a digest mismatch after a daemon restart, the second was stopped at 41 percent when the daemon had to be restarted again; never benchmarked (docs/MODEL_SELECTION.md) |
+| qwen3.5:4b | 3.39 GB | present, Q4_K_M; the only model Beetle uses |
 
-Quantization and exact digest are recorded by `scripts/benchmark-local.mjs` output once a model is present (`ollama show`). No cloud model is configured anywhere in the product path. Qwen3.8-2.4T-A95B is explicitly not downloaded.
+Exact digest: `ollama show qwen3.5:4b`. In the 2D benchmark (docs/RESULTS.md) the warm-up call took 14.0 s, of which 5.5 s was model load; warm design calls took 10.3 to 12.7 s for about 350 prompt and 370 to 500 output tokens. No cloud model is configured anywhere in the product path.
 
 ## Network
 
@@ -60,14 +57,11 @@ Quantization and exact digest are recorded by `scripts/benchmark-local.mjs` outp
 |---|---|
 | 127.0.0.1:11434 | Ollama (loopback only) |
 | 127.0.0.1:11000 | pre-existing unrelated loopback service, not touched |
-| 0.0.0.0:7700 | Beetle server: HTTP, WebSocket, static web build (team LAN) |
+| 0.0.0.0:7700 | Beetle server: the 2D studio at / and the /api/2d model proxy; the director token is handed only to pages opened on this machine |
 | 127.0.0.1:5173 | Vite dev server (development only) |
-| 127.0.0.1 | OpenClaw gateway, loopback only (port recorded in docs/ARCHITECTURE.md once configured) |
 | 22, 631, 53 | pre-existing system services, untouched |
 
 ## Blockers and limitations
 
 - Network: flaky Wi-Fi; dependency installs and model pulls need retries.
-- Team chat channel: no credentials available; report publishing stays local (file plus UI).
-- Physical phones: require a person on site; marked unrun until done.
 - Playwright browsers: not downloaded (large download on a slow link); browser tests are deferred unless time permits.

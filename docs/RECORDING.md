@@ -19,23 +19,23 @@ Tools: scripts/record-demo.sh (capture), scripts/caption-video.sh (captions). Ou
 ## Screen setup
 
 - Leave GNOME at 100% scaling and record at the native 1920x1200. Fractional scaling on X11 blurs text and changes the capture size. Deliver the file as recorded; if an upload form insists on 1920x1080, letterbox, never crop.
-- Browser zoom 125% (Ctrl and plus) so the version badge, relic count and activity trail stay legible on a phone-sized player. Press F11 so no tabs or URL bar are captured (the director URL carries the director token; it must not be on screen).
+- Browser zoom 125% (Ctrl and plus) so the studio panels, the design document and the playtest progress stay legible. Press F11 so no tabs or URL bar are captured.
 - Switch on Do Not Disturb in the notification pane before the take. Close chat clients.
-- The dev terminal (`npm run dev -- --prod`) is on another workspace, not on the recording screen. Do not switch workspace during the take.
-- Do one 10 second test take, play it back and check that the badge text is readable at 50% size.
+- The terminal running `npm start` is on another workspace, not on the recording screen. Do not switch workspace during the take.
+- Do one 10 second test take, play it back and check that the studio text is readable at 50% size.
 
 ## What to show
 
-- The director page with the panel collapsed so the world canvas dominates (shot 1 opens with the panel open, then collapse it).
-- The version badge visible at all times: v1 after the brief, v2 after the live edit, v3 after the repaired conflicting edit.
-- Two phones joined: both connection dots green, two avatars moving, relics 1/3 before and after the live edit.
-- The activity trail during planning, validating, committed, and the validator error with its code and bridge id in shot 5.
-- The version report panel at the end: versions, attempts, codes, measured times, plus the `npm run demo:check` output.
+- The studio at `/` with the model status online.
+- The design document after Design it, and the level build with bot playtest progress after Build.
+- Play, then the plain-word changes, including one refused change with its reason.
+- The export opened from disk with the network off.
+- The measured table from docs/RESULTS.md and the `npm run demo:check` output.
 
 ## Capture
 
 Option A, recommended: GNOME recorder.
-1. Director page full screen. Press Ctrl+Shift+Alt+R. The overlay opens in record mode (video camera icon). Choose "Screen".
+1. Studio page full screen. Press Ctrl+Shift+Alt+R. The overlay opens in record mode (video camera icon). Choose "Screen".
 2. Press the red button. A red dot with a timer appears in the top bar. Run the sequence from docs/RUNBOOK.md.
 3. Stop by clicking the red indicator in the top bar (or Ctrl+Shift+Alt+R again). GNOME writes `~/Videos/Screencasts/Screencast From YYYY-MM-DD HH-MM-SS.webm` (folder created on the first recording).
 4. `scripts/record-demo.sh --import` copies the newest screencast to `data/recordings/demo-<timestamp>.webm` and writes a `.meta.txt` sidecar with source path, time and sha256. The original stays in `~/Videos/Screencasts/`.
@@ -50,7 +50,7 @@ Option B: `scripts/record-demo.sh [--duration SECONDS]`. It prints its plan (ses
 
 ## Label time compression
 
-- Any part of the published video that runs faster than real time, or that skips time inside a shot, carries "TIME COMPRESSED" on screen for the whole span: `--compressed START END` on the caption script (repeat the flag for several spans). Say in that shot's caption what was compressed, for example "planning, 38 s shown as 8 s".
+- Any part of the published video that runs faster than real time, or that skips time inside a shot, carries "TIME COMPRESSED" on screen for the whole span: `--compressed START END` on the caption script (repeat the flag for several spans). Say in that shot's caption what was compressed, for example "level build, 4 s shown as 1 s".
 - Model waits up to about 10 seconds are shown at real speed. Longer waits may be compressed, labelled, and the measured time stays visible in the trail.
 - A failed attempt is never cut out silently. Show it, show the retry, label any compression.
 
@@ -64,10 +64,10 @@ Option B: `scripts/record-demo.sh [--duration SECONDS]`. It prints its plan (ses
 
 ## Honest footage rules
 
-- No fake progress. The trail, timings, version badge, relic count and connection dots on screen are what the software did in that take. Nothing is mocked, replayed, re-ordered or sped up without a label.
+- No fake progress. The design document, build progress, bot playtest results and timings on screen are what the software did in that take. Nothing is mocked, replayed, re-ordered or sped up without a label.
 - Shots that cannot be produced honestly are cut, not faked.
-- Keep all attempts. Every take and every agent attempt, including failures and retries, stays on disk and is listed in BUILD_STATUS.md. The validator rejection in shot 5 is shown, not skipped. If the agent's first attempt is already valid, say so on screen and use the separately labelled invalid-patch test clip (storyboard fallback).
+- Keep all attempts. Every take and every generation attempt, including failures and retries, stays on disk and is listed in BUILD_STATUS.md. A refused change is shown, not skipped.
 - All time compression is labelled on screen.
-- The cold model load is reported separately in the benchmark, never hidden. The warm-up brief run before recording is declared.
-- If the phones cannot join the LAN, use the director keyboard player and say so in the caption.
-- Numbers shown or quoted come from data/reports and data/benchmarks, nothing else.
+- The cold model load is reported separately in the benchmark, never hidden. The warm-up idea run before recording is declared.
+- If the model is offline, show the idea reader building the game without it and say so in the caption.
+- Numbers shown or quoted come from docs/RESULTS.md and data/studio2d-runs, nothing else.
