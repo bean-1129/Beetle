@@ -1,0 +1,178 @@
+:root {
+  --bg: #0e2a2f;
+  --bg-2: #123a40;
+  --bg-3: #174951;
+  --panel: rgba(11, 33, 38, 0.94);
+  --panel-border: rgba(233, 227, 211, 0.14);
+  --stone: #e9e3d3;
+  --stone-2: #cfc6b0;
+  --text: #eef3f1;
+  --muted: #9fb7b3;
+  --amber: #f0b45a;
+  --amber-2: #ffd27f;
+  --lava: #ff5a36;
+  --water: #3aa0d8;
+  --ok: #7bd389;
+  --warn: #f0b45a;
+  --bad: #ff5a36;
+  --focus: #ffd27f;
+  --radius: 12px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+body { min-height: 100vh; }
+
+a { color: var(--amber-2); }
+
+button, input, textarea, select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 1px solid var(--panel-border);
+  background: var(--bg-3);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+button:hover { background: #1b5862; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+button.primary {
+  background: var(--amber);
+  color: #221a0c;
+  border-color: transparent;
+  font-weight: 650;
+}
+button.primary:hover { background: var(--amber-2); }
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+textarea, input[type="text"] {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text);
+}
+
+textarea { resize: vertical; min-height: 92px; }
+
+.muted { color: var(--muted); }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+.dot {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.dot.off { background: #5a6f6c; }
+.dot.warn { background: var(--warn); }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: rgba(0, 0, 0, 0.3);
+  font-size: 13px;
+  font-family: var(--mono);
+}
+.badge.pulse { animation: badge-pulse 900ms ease-out; }
+@keyframes badge-pulse {
+  0% { background: var(--amber); color: #221a0c; transform: scale(1.15); }
+  100% { background: rgba(0, 0, 0, 0.3); color: var(--text); transform: scale(1); }
+}
+
+.tag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--amber);
+  color: #221a0c;
+  font-weight: 700;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  font-size: 20px;
+  color: var(--stone);
+}
+.wordmark svg { width: 34px; height: 34px; }
+
+.qr-panel {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.25);
+}
+.qr-panel img {
+  width: 200px; height: 200px;
+  border-radius: 8px;
+  background: var(--stone);
+  image-rendering: pixelated;
+}
+.qr-panel .url {
+  font-family: var(--mono);
+  font-size: 12px;
+  word-break: break-all;
+  text-align: center;
+  color: var(--stone-2);
+  user-select: all;
+}
+.qr-panel .expires { font-size: 12px; color: var(--muted); }
+
+.phase {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: rgba(233, 227, 211, 0.12);
+  color: var(--stone);
+  white-space: nowrap;
+}
+.phase.committed { background: rgba(123, 211, 137, 0.2); color: var(--ok); }
+.phase.failed, .phase.cancelled { background: rgba(255, 90, 54, 0.2); color: var(--lava); }
+.phase.repairing, .phase.awaiting_safe_commit { background: rgba(240, 180, 90, 0.2); color: var(--amber-2); }

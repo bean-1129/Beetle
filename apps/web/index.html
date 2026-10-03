@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <title>Beetle</title>
+    <link rel="stylesheet" href="/src/styles/base.css" />
+    <link rel="stylesheet" href="/src/styles/landing.css" />
+  </head>
+  <body class="landing">
+    <main id="app" class="landing-main">
+      <header class="landing-header">
+        <span id="wordmark"></span>
+        <p class="tagline">Change the game without stopping the game.</p>
+      </header>
+      <nav class="landing-links" aria-label="Pages">
+        <a class="card" href="/director"><strong>Director</strong><span>Prompt the local agent, invite players, watch every phase.</span></a>
+        <a class="card" href="/play"><strong>Play</strong><span>The big screen. World, players, relics and gate.</span></a>
+        <a class="card" href="/controller"><strong>Controller</strong><span>Phone page. Open from a join QR, not by hand.</span></a>
+      </nav>
+      <section class="landing-status" aria-live="polite">
+        <h2>Server</h2>
+        <dl id="health">
+          <dt>Public URL</dt><dd id="publicUrl">checking</dd>
+          <dt>World</dt><dd id="world">checking</dd>
+          <dt>Model</dt><dd id="model">checking</dd>
+          <dt>Agent worker</dt><dd id="agent">checking</dd>
+        </dl>
+        <p class="hint">The director link printed by the server includes its token. Open it from that console line.</p>
+      </section>
+    </main>
+    <script type="module" src="/src/landing/main.ts"></script>
+  </body>
+</html>

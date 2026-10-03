@@ -1,0 +1,145 @@
+html, body { height: 100%; overflow: hidden; }
+#root { height: 100%; }
+
+.director-layout { position: fixed; inset: 0; }
+#scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+  touch-action: none;
+}
+
+.scene-overlay {
+  position: absolute;
+  left: 16px; top: 14px;
+  display: grid; gap: 8px;
+  pointer-events: none;
+}
+.scene-title {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  font-size: 18px; font-weight: 700;
+  pointer-events: auto;
+}
+.scene-title .title-text { max-width: 40vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scene-readout {
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+  color: var(--muted);
+  width: fit-content;
+}
+
+.panel-toggle {
+  position: absolute;
+  top: 14px; right: 16px;
+  z-index: 3;
+}
+.panel-open .panel-toggle { right: calc(min(420px, 92vw) + 16px); }
+
+.panel {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: min(420px, 92vw);
+  background: var(--panel);
+  border-left: 1px solid var(--panel-border);
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 14px 16px 40px;
+  transition: transform 180ms ease-out;
+  z-index: 2;
+}
+.panel-closed .panel { transform: translateX(100%); visibility: hidden; }
+
+.panel-header {
+  display: flex; align-items: baseline; gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--panel-border);
+}
+.panel-section { padding: 12px 0; border-bottom: 1px solid var(--panel-border); display: grid; gap: 8px; }
+.panel-section:last-child { border-bottom: none; }
+.section-title {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--stone-2);
+  font-weight: 700;
+}
+.small { font-size: 13px; }
+.notice { color: var(--amber-2); }
+.note { font-size: 13px; color: var(--ok); }
+.error { font-size: 13px; color: var(--lava); }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.prompt-form { display: grid; gap: 8px; }
+.kind-row { display: flex; gap: 8px; }
+.kind {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  min-height: 44px;
+}
+.kind.selected { border-color: var(--amber); background: rgba(240, 180, 90, 0.15); }
+.kind.disabled { opacity: 0.5; cursor: not-allowed; }
+.kind input { margin: 0; }
+.kind:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
+.check input { margin-top: 4px; width: 20px; height: 20px; }
+
+.hints summary { cursor: pointer; color: var(--amber-2); font-size: 14px; min-height: 32px; display: flex; align-items: center; }
+.hints ul { margin: 6px 0; padding-left: 18px; font-size: 14px; }
+.hints li { margin: 2px 0; }
+.hints p { margin: 4px 0 0; }
+
+.activity {
+  list-style: none;
+  margin: 0; padding: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.activity-item {
+  display: grid;
+  grid-template-columns: 52px auto 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+}
+.activity-item .when { color: var(--muted); font-size: 12px; padding-top: 2px; }
+.activity-item .msg { word-break: break-word; }
+.activity-item .codes { color: var(--amber-2); }
+.activity-item .ids { color: var(--muted); }
+
+.status-grid dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 14px;
+}
+.status-grid dt { color: var(--muted); }
+.status-grid dd { margin: 0; word-break: break-all; }
+
+.controller-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; width: 100%; }
+
+@media (max-width: 720px) {
+  .scene-title .title-text { max-width: 50vw; }
+  .panel-open .panel-toggle { right: 16px; top: auto; bottom: 16px; }
+}
