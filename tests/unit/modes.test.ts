@@ -88,7 +88,7 @@ describe('mode fixtures', () => {
     expect(effectiveMode(hill)).toMatchObject({ kind: 'king_of_the_hill', holdSeconds: 10, timeLimitSec: null });
 
     const surv = fixtureWorld('survival5');
-    expect(surv.hazard.rise).toEqual({ afterSec: 20, metersPerSec: 0.05, maxElevation: -1.2 });
+    expect(surv.hazard.rise).toEqual({ afterSec: 20, metersPerSec: 0.05, maxElevation: -0.7 });
     expect(effectiveMode(surv)).toMatchObject({ kind: 'survival', timeLimitSec: 120 });
 
     const trial = fixtureWorld('trial5');
@@ -362,7 +362,7 @@ describe('expandDraft mode, biome, speed and rise', () => {
   it('a survival draft with words and a rise expands to a world that validates as survival', () => {
     const r = expandDraft({
       ...draftBase(), hazard: 'lava', mode: { kind: 'survive the rising lava', timeLimitSec: 90.4 },
-      hazardRise: { afterSec: 15, metersPerSec: 0.05, maxElevation: -1.2 },
+      hazardRise: { afterSec: 15, metersPerSec: 0.05, maxElevation: -0.7 },
     }, { seed: 8, worldId: 'survive-draft' });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
