@@ -1,0 +1,65 @@
+{
+  "id": "probe-par-1",
+  "kind": "patch",
+  "promptId": "e05",
+  "promptNote": "pass expected: set_hazard and set_title",
+  "prompt": "Make the fall deadly: the hazard beneath the islands becomes lava. Rename the world \"Ember Garden\" to match.",
+  "temperature": 0.4,
+  "sampleIndex": 1,
+  "phase": "probe-par",
+  "model": "qwen3.5:4b",
+  "request": {
+    "numCtx": 8192,
+    "numPredict": 1536,
+    "format": "PATCH_DRAFT_JSON_SCHEMA",
+    "systemPromptChars": 2553
+  },
+  "timing": {
+    "status": 200,
+    "wallMs": 31249,
+    "totalDurationMs": 31246,
+    "loadMs": 1,
+    "promptEvalMs": 37,
+    "evalMs": 1340,
+    "promptTokens": 756,
+    "outputTokens": 81,
+    "doneReason": "stop",
+    "queueWaitMs": 29868,
+    "inFlightAtStart": 1,
+    "startedAtMs": 60567
+  },
+  "rawContent": "{\n  \"summary\": \"The world hazard is changed to lava and the title is updated.\",\n  \"ops\": [\n    {\n      \"op\": \"set_hazard\",\n      \"kind\": \"lava\"\n    },\n    {\n      \"op\": \"set_title\",\n      \"title\": \"Ember Garden\"\n    }\n  ]\n}",
+  "rawChars": 223,
+  "parse": {
+    "ok": true
+  },
+  "zod": {
+    "ok": true,
+    "issues": []
+  },
+  "pipeline": {
+    "apply": {
+      "ok": true,
+      "issues": [],
+      "changedIds": [
+        "hazard",
+        "title"
+      ],
+      "normalizations": [],
+      "opNames": [
+        "set_hazard",
+        "set_title"
+      ]
+    },
+    "validate": {
+      "ok": true,
+      "issues": []
+    },
+    "playability": {
+      "ok": true,
+      "failedChecks": []
+    }
+  },
+  "outcome": "valid",
+  "failureModes": []
+}

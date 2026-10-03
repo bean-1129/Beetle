@@ -1,0 +1,132 @@
+{
+  "id": "b01-t08-s0",
+  "kind": "draft",
+  "promptId": "b01",
+  "promptNote": "diamond, four islands, two routes",
+  "prompt": "Four islands arranged in a diamond with water below. Both spawns on the west island, the gate on the east island, one relic each on the north, south and west islands. Bridge every island to its two ring neighbours so there are two ways round. Title it \"Diamond Pond\".",
+  "temperature": 0.8,
+  "sampleIndex": 0,
+  "phase": "main",
+  "model": "qwen3.5:4b",
+  "request": {
+    "numCtx": 8192,
+    "numPredict": 2048,
+    "format": "WORLD_DRAFT_JSON_SCHEMA",
+    "systemPromptChars": 1377
+  },
+  "timing": {
+    "status": 200,
+    "wallMs": 43263,
+    "totalDurationMs": 43258,
+    "loadMs": 1,
+    "promptEvalMs": 35,
+    "evalMs": 15205,
+    "promptTokens": 430,
+    "outputTokens": 864,
+    "doneReason": "stop",
+    "queueWaitMs": 28017,
+    "inFlightAtStart": 3,
+    "startedAtMs": 91837
+  },
+  "rawContent": "{\n  \"title\": \"Diamond Pond\",\n  \"islands\": [\n    {\"id\": \"west_island\", \"name\": \"West Outpost\", \"center\": {\"x\": -20, \"z\": 0}, \"radius\": 8},\n    {\"id\": \"north_island\", \"name\": \"North Sanctum\", \"center\": {\"x\": 0, \"z\": 25}, \"radius\": 9},\n    {\"id\": \"east_island\", \"name\": \"East Citadel\", \"center\": {\"x\": 20, \"z\": 0}, \"radius\": 8},\n    {\"id\": \"south_island\", \"name\": \"South Haven\", \"center\": {\"x\": 0, \"z\": -25}, \"radius\": 9}\n  ],\n  \"bridges\": [\n    {\"id\": \"bridge_w_n\", \"from\": \"west_island\", \"to\": \"north_island\", \"width\": 3.0},\n    {\"id\": \"bridge_w_s\", \"from\": \"west_island\", \"to\": \"south_island\", \"width\": 3.0},\n    {\"id\": \"bridge_n_e\", \"from\": \"north_island\", \"to\": \"east_island\", \"width\": 2.5},\n    {\"id\": \"bridge_s_e\", \"from\": \"south_island\", \"to\": \"east_island\", \"width\": 3.0},\n    {\"id\": \"risky_n_e\", \"from\": \"north_island\", \"to\": \"east_island\", \"width\": 1.6}\n  ],\n  \"spawns\": [\n    {\"islandId\": \"west_island\", \"localPosition\": {\"x\": -5, \"z\": -2}},\n    {\"islandId\": \"west_island\", \"localPosition\": {\"x\": -5, \"z\": 2}}\n  ],\n  \"relics\": [\n    {\"id\": \"relic_floating_watch\", \"name\": \"Floating Watch\", \"islandId\": \"north_island\", \"localPosition\": {\"x\": 3, \"z\": 10}},\n    {\"id\": \"relic_sunset_pearl\", \"name\": \"Sunset Pearl\", \"islandId\": \"south_island\", \"localPosition\": {\"x\": 3, \"z\": -15}},\n    {\"id\": \"relic_starlight_ring\", \"name\": \"Starlight Ring\", \"islandId\": \"west_island\", \"localPosition\": {\"x\": 0, \"z\": 0}}\n  ],\n  \"gate\": {\n    \"islandId\": \"east_island\",\n    \"localPosition\": {\"x\": 3, \"z\": 0}\n  },\n  \"hazard\": \"water\",\n  \"decorations\": [\n    {\"id\": \"dec_bush_1\", \"type\": \"bush\", \"islandId\": \"west_island\", \"localPosition\": {\"x\": -7, \"z\": -3}},\n    {\"id\": \"dec_tree_2\", \"type\": \"tree\", \"islandId\": \"north_island\", \"localPosition\": {\"x\": 0, \"z\": 15}},\n    {\"id\": \"dec_lantern_3\", \"type\": \"lantern\", \"islandId\": \"east_island\", \"localPosition\": {\"x\": -7, \"z\": 0}},\n    {\"id\": \"dec_pillar_4\", \"type\": \"pillar\", \"islandId\": \"south_island\", \"localPosition\": {\"x\": -5, \"z\": -15}},\n    {\"id\": \"dec_shrine_5\", \"type\": \"shrine\", \"islandId\": \"west_island\", \"localPosition\": {\"x\": 0, \"z\": -3}}\n  ]\n}",
+  "rawChars": 2089,
+  "parse": {
+    "ok": true
+  },
+  "zod": {
+    "ok": true,
+    "issues": []
+  },
+  "pipeline": {
+    "expand": {
+      "ok": true,
+      "issues": [],
+      "normalizations": [
+        {
+          "path": "relics[0].localPosition",
+          "from": {
+            "x": 3,
+            "z": 10
+          },
+          "to": {
+            "x": 2.241,
+            "z": 7.471
+          },
+          "reason": "offset exceeded island radius 9; scaled to 7.8"
+        },
+        {
+          "path": "relics[1].localPosition",
+          "from": {
+            "x": 3,
+            "z": -15
+          },
+          "to": {
+            "x": 1.53,
+            "z": -7.649
+          },
+          "reason": "offset exceeded island radius 9; scaled to 7.8"
+        },
+        {
+          "path": "decorations[0].localPosition",
+          "from": {
+            "x": -7,
+            "z": -3
+          },
+          "to": {
+            "x": -6.25,
+            "z": -2.679
+          },
+          "reason": "offset exceeded island radius 8; scaled to 6.8"
+        },
+        {
+          "path": "decorations[1].localPosition",
+          "from": {
+            "x": 0,
+            "z": 15
+          },
+          "to": {
+            "x": 0,
+            "z": 7.8
+          },
+          "reason": "offset exceeded island radius 9; scaled to 7.8"
+        },
+        {
+          "path": "decorations[2].localPosition",
+          "from": {
+            "x": -7,
+            "z": 0
+          },
+          "to": {
+            "x": -6.8,
+            "z": 0
+          },
+          "reason": "offset exceeded island radius 8; scaled to 6.8"
+        },
+        {
+          "path": "decorations[3].localPosition",
+          "from": {
+            "x": -5,
+            "z": -15
+          },
+          "to": {
+            "x": -2.467,
+            "z": -7.4
+          },
+          "reason": "offset exceeded island radius 9; scaled to 7.8"
+        }
+      ]
+    },
+    "validate": {
+      "ok": true,
+      "issues": []
+    },
+    "playability": {
+      "ok": true,
+      "failedChecks": []
+    }
+  },
+  "outcome": "valid",
+  "failureModes": [
+    "local_position_normalized"
+  ]
+}

@@ -94,7 +94,7 @@ describe('model output normalization', () => {
     const r = expandDraft(draft, { seed: 3, worldId: 'crowded' });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.normalizations.some((n) => n.reason.includes('moved apart'))).toBe(true);
+    expect(r.normalizations.some((n) => n.reason.includes('apart'))).toBe(true);
     const v = validateSpec(r.spec);
     expect(v.issues.map((i) => i.code)).not.toContain('ISLAND_OVERLAP');
     expect(v.ok).toBe(true);

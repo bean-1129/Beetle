@@ -1,0 +1,47 @@
+{
+  "id": "b06-t04-s0",
+  "kind": "draft",
+  "promptId": "b06",
+  "promptNote": "hub with three spokes plus a tiny gate island",
+  "prompt": "A hub island of radius 12 at the centre with three spoke islands 30 metres out to the north-west, north-east and south, each holding one relic. A fourth tiny island of radius 5 hangs off the east side of the north-east island and holds the gate. Water below, a shrine on the hub.",
+  "temperature": 0.4,
+  "sampleIndex": 0,
+  "phase": "main",
+  "model": "qwen3.5:4b",
+  "request": {
+    "numCtx": 8192,
+    "numPredict": 2048,
+    "format": "WORLD_DRAFT_JSON_SCHEMA",
+    "systemPromptChars": 1377
+  },
+  "timing": {
+    "status": 200,
+    "wallMs": 129148,
+    "totalDurationMs": 129147,
+    "loadMs": 2,
+    "promptEvalMs": 162,
+    "evalMs": 44788,
+    "promptTokens": 440,
+    "outputTokens": 2048,
+    "doneReason": "length",
+    "queueWaitMs": 84195,
+    "inFlightAtStart": 3,
+    "startedAtMs": 248917,
+    "retries": 0
+  },
+  "rawContent": "{\n  \"title\": \"Floating Relic Hunt\",\n  \"islands\": [\n    {\n      \"id\": \"hub_island\",\n      \"name\": \"Central Hub\",\n      \"center\": { \"x\": 0, \"z\": 0 },\n      \"radius\": 12\n    },\n    {\n      \"id\": \"nw_relic_island\",\n      \"name\": \"North-West Relic\",\n      \"center\": { \"x\": -30, \"z\": 30 },\n      \"radius\": 8\n    },\n    {\n      \"id\": \"ne_relic_island\",\n      \"name\": \"North-East Relic\",\n      \"center\": { \"x\": 30, \"z\": 30 },\n      \"radius\": 8\n    },\n    {\n      \"id\": \"south_relic_island\",\n      \"name\": \"South Relic\",\n      \"center\": { \"x\": 0, \"z\": -35 },\n      \"radius\": 7\n    },\n    {\n      \"id\": \"gate_island\",\n      \"name\": \"Gate Keep\",\n      \"center\": { \"x\": 28, \"z\": 29 },\n      \"radius\": 5\n    }\n  ],\n  \"bridges\": [\n    {\n      \"id\": \"bridge_hub_nw\",\n      \"from\": \"hub_island\",\n      \"to\": \"nw_relic_island\",\n      \"width\": 3.0\n    },\n    {\n      \"id\": \"bridge_hub_ne\",\n      \"from\": \"hub_island\",\n      \"to\": \"ne_relic_island\",\n      \"width\": 3.0\n    },\n    {\n      \"id\": \"bridge_hub_south\",\n      \"from\": \"hub_island\",\n      \"to\": \"south_relic_island\",\n      \"width\": 3.0\n    },\n    {\n      \"id\": \"bridge_ne_gate\",\n      \"from\": \"ne_relic_island\",\n      \"to\": \"gate_island\",\n      \"width\": 2.5\n    }\n  ],\n  \"spawns\": [\n    {\n      \"islandId\": \"hub_island\",\n      \"localPosition\": { \"x\": -4, \"z\": -4 }\n    },\n    {\n      \"islandId\": \"hub_island\",\n      \"localPosition\": { \"x\": 4, \"z\": -4 }\n    }\n  ],\n  \"relics\": [\n    {\n      \"id\": \"relic_nw\",\n      \"name\": \"Ancient Tome\",\n      \"islandId\": \"nw_relic_island\",\n      \"localPosition\": { \"x\": -8, \"z\": 4 }\n    },\n    {\n      \"id\": \"relic_ne\",\n      \"name\": \"Star Shard\",\n      \"islandId\": \"ne_relic_island\",\n      \"localPosition\": { \"x\": 8, \"z\": 4 }\n    },\n    {\n      \"id\": \"relic_south\",\n      \"name\": \"Void Key\",\n      \"islandId\": \"south_relic_island\",\n      \"localPosition\": { \"x\": -2, \"z\": -10 }\n    }\n  ],\n  \"gate\": {\n    \"islandId\": \"gate_island\",\n    \"localPosition\": { \"x\": 3, \"z\": 3 }\n  },\n  \"hazard\": \"water\",\n  \"decorations\": [\n    {\n      \"id\": \"dec_shrine_hub\",\n      \"type\": \"shrine\",\n      \"islandId\": \"hub_island\",\n      \"localPosition\": { \"x\": 0, \"z\": 0 }\n    },\n    {\n      \"id\": \"dec_tree_nw\",\n      \"type\": \"tree\",\n      \"islandId\": \"nw_relic_island\",\n      \"localPosition\": { \"x\": -10, \"z\": 2 }\n    },\n    {\n      \"id\": \"dec_tree_ne\",\n      \"type\": \"tree\",\n      \"islandId\": \"ne_relic_island\",\n      \"localPosition\": { \"x\": 10, \"z\": 2 }\n    },\n    {\n      \"id\": \"dec_bush_south\",\n      \"type\": \"bush\",\n      \"islandId\": \"south_relic_island\",\n      \"localPosition\": { \"x\": -4, \"z\": -8 }\n    },\n    {\n      \"id\": \"dec_lantern_nw\",\n      \"type\": \"lantern\",\n      \"islandId\": \"nw_relic_island\",\n      \"localPosition\": { \"x\": -6, \"z\": 6 }\n    },\n    {\n      \"id\": \"dec_pillar_ne\",\n      \"type\": \"pillar\",\n      \"islandId\": \"ne_relic_island\",\n      \"localPosition\": { \"x\": 6, \"z\": 6 }\n    },\n    {\n      \"id\": \"dec_rock_south\",\n      \"type\": \"rock\",\n      \"islandId\": \"south_relic_island\",\n      \"localPosition\": { \"x\": 2, \"z\": -12 }\n    },\n    {\n      \"id\": \"dec_bush_hub\",\n      \"type\": \"bush\",\n      \"islandId\": \"hub_island\",\n      \"localPosition\": { \"x\": -8, \"z\": -6 }\n    },\n    {\n      \"id\": \"dec_lantern_south\",\n      \"type\": \"lantern\",\n      \"islandId\": \"south_relic_island\",\n      \"localPosition\": { \"x\": 0, \"z\": -18 }\n    },\n    {\n      \"id\": \"dec_tree_hub\",\n      \"type\": \"tree\",\n      \"islandId\": \"hub_island\",\n      \"localPosition\": { \"x\": 6, \"z\": 4 }\n    },\n    {\n      \"id\": \"dec_shrine_nw\",\n      \"type\": \"shrine\",\n      \"islandId\": \"nw_relic_island\",\n      \"localPosition\": { \"x\": -2, \"z\": 8 }\n    },\n    {\n      \"id\": \"dec_pillar_south\",\n      \"type\": \"pillar\",\n      \"islandId\": \"south_relic_island\",\n      \"localPosition\": { \"x\": 6, \"z\": -10 }\n    },\n    {\n      \"id\": \"dec_rock_ne\",\n      \"type\": \"rock\",\n      \"islandId\": \"ne_relic_island\",\n      \"localPosition\": { \"x\": 12, \"z\": 6 }\n    },\n    {\n      \"id\": \"dec_bush_hub_2\",\n      \"type\": \"bush\",\n      \"islandId\": \"hub_island\",\n      \"localPosition\": { \"x\": 4, \"z\": 6 }\n    },\n    {\n      \"id\": \"dec_lantern_ne\",\n      \"type\": \"lantern\",\n      \"islandId\": \"ne_relic_island\",\n      \"localPosition\": { \"x\": 4, \"z\": 8 }\n    },\n    {\n      \"id\": \"dec_tree_south\",\n      \"type\": \"tree\",\n      \"islandId\": \"south_relic_island\",\n      \"localPosition\": { \"x\": -10, \"z\": -4 }\n    },\n    {\n      \"id\": \"dec_shrine_hub_2\",\n      \"type\": \"shrine\",\n      \"islandId\": \"hub_island\",\n      \"localPosition\": { \"x\": 8, \"z\": -6 }\n    },\n    {\n      \"id\": \"dec_pillar_nw\",\n      \"type\": \"pillar\",\n      \"islandId\": \"nw_relic_island\",\n      \"localPosition\": { \"x\": 6, \"z\": 4 }\n    },\n    {\n      \"id\": \"dec_rock_hub\",\n      \"type\": \"rock\",\n      \"islandId\": \"hub_island\",\n      \"localPosition\": { \"x\": -6, \"z\": 4 }\n    },\n    {\n      \"id\": \"dec_bush_ne\",\n      \"type\": \"bush\",\n      \"islandId\": \"ne_relic_island\",\n      \"localPosition\": { \"x\": 2, \"z\": 8 }\n    },\n    {\n      \"id\": \"dec_lantern_south_2\",\n      \"type\": \"lantern\",\n      \"islandId\": \"south_relic_island\",\n      \"localPosition\":",
+  "rawChars": 5013,
+  "parse": {
+    "ok": false,
+    "error": "Unexpected end of JSON input"
+  },
+  "zod": {
+    "ok": false,
+    "issues": []
+  },
+  "pipeline": {},
+  "outcome": "invalid_parse",
+  "failureModes": [
+    "truncated_output"
+  ]
+}

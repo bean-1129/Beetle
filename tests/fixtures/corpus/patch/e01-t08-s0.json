@@ -1,0 +1,80 @@
+{
+  "id": "e01-t08-s0",
+  "kind": "patch",
+  "promptId": "e01",
+  "promptNote": "pass expected: add bridge east to south, retitle",
+  "prompt": "Add a second route: a 3 metre wide bridge from the Orchard Island in the east straight to the Lantern Island in the south, and retitle the world \"Orchard Loop\".",
+  "temperature": 0.8,
+  "sampleIndex": 0,
+  "phase": "main",
+  "model": "qwen3.5:4b",
+  "request": {
+    "numCtx": 8192,
+    "numPredict": 1536,
+    "format": "PATCH_DRAFT_JSON_SCHEMA",
+    "systemPromptChars": 2553
+  },
+  "timing": {
+    "status": 200,
+    "wallMs": 45482,
+    "totalDurationMs": 45477,
+    "loadMs": 1,
+    "promptEvalMs": 34,
+    "evalMs": 2142,
+    "promptTokens": 770,
+    "outputTokens": 118,
+    "doneReason": "stop",
+    "queueWaitMs": 43300,
+    "inFlightAtStart": 2,
+    "startedAtMs": 91837
+  },
+  "rawContent": "{\n  \"summary\": \"Added a new bridge connecting Orchard Island to Lantern Island and updated the world title.\",\n  \"ops\": [\n    {\n      \"op\": \"add_bridge\",\n      \"id\": \"bridge-east-south\",\n      \"from\": \"orchard-island\",\n      \"to\": \"lantern-island\",\n      \"width\": 3.0\n    },\n    {\n      \"op\": \"set_title\",\n      \"title\": \"Orchard Loop\"\n    }\n  ]\n}",
+  "rawChars": 346,
+  "parse": {
+    "ok": true
+  },
+  "zod": {
+    "ok": true,
+    "issues": []
+  },
+  "pipeline": {
+    "apply": {
+      "ok": true,
+      "issues": [],
+      "changedIds": [
+        "bridge-east-south",
+        "title"
+      ],
+      "normalizations": [
+        {
+          "path": "ops[0].from",
+          "from": "orchard-island",
+          "to": "east",
+          "reason": "island reference resolved by name or direction"
+        },
+        {
+          "path": "ops[0].to",
+          "from": "lantern-island",
+          "to": "south",
+          "reason": "island reference resolved by name or direction"
+        }
+      ],
+      "opNames": [
+        "add_bridge",
+        "set_title"
+      ]
+    },
+    "validate": {
+      "ok": true,
+      "issues": []
+    },
+    "playability": {
+      "ok": true,
+      "failedChecks": []
+    }
+  },
+  "outcome": "valid",
+  "failureModes": [
+    "invented_ids_normalized"
+  ]
+}

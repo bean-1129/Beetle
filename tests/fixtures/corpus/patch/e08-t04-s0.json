@@ -1,0 +1,67 @@
+{
+  "id": "e08-t04-s0",
+  "kind": "patch",
+  "promptId": "e08",
+  "promptNote": "move_relic and move_decoration",
+  "prompt": "Move the Star Relic to the Mossy Island, next to the pillar, and nudge the pillar one metre north.",
+  "temperature": 0.4,
+  "sampleIndex": 0,
+  "phase": "main",
+  "model": "qwen3.5:4b",
+  "request": {
+    "numCtx": 8192,
+    "numPredict": 1536,
+    "format": "PATCH_DRAFT_JSON_SCHEMA",
+    "systemPromptChars": 2553
+  },
+  "timing": {
+    "status": 200,
+    "wallMs": 138160,
+    "totalDurationMs": 138158,
+    "loadMs": 1,
+    "promptEvalMs": 291,
+    "evalMs": 3164,
+    "promptTokens": 757,
+    "outputTokens": 146,
+    "doneReason": "stop",
+    "queueWaitMs": 134702,
+    "inFlightAtStart": 3,
+    "startedAtMs": 427386,
+    "retries": 0
+  },
+  "rawContent": "{\n  \"summary\": \"Relocated the star relic to Mossy Island near the pillar and shifted the pillar north.\",\n  \"ops\": [\n    {\n      \"op\": \"move_relic\",\n      \"id\": \"relic-star\",\n      \"islandId\": \"west\",\n      \"localPosition\": {\"x\": -5, \"z\": 0}\n    },\n    {\n      \"op\": \"move_decoration\",\n      \"id\": \"pillar-1\",\n      \"islandId\": \"west\",\n      \"localPosition\": {\"x\": -7, \"z\": 2}\n    }\n  ]\n}",
+  "rawChars": 387,
+  "parse": {
+    "ok": true
+  },
+  "zod": {
+    "ok": true,
+    "issues": []
+  },
+  "pipeline": {
+    "apply": {
+      "ok": false,
+      "issues": [
+        {
+          "code": "INVALID_REFERENCE",
+          "message": "ops[0] move_relic: unknown relic \"relic-star\"",
+          "objectIds": [
+            "relic-star"
+          ],
+          "evidence": {
+            "opIndex": 0,
+            "op": "move_relic"
+          }
+        }
+      ],
+      "opNames": [
+        "move_relic",
+        "move_decoration"
+      ]
+    }
+  },
+  "outcome": "invalid_apply",
+  "failureModes": [
+    "invented_ids"
+  ]
+}

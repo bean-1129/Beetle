@@ -1,0 +1,114 @@
+{
+  "id": "e03-t08-s0",
+  "kind": "patch",
+  "promptId": "e03",
+  "promptNote": "GATE_HIDES_RELIC expected",
+  "prompt": "Move the Sun Relic onto the Temple Island, right beside the shrine.",
+  "temperature": 0.8,
+  "sampleIndex": 0,
+  "phase": "main",
+  "model": "qwen3.5:4b",
+  "request": {
+    "numCtx": 8192,
+    "numPredict": 1536,
+    "format": "PATCH_DRAFT_JSON_SCHEMA",
+    "systemPromptChars": 2553
+  },
+  "timing": {
+    "status": 200,
+    "wallMs": 77234,
+    "totalDurationMs": 77229,
+    "loadMs": 4718,
+    "promptEvalMs": 38,
+    "evalMs": 1701,
+    "promptTokens": 747,
+    "outputTokens": 96,
+    "doneReason": "stop",
+    "queueWaitMs": 70772,
+    "inFlightAtStart": 3,
+    "startedAtMs": 39,
+    "retries": 0
+  },
+  "rawContent": "{\n  \"summary\": \"Relocated the Sun Relic to Temple Island adjacent to the shrine.\",\n  \"ops\": [\n    {\n      \"op\": \"move_relic\",\n      \"id\": \"relic-east\",\n      \"islandId\": \"Temple Island\",\n      \"localPosition\": { \"x\": 0.5, \"z\": 29.0 }\n    }\n  ]\n}",
+  "rawChars": 245,
+  "parse": {
+    "ok": true
+  },
+  "zod": {
+    "ok": false,
+    "issues": [
+      {
+        "path": "ops.0.islandId",
+        "message": "id must be lowercase slug, max 32 chars",
+        "code": "invalid_string"
+      },
+      {
+        "path": "ops.0.localPosition.z",
+        "message": "Number must be less than or equal to 20",
+        "code": "too_big"
+      }
+    ]
+  },
+  "pipeline": {
+    "apply": {
+      "ok": true,
+      "issues": [],
+      "changedIds": [
+        "relic-east"
+      ],
+      "normalizations": [
+        {
+          "path": "ops[0].islandId",
+          "from": "Temple Island",
+          "to": "temple",
+          "reason": "island reference resolved by name or direction"
+        },
+        {
+          "path": "ops[0].localPosition",
+          "from": {
+            "x": 0.5,
+            "z": 29
+          },
+          "to": {
+            "x": 0.5,
+            "z": 1
+          },
+          "reason": "world coordinate converted to island offset"
+        }
+      ],
+      "opNames": [
+        "move_relic"
+      ]
+    },
+    "validate": {
+      "ok": false,
+      "issues": [
+        {
+          "code": "GATE_HIDES_RELIC",
+          "message": "relic \"relic-east\" on \"temple\" is reachable only after the gate \"gate\" opens, from spawn-0, spawn-1",
+          "objectIds": [
+            "relic-east",
+            "gate",
+            "spawn-0",
+            "spawn-1"
+          ],
+          "evidence": {
+            "fromSpawnIds": [
+              "spawn-0",
+              "spawn-1"
+            ],
+            "islandId": "temple"
+          }
+        }
+      ]
+    }
+  },
+  "outcome": "invalid_validator",
+  "failureModes": [
+    "gate_hides_relic",
+    "invented_ids_normalized",
+    "local_position_misuse",
+    "local_position_normalized",
+    "other_schema"
+  ]
+}

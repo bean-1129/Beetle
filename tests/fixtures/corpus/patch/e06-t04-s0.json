@@ -1,0 +1,89 @@
+{
+  "id": "e06-t04-s0",
+  "kind": "patch",
+  "promptId": "e06",
+  "promptNote": "BRIDGE_CROSSES_ISLAND expected",
+  "prompt": "Add a straight bridge from the Orchard Island in the east directly across to the Mossy Island in the west.",
+  "temperature": 0.4,
+  "sampleIndex": 0,
+  "phase": "main",
+  "model": "qwen3.5:4b",
+  "request": {
+    "numCtx": 8192,
+    "numPredict": 1536,
+    "format": "PATCH_DRAFT_JSON_SCHEMA",
+    "systemPromptChars": 2553
+  },
+  "timing": {
+    "status": 200,
+    "wallMs": 83812,
+    "totalDurationMs": 83811,
+    "loadMs": 1,
+    "promptEvalMs": 298,
+    "evalMs": 1865,
+    "promptTokens": 754,
+    "outputTokens": 88,
+    "doneReason": "stop",
+    "queueWaitMs": 81647,
+    "inFlightAtStart": 3,
+    "startedAtMs": 204123,
+    "retries": 0
+  },
+  "rawContent": "{\n  \"summary\": \"Added a new bridge connecting Orchard Island and Mossy Island.\",\n  \"ops\": [\n    {\n      \"op\": \"add_bridge\",\n      \"id\": \"bridge-west-east\",\n      \"from\": \"orchard-island\",\n      \"to\": \"mossy-island\",\n      \"width\": 2.4\n    }\n  ]\n}",
+  "rawChars": 246,
+  "parse": {
+    "ok": true
+  },
+  "zod": {
+    "ok": true,
+    "issues": []
+  },
+  "pipeline": {
+    "apply": {
+      "ok": true,
+      "issues": [],
+      "changedIds": [
+        "bridge-west-east"
+      ],
+      "normalizations": [
+        {
+          "path": "ops[0].from",
+          "from": "orchard-island",
+          "to": "east",
+          "reason": "island reference resolved by name or direction"
+        },
+        {
+          "path": "ops[0].to",
+          "from": "mossy-island",
+          "to": "west",
+          "reason": "island reference resolved by name or direction"
+        }
+      ],
+      "opNames": [
+        "add_bridge"
+      ]
+    },
+    "validate": {
+      "ok": false,
+      "issues": [
+        {
+          "code": "BRIDGE_CROSSES_ISLAND",
+          "message": "bridge \"bridge-west-east\" passes through island \"centre\" (0 m from its centre, radius 9)",
+          "objectIds": [
+            "bridge-west-east",
+            "centre"
+          ],
+          "evidence": {
+            "distance": 0,
+            "radius": 9
+          }
+        }
+      ]
+    }
+  },
+  "outcome": "invalid_validator",
+  "failureModes": [
+    "bridge_geometry",
+    "invented_ids_normalized"
+  ]
+}

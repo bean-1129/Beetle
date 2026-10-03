@@ -1,0 +1,46 @@
+{
+  "id": "b02-t04-s0",
+  "kind": "draft",
+  "promptId": "b02",
+  "promptNote": "six-island chain, lava, decorations at edges",
+  "prompt": "A chain of six small islands running from the south-west corner to the north-east corner, each linked to the next by one bridge, lava below. Spawns on the first island, the gate on the last, relics on the second, fourth and fifth islands. A few rocks and bushes at the edges, never on the bridges. Title \"Ember Causeway\".",
+  "temperature": 0.4,
+  "sampleIndex": 0,
+  "phase": "main",
+  "model": "qwen3.5:4b",
+  "request": {
+    "numCtx": 8192,
+    "numPredict": 2048,
+    "format": "WORLD_DRAFT_JSON_SCHEMA",
+    "systemPromptChars": 1377
+  },
+  "timing": {
+    "status": 200,
+    "wallMs": 56250,
+    "totalDurationMs": 56247,
+    "loadMs": 1,
+    "promptEvalMs": 139,
+    "evalMs": 35128,
+    "promptTokens": 447,
+    "outputTokens": 2048,
+    "doneReason": "length",
+    "queueWaitMs": 20979,
+    "inFlightAtStart": 3,
+    "startedAtMs": 119840
+  },
+  "rawContent": "{\n  \"title\": \"Ember Causeway\",\n  \"islands\": [\n    {\n      \"id\": \"island_01\",\n      \"name\": \"Starting Shore\",\n      \"center\": { \"x\": -35.0, \"z\": -35.0 },\n      \"radius\": 8.0\n    },\n    {\n      \"id\": \"island_02\",\n      \"name\": \"Lava Edge\",\n      \"center\": { \"x\": -20.0, \"z\": -20.0 },\n      \"radius\": 7.5\n    },\n    {\n      \"id\": \"island_03\",\n      \"name\": \"Midpoint Rock\",\n      \"center\": { \"x\": -5.0, \"z\": -5.0 },\n      \"radius\": 8.5\n    },\n    {\n      \"id\": \"island_04\",\n      \"name\": \"Relic Haven\",\n      \"center\": { \"x\": 10.0, \"z\": 10.0 },\n      \"radius\": 7.0\n    },\n    {\n      \"id\": \"island_05\",\n      \"name\": \"Guardian Isle\",\n      \"center\": { \"x\": 25.0, \"z\": 25.0 },\n      \"radius\": 8.0\n    },\n    {\n      \"id\": \"island_06\",\n      \"name\": \"Final Gate\",\n      \"center\": { \"x\": 40.0, \"z\": 40.0 },\n      \"radius\": 7.5\n    }\n  ],\n  \"bridges\": [\n    {\n      \"id\": \"bridge_01\",\n      \"from\": \"island_01\",\n      \"to\": \"island_02\",\n      \"width\": 3.5\n    },\n    {\n      \"id\": \"bridge_02\",\n      \"from\": \"island_02\",\n      \"to\": \"island_03\",\n      \"width\": 3.5\n    },\n    {\n      \"id\": \"bridge_03\",\n      \"from\": \"island_03\",\n      \"to\": \"island_04\",\n      \"width\": 1.8\n    },\n    {\n      \"id\": \"bridge_04\",\n      \"from\": \"island_04\",\n      \"to\": \"island_05\",\n      \"width\": 3.2\n    },\n    {\n      \"id\": \"bridge_05\",\n      \"from\": \"island_05\",\n      \"to\": \"island_06\",\n      \"width\": 1.7\n    }\n  ],\n  \"spawns\": [\n    {\n      \"islandId\": \"island_01\",\n      \"localPosition\": { \"x\": -28.0, \"z\": -30.0 }\n    },\n    {\n      \"islandId\": \"island_01\",\n      \"localPosition\": { \"x\": -28.0, \"z\": -30.0 }\n    }\n  ],\n  \"relics\": [\n    {\n      \"id\": \"relic_01\",\n      \"name\": \"First Ember Shard\",\n      \"islandId\": \"island_02\",\n      \"localPosition\": { \"x\": -15.0, \"z\": -18.0 }\n    },\n    {\n      \"id\": \"relic_02\",\n      \"name\": \"Midnight Crystal\",\n      \"islandId\": \"island_04\",\n      \"localPosition\": { \"x\": 5.0, \"z\": 12.0 }\n    },\n    {\n      \"id\": \"relic_03\",\n      \"name\": \"Final Flame Core\",\n      \"islandId\": \"island_05\",\n      \"localPosition\": { \"x\": 28.0, \"z\": 32.0 }\n    }\n  ],\n  \"gate\": {\n    \"islandId\": \"island_06\",\n    \"localPosition\": { \"x\": 35.0, \"z\": 42.0 }\n  },\n  \"hazard\": \"lava\",\n  \"decorations\": [\n    {\n      \"id\": \"dec_01\",\n      \"type\": \"rock\",\n      \"islandId\": \"island_01\",\n      \"localPosition\": { \"x\": -38.0, \"z\": -40.0 }\n    },\n    {\n      \"id\": \"dec_02\",\n      \"type\": \"bush\",\n      \"islandId\": \"island_01\",\n      \"localPosition\": { \"x\": -32.0, \"z\": -42.0 }\n    },\n    {\n      \"id\": \"dec_03\",\n      \"type\": \"rock\",\n      \"islandId\": \"island_02\",\n      \"localPosition\": { \"x\": -25.0, \"z\": -18.0 }\n    },\n    {\n      \"id\": \"dec_04\",\n      \"type\": \"bush\",\n      \"islandId\": \"island_03\",\n      \"localPosition\": { \"x\": -2.0, \"z\": -8.0 }\n    },\n    {\n      \"id\": \"dec_05\",\n      \"type\": \"rock\",\n      \"islandId\": \"island_04\",\n      \"localPosition\": { \"x\": 12.0, \"z\": 16.0 }\n    },\n    {\n      \"id\": \"dec_06\",\n      \"type\": \"bush\",\n      \"islandId\": \"island_05\",\n      \"localPosition\": { \"x\": 32.0, \"z\": 38.0 }\n    },\n    {\n      \"id\": \"dec_07\",\n      \"type\": \"rock\",\n      \"islandId\": \"island_06\",\n      \"localPosition\": { \"x\": 42.0, \"z\": 45.0 }\n    },\n    {\n      \"id\": \"dec_08\",\n      \"type\": \"bush\",\n      \"islandId\": \"island_01\",\n      \"localPosition\": { \"x\": -36.0, \"z\": -28.0 }\n    },\n    {\n      \"id\": \"dec_09\",\n      \"type\": \"rock\",\n      \"islandId\": \"island_02\",\n      \"localPosition\": { \"x\": -18.0, \"z\": -25.0 }\n    },\n    {\n      \"id\": \"dec_10\",\n      \"type\": \"bush\",\n      \"islandId\": \"island_03\",\n      \"localPosition\": { \"x\": 2.0, \"z\": -2.0 }\n    },\n    {\n      \"id\": \"dec_11\",\n      \"type\": \"rock\",\n      \"islandId\": \"island_04\",\n      \"localPosition\": { \"x\": 8.0, \"z\": 18.0 }\n    },\n    {\n      \"id\": \"dec_12\",\n      \"type\": \"bush\",\n      \"islandId\": \"island_05\",\n      \"localPosition\": { \"x\": 22.0, \"z\": 32.0 }\n    },\n    {\n      \"id\": \"dec_13\",\n      \"type\": \"rock\",\n      \"islandId\": \"island_06\",\n      \"localPosition\": { \"x\": 38.0, \"z\": 42.0 }\n    },\n    {\n      \"id\": \"dec_14\",\n      \"type\": \"bush\",\n      \"islandId\": \"island_01\",\n      \"localPosition\": { \"x\": -34.0, \"z\": -36.0 }\n    },\n    {\n      \"id\": \"dec_15\",\n      \"type\": \"rock\",\n      \"islandId\": \"island_02\",\n      \"localPosition\": { \"x\": -22.0, \"z\": -22.0 }\n    },\n    {\n      \"id\": \"dec_16\",\n      \"type\": \"bush\",\n      \"islandId\": \"island_03\",\n      \"localPosition\": { \"x\": 0.0, \"z\": 0.0 }\n    },\n    {",
+  "rawChars": 4394,
+  "parse": {
+    "ok": false,
+    "error": "Expected property name or '}' in JSON at position 4394 (line 205 column 6)"
+  },
+  "zod": {
+    "ok": false,
+    "issues": []
+  },
+  "pipeline": {},
+  "outcome": "invalid_parse",
+  "failureModes": [
+    "truncated_output"
+  ]
+}

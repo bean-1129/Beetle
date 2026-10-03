@@ -185,7 +185,7 @@ async function runBrief(ctx: Ctx): Promise<{ worldVersion: number }> {
   };
   return runDraftValidateCommit(ctx, {
     messages, format: WORLD_DRAFT_JSON_SCHEMA as unknown as Record<string, unknown>,
-    numPredict: 2048, temperature: 0.4, stage, world: null,
+    numPredict: 3072, temperature: 0.4, stage, world: null,
   });
 }
 

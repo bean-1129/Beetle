@@ -1,0 +1,1617 @@
+{
+  "id": "b02-t08-s0",
+  "kind": "draft",
+  "promptId": "b02",
+  "promptNote": "six-island chain, lava, decorations at edges",
+  "prompt": "A chain of six small islands running from the south-west corner to the north-east corner, each linked to the next by one bridge, lava below. Spawns on the first island, the gate on the last, relics on the second, fourth and fifth islands. A few rocks and bushes at the edges, never on the bridges. Title \"Ember Causeway\".",
+  "temperature": 0.8,
+  "sampleIndex": 0,
+  "phase": "main",
+  "model": "qwen3.5:4b",
+  "request": {
+    "numCtx": 8192,
+    "numPredict": 2048,
+    "format": "WORLD_DRAFT_JSON_SCHEMA",
+    "systemPromptChars": 1377
+  },
+  "timing": {
+    "status": 200,
+    "wallMs": 33509,
+    "totalDurationMs": 33492,
+    "loadMs": 4718,
+    "promptEvalMs": 167,
+    "evalMs": 28602,
+    "promptTokens": 447,
+    "outputTokens": 1475,
+    "doneReason": "stop",
+    "queueWaitMs": 5,
+    "inFlightAtStart": 0,
+    "startedAtMs": 28,
+    "retries": 0
+  },
+  "rawContent": "{\n  \"title\": \"Ember Causeway\",\n  \"islands\": [\n    {\n      \"id\": \"sw_start\",\n      \"name\": \"Starting Shale\",\n      \"center\": { \"x\": -40.0, \"z\": -40.0 },\n      \"radius\": 8.0\n    },\n    {\n      \"id\": \"island_2\",\n      \"name\": \"Mid-Red Sand\",\n      \"center\": { \"x\": -15.0, \"z\": -15.0 },\n      \"radius\": 10.0\n    },\n    {\n      \"id\": \"north_west_hub\",\n      \"name\": \"North West Hub\",\n      \"center\": { \"x\": 10.0, \"z\": 0.0 },\n      \"radius\": 9.0\n    },\n    {\n      \"id\": \"island_5\",\n      \"name\": \"East Red Sand\",\n      \"center\": { \"x\": 35.0, \"z\": 10.0 },\n      \"radius\": 10.0\n    },\n    {\n      \"id\": \"south_east_base\",\n      \"name\": \"SE Base\",\n      \"center\": { \"x\": 60.0, \"z\": 35.0 },\n      \"radius\": 8.0\n    },\n    {\n      \"id\": \"ne_gate_island\",\n      \"name\": \"Final Zenith\",\n      \"center\": { \"x\": 75.0, \"z\": 65.0 },\n      \"radius\": 10.0\n    }\n  ],\n  \"bridges\": [\n    {\n      \"id\": \"bridge_1\",\n      \"from\": \"sw_start\",\n      \"to\": \"island_2\",\n      \"width\": 2.5\n    },\n    {\n      \"id\": \"bridge_2\",\n      \"from\": \"island_2\",\n      \"to\": \"north_west_hub\",\n      \"width\": 1.6\n    },\n    {\n      \"id\": \"bridge_3\",\n      \"from\": \"north_west_hub\",\n      \"to\": \"island_5\",\n      \"width\": 2.5\n    },\n    {\n      \"id\": \"bridge_4\",\n      \"from\": \"island_5\",\n      \"to\": \"south_east_base\",\n      \"width\": 1.6\n    },\n    {\n      \"id\": \"bridge_5\",\n      \"from\": \"south_east_base\",\n      \"to\": \"ne_gate_island\",\n      \"width\": 2.0\n    }\n  ],\n  \"spawns\": [\n    {\n      \"islandId\": \"sw_start\",\n      \"localPosition\": { \"x\": -3.0, \"z\": -3.0 }\n    },\n    {\n      \"islandId\": \"sw_start\",\n      \"localPosition\": { \"x\": 3.0, \"z\": -3.0 }\n    }\n  ],\n  \"relics\": [\n    {\n      \"id\": \"r_ember_chain_1\",\n      \"name\": \"First Link\",\n      \"islandId\": \"island_2\",\n      \"localPosition\": { \"x\": -8.0, \"z\": 0.5 }\n    },\n    {\n      \"id\": \"r_ember_chain_3\",\n      \"name\": \"Third Fragment\",\n      \"islandId\": \"island_5\",\n      \"localPosition\": { \"x\": 6.0, \"z\": 4.0 }\n    },\n    {\n      \"id\": \"r_ember_chain_4\",\n      \"name\": \"Fourth Shard\",\n      \"islandId\": \"south_east_base\",\n      \"localPosition\": { \"x\": -7.0, \"z\": 1.5 }\n    }\n  ],\n  \"gate\": {\n    \"islandId\": \"ne_gate_island\",\n    \"localPosition\": { \"x\": 7.0, \"z\": 7.0 }\n  },\n  \"hazard\": \"lava\",\n  \"decorations\": [\n    {\n      \"id\": \"dec_sw_1\",\n      \"type\": \"rock\",\n      \"islandId\": \"sw_start\",\n      \"localPosition\": { \"x\": -6.0, \"z\": -8.0 }\n    },\n    {\n      \"id\": \"dec_sw_2\",\n      \"type\": \"bush\",\n      \"islandId\": \"sw_start\",\n      \"localPosition\": { \"x\": 5.0, \"z\": -9.0 }\n    },\n    {\n      \"id\": \"dec_is2_1\",\n      \"type\": \"rock\",\n      \"islandId\": \"island_2\",\n      \"localPosition\": { \"x\": 8.0, \"z\": -3.0 }\n    },\n    {\n      \"id\": \"dec_nw_1\",\n      \"type\": \"tree\",\n      \"islandId\": \"north_west_hub\",\n      \"localPosition\": { \"x\": -6.0, \"z\": 6.0 }\n    },\n    {\n      \"id\": \"dec_is5_1\",\n      \"type\": \"bush\",\n      \"islandId\": \"island_5\",\n      \"localPosition\": { \"x\": -6.0, \"z\": 2.0 }\n    },\n    {\n      \"id\": \"dec_se_1\",\n      \"type\": \"rock\",\n      \"islandId\": \"south_east_base\",\n      \"localPosition\": { \"x\": 7.0, \"z\": -3.0 }\n    },\n    {\n      \"id\": \"dec_se_2\",\n      \"type\": \"pillar\",\n      \"islandId\": \"south_east_base\",\n      \"localPosition\": { \"x\": -9.0, \"z\": 1.5 }\n    },\n    {\n      \"id\": \"dec_gate_1\",\n      \"type\": \"lantern\",\n      \"islandId\": \"ne_gate_island\",\n      \"localPosition\": { \"x\": -5.0, \"z\": -5.0 }\n    }\n  ]\n}",
+  "rawChars": 3369,
+  "parse": {
+    "ok": true
+  },
+  "zod": {
+    "ok": false,
+    "issues": [
+      {
+        "path": "islands.5.center.x",
+        "message": "Number must be less than or equal to 60",
+        "code": "too_big"
+      },
+      {
+        "path": "islands.5.center.z",
+        "message": "Number must be less than or equal to 60",
+        "code": "too_big"
+      }
+    ]
+  },
+  "pipeline": {
+    "expand": {
+      "ok": true,
+      "issues": [],
+      "normalizations": [
+        {
+          "path": "islands[4].center.x",
+          "from": 60,
+          "to": 52,
+          "reason": "clamped to [-52, 52]"
+        },
+        {
+          "path": "islands[5].center.x",
+          "from": 75,
+          "to": 50,
+          "reason": "clamped to [-50, 50]"
+        },
+        {
+          "path": "islands[5].center.z",
+          "from": 65,
+          "to": 50,
+          "reason": "clamped to [-50, 50]"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 35
+          },
+          "to": {
+            "x": 52,
+            "z": 32.959
+          },
+          "reason": "moved apart from ne_gate_island (overlap 4.117 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 50,
+            "z": 50
+          },
+          "to": {
+            "x": 49.728,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 4.117 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 32.959
+          },
+          "to": {
+            "x": 52,
+            "z": 31.939
+          },
+          "reason": "moved apart from ne_gate_island (overlap 2.058 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.728,
+            "z": 50
+          },
+          "to": {
+            "x": 49.592,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 2.058 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 31.939
+          },
+          "to": {
+            "x": 52,
+            "z": 31.429
+          },
+          "reason": "moved apart from ne_gate_island (overlap 1.029 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.592,
+            "z": 50
+          },
+          "to": {
+            "x": 49.524,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 1.029 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 31.429
+          },
+          "to": {
+            "x": 52,
+            "z": 31.174
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0.515 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.524,
+            "z": 50
+          },
+          "to": {
+            "x": 49.49,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0.515 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 31.174
+          },
+          "to": {
+            "x": 52,
+            "z": 31.046
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0.257 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.49,
+            "z": 50
+          },
+          "to": {
+            "x": 49.473,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0.257 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 31.046
+          },
+          "to": {
+            "x": 52,
+            "z": 30.982
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0.128 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.473,
+            "z": 50
+          },
+          "to": {
+            "x": 49.465,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0.128 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.982
+          },
+          "to": {
+            "x": 52,
+            "z": 30.95
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0.064 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.465,
+            "z": 50
+          },
+          "to": {
+            "x": 49.461,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0.064 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.95
+          },
+          "to": {
+            "x": 52,
+            "z": 30.934
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0.032 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.461,
+            "z": 50
+          },
+          "to": {
+            "x": 49.459,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0.032 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.934
+          },
+          "to": {
+            "x": 52,
+            "z": 30.926
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0.015 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.459,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0.015 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.926
+          },
+          "to": {
+            "x": 52,
+            "z": 30.922
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0.007 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0.007 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.922
+          },
+          "to": {
+            "x": 52,
+            "z": 30.92
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0.003 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0.003 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.92
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0.001 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0.001 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "islands[south_east_base]",
+          "from": {
+            "x": 52,
+            "z": 30.919
+          },
+          "to": {
+            "x": 52,
+            "z": 30.919
+          },
+          "reason": "moved apart from ne_gate_island (overlap 0 m)"
+        },
+        {
+          "path": "islands[ne_gate_island]",
+          "from": {
+            "x": 49.458,
+            "z": 50
+          },
+          "to": {
+            "x": 49.458,
+            "z": 50
+          },
+          "reason": "moved apart from south_east_base (overlap 0 m)"
+        },
+        {
+          "path": "relics[2].localPosition",
+          "from": {
+            "x": -7,
+            "z": 1.5
+          },
+          "to": {
+            "x": -6.649,
+            "z": 1.425
+          },
+          "reason": "offset exceeded island radius 8; scaled to 6.8"
+        },
+        {
+          "path": "decorations[0].localPosition",
+          "from": {
+            "x": -6,
+            "z": -8
+          },
+          "to": {
+            "x": -4.08,
+            "z": -5.44
+          },
+          "reason": "offset exceeded island radius 8; scaled to 6.8"
+        },
+        {
+          "path": "decorations[1].localPosition",
+          "from": {
+            "x": 5,
+            "z": -9
+          },
+          "to": {
+            "x": 3.302,
+            "z": -5.944
+          },
+          "reason": "offset exceeded island radius 8; scaled to 6.8"
+        },
+        {
+          "path": "decorations[3].localPosition",
+          "from": {
+            "x": -6,
+            "z": 6
+          },
+          "to": {
+            "x": -5.515,
+            "z": 5.515
+          },
+          "reason": "offset exceeded island radius 9; scaled to 7.8"
+        },
+        {
+          "path": "decorations[5].localPosition",
+          "from": {
+            "x": 7,
+            "z": -3
+          },
+          "to": {
+            "x": 6.25,
+            "z": -2.679
+          },
+          "reason": "offset exceeded island radius 8; scaled to 6.8"
+        },
+        {
+          "path": "decorations[6].localPosition",
+          "from": {
+            "x": -9,
+            "z": 1.5
+          },
+          "to": {
+            "x": -6.707,
+            "z": 1.118
+          },
+          "reason": "offset exceeded island radius 8; scaled to 6.8"
+        },
+        {
+          "path": "gate.localPosition",
+          "from": {
+            "x": 7,
+            "z": 7
+          },
+          "to": {
+            "x": 6.223,
+            "z": 6.223
+          },
+          "reason": "offset exceeded island radius 10; scaled to 8.8"
+        }
+      ]
+    },
+    "validate": {
+      "ok": true,
+      "issues": []
+    },
+    "playability": {
+      "ok": true,
+      "failedChecks": []
+    }
+  },
+  "outcome": "valid",
+  "failureModes": [
+    "coordinates_normalized",
+    "coordinates_out_of_range",
+    "local_position_normalized",
+    "other_normalized"
+  ]
+}

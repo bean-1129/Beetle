@@ -1,0 +1,47 @@
+{
+  "id": "b05-t04-s0",
+  "kind": "draft",
+  "promptId": "b05",
+  "promptNote": "west-to-east row of four",
+  "prompt": "Four islands in a straight row from west to east, 24 metres apart. Spawns on the first island, the gate on the last. Relics: one on the first island, one on the second, one on the third. Water. Title \"Causeway\".",
+  "temperature": 0.4,
+  "sampleIndex": 0,
+  "phase": "main",
+  "model": "qwen3.5:4b",
+  "request": {
+    "numCtx": 8192,
+    "numPredict": 2048,
+    "format": "WORLD_DRAFT_JSON_SCHEMA",
+    "systemPromptChars": 1377
+  },
+  "timing": {
+    "status": 200,
+    "wallMs": 105911,
+    "totalDurationMs": 105910,
+    "loadMs": 1,
+    "promptEvalMs": 179,
+    "evalMs": 44605,
+    "promptTokens": 429,
+    "outputTokens": 2048,
+    "doneReason": "length",
+    "queueWaitMs": 61125,
+    "inFlightAtStart": 3,
+    "startedAtMs": 143004,
+    "retries": 0
+  },
+  "rawContent": "{\n  \"title\": \"Causeway\",\n  \"islands\": [\n    {\n      \"id\": \"isle_start\",\n      \"name\": \"Starting Isle\",\n      \"center\": { \"x\": -30, \"z\": 0 },\n      \"radius\": 12.0\n    },\n    {\n      \"id\": \"isle_mid1\",\n      \"name\": \"Midway One\",\n      \"center\": { \"x\": -6, \"z\": 0 },\n      \"radius\": 10.0\n    },\n    {\n      \"id\": \"isle_mid2\",\n      \"name\": \"Midway Two\",\n      \"center\": { \"x\": 6, \"z\": 0 },\n      \"radius\": 10.0\n    },\n    {\n      \"id\": \"isle_end\",\n      \"name\": \"End Isle\",\n      \"center\": { \"x\": 30, \"z\": 0 },\n      \"radius\": 12.0\n    }\n  ],\n  \"bridges\": [\n    {\n      \"id\": \"br_main_west\",\n      \"from\": \"isle_start\",\n      \"to\": \"isle_mid1\",\n      \"width\": 3.5\n    },\n    {\n      \"id\": \"br_main_east\",\n      \"from\": \"isle_mid1\",\n      \"to\": \"isle_mid2\",\n      \"width\": 3.5\n    },\n    {\n      \"id\": \"br_main_far\",\n      \"from\": \"isle_mid2\",\n      \"to\": \"isle_end\",\n      \"width\": 3.5\n    },\n    {\n      \"id\": \"br_risky_west\",\n      \"from\": \"isle_start\",\n      \"to\": \"isle_mid1\",\n      \"width\": 1.6\n    },\n    {\n      \"id\": \"br_risky_east\",\n      \"from\": \"isle_mid1\",\n      \"to\": \"isle_end\",\n      \"width\": 1.6\n    }\n  ],\n  \"spawns\": [\n    {\n      \"islandId\": \"isle_start\",\n      \"localPosition\": { \"x\": -5, \"z\": 0 }\n    },\n    {\n      \"islandId\": \"isle_start\",\n      \"localPosition\": { \"x\": 5, \"z\": 0 }\n    }\n  ],\n  \"relics\": [\n    {\n      \"id\": \"rel_1st\",\n      \"name\": \"First Echo\",\n      \"islandId\": \"isle_start\",\n      \"localPosition\": { \"x\": -8, \"z\": 0 }\n    },\n    {\n      \"id\": \"rel_2nd\",\n      \"name\": \"Second Pulse\",\n      \"islandId\": \"isle_mid1\",\n      \"localPosition\": { \"x\": -8, \"z\": 0 }\n    },\n    {\n      \"id\": \"rel_3rd\",\n      \"name\": \"Third Resonance\",\n      \"islandId\": \"isle_mid2\",\n      \"localPosition\": { \"x\": 8, \"z\": 0 }\n    }\n  ],\n  \"gate\": {\n    \"islandId\": \"isle_end\",\n    \"localPosition\": { \"x\": 5, \"z\": 0 }\n  },\n  \"hazard\": \"water\",\n  \"decorations\": [\n    { \"id\": \"dec_1\", \"type\": \"tree\", \"islandId\": \"isle_start\", \"localPosition\": { \"x\": -10, \"z\": 5 } },\n    { \"id\": \"dec_2\", \"type\": \"rock\", \"islandId\": \"isle_start\", \"localPosition\": { \"x\": -10, \"z\": -5 } },\n    { \"id\": \"dec_3\", \"type\": \"lantern\", \"islandId\": \"isle_mid1\", \"localPosition\": { \"x\": 2, \"z\": 5 } },\n    { \"id\": \"dec_4\", \"type\": \"pillar\", \"islandId\": \"isle_mid2\", \"localPosition\": { \"x\": -2, \"z\": 5 } },\n    { \"id\": \"dec_5\", \"type\": \"bush\", \"islandId\": \"isle_end\", \"localPosition\": { \"x\": 10, \"z\": 5 } },\n    { \"id\": \"dec_6\", \"type\": \"shrine\", \"islandId\": \"isle_mid1\", \"localPosition\": { \"x\": -2, \"z\": -5 } },\n    { \"id\": \"dec_7\", \"type\": \"tree\", \"islandId\": \"isle_start\", \"localPosition\": { \"x\": 8, \"z\": 5 } },\n    { \"id\": \"dec_8\", \"type\": \"rock\", \"islandId\": \"isle_mid2\", \"localPosition\": { \"x\": 2, \"z\": -5 } },\n    { \"id\": \"dec_9\", \"type\": \"lantern\", \"islandId\": \"isle_end\", \"localPosition\": { \"x\": -10, \"z\": 5 } },\n    { \"id\": \"dec_10\", \"type\": \"pillar\", \"islandId\": \"isle_mid1\", \"localPosition\": { \"x\": 8, \"z\": 5 } },\n    { \"id\": \"dec_11\", \"type\": \"bush\", \"islandId\": \"isle_start\", \"localPosition\": { \"x\": -6, \"z\": 8 } },\n    { \"id\": \"dec_12\", \"type\": \"shrine\", \"islandId\": \"isle_mid2\", \"localPosition\": { \"x\": -8, \"z\": 5 } },\n    { \"id\": \"dec_13\", \"type\": \"tree\", \"islandId\": \"isle_end\", \"localPosition\": { \"x\": 6, \"z\": -5 } },\n    { \"id\": \"dec_14\", \"type\": \"rock\", \"islandId\": \"isle_mid1\", \"localPosition\": { \"x\": -6, \"z\": 8 } },\n    { \"id\": \"dec_15\", \"type\": \"lantern\", \"islandId\": \"isle_start\", \"localPosition\": { \"x\": 2, \"z\": -8 } },\n    { \"id\": \"dec_16\", \"type\": \"pillar\", \"islandId\": \"isle_mid2\", \"localPosition\": { \"x\": 6, \"z\": -8 } },\n    { \"id\": \"dec_17\", \"type\": \"bush\", \"islandId\": \"isle_end\", \"localPosition\": { \"x\": -6, \"z\": -8 } },\n    { \"id\": \"dec_18\", \"type\": \"shrine\", \"islandId\": \"isle_mid1\", \"localPosition\": { \"x\": 6, \"z\": -8 } },\n    { \"id\": \"dec_19\", \"type\": \"tree\", \"islandId\": \"isle_start\", \"localPosition\": { \"x\": -2, \"z\": 8 } },\n    { \"id\": \"dec_20\", \"type\": \"rock\", \"islandId\": \"isle_mid2\", \"localPosition\": { \"x\": -6, \"z\": 8 } },\n    { \"id\": \"dec_21\", \"type\": \"lantern\", \"islandId\": \"isle_end\", \"localPosition\": { \"x\": 2, \"z\": 8 } },\n    { \"id\": \"dec_22\", \"type\": \"pillar\", \"islandId\": \"isle_mid1\", \"localPosition\": { \"x\": -8, \"z\": -5 } },\n    { \"id\": \"dec_23\", \"type\": \"bush\", \"islandId\": \"isle_start\", \"localPosition\": { \"x\": 6, \"z\": -5 } },\n    { \"id\": \"dec_24\", \"type\": \"shrine\", \"islandId\": \"isle_mid2\", \"localPosition\": { \"x\": 6, \"z\": -5 } },\n    { \"id\": \"dec_25\", \"type\": \"tree\", \"islandId\": \"isle_end\", \"localPosition\": { \"x\": -8, \"z\": -5 } },\n    { \"id\": \"dec_26\", \"type\": \"rock\", \"islandId\": \"isle_mid1\", \"localPosition\": { \"x\": 2, \"z\": -5 } },\n    { \"id\": \"dec_27\", \"type\": \"lantern\", \"islandId\": \"isle_start\", \"localPosition\": { \"x\": -4, \"z\": -8 } },\n    { \"id\": \"dec_28\", \"type\": \"pillar\", \"is",
+  "rawChars": 4731,
+  "parse": {
+    "ok": false,
+    "error": "Unterminated string in JSON at position 4731 (line 124 column 44)"
+  },
+  "zod": {
+    "ok": false,
+    "issues": []
+  },
+  "pipeline": {},
+  "outcome": "invalid_parse",
+  "failureModes": [
+    "truncated_output"
+  ]
+}

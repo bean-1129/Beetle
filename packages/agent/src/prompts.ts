@@ -28,6 +28,7 @@ export function worldDraftSystemPrompt(): string {
     `Exactly ${L.spawns} spawns, ${L.relics} relics and 1 gate. ${L.islands.min} to ${L.islands.max} islands, at most ${L.bridges.max} bridges, at most ${L.decorations.max} decorations (types: ${DECORATION_TYPES.join(', ')}). Hazard is one of: ${HAZARD_KINDS.join(', ')}.`,
     'Both spawns go on the same central island. Every relic and the gate must be reachable from the spawns by walking over bridges. Put the gate on its own island with exactly one bridge leading to it, so the locked gate guards that bridge mouth. Do not place a relic on the gate island.',
     'Give a wide safe route plus one optional narrow risky bridge. Keep decorations away from bridge mouths so they never block a route.',
+    'Use between 4 and 8 decorations in total (more than 8 is wasteful and gets truncated). Output compact JSON on one line with no extra whitespace and no commentary.',
     'Output only JSON matching the schema. No commentary.',
   ].join('\n');
 }

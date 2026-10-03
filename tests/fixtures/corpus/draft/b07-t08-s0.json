@@ -1,0 +1,47 @@
+{
+  "id": "b07-t08-s0",
+  "kind": "draft",
+  "promptId": "b07",
+  "promptNote": "tight small islands, loops, many decorations",
+  "prompt": "A compact map of six small islands (radius 5 each) packed tightly together so every bridge is short, and every island has two bridges so the whole map is a loop. Lava below. Twenty bushes and rocks scattered around, but keep the bridge mouths clear. Spawns on one island, the gate on the island opposite, relics on three others.",
+  "temperature": 0.8,
+  "sampleIndex": 0,
+  "phase": "main",
+  "model": "qwen3.5:4b",
+  "request": {
+    "numCtx": 8192,
+    "numPredict": 2048,
+    "format": "WORLD_DRAFT_JSON_SCHEMA",
+    "systemPromptChars": 1377
+  },
+  "timing": {
+    "status": 200,
+    "wallMs": 137781,
+    "totalDurationMs": 137780,
+    "loadMs": 1,
+    "promptEvalMs": 177,
+    "evalMs": 44953,
+    "promptTokens": 444,
+    "outputTokens": 2048,
+    "doneReason": "length",
+    "queueWaitMs": 92649,
+    "inFlightAtStart": 3,
+    "startedAtMs": 424259,
+    "retries": 0
+  },
+  "rawContent": "{\n  \"title\": \"Lava Loop Compact\",\n  \"islands\": [\n    {\n      \"id\": \"isle_spawn_01\",\n      \"name\": \"Spawn Islet\",\n      \"center\": { \"x\": 0.0, \"z\": 0.0 },\n      \"radius\": 5.0\n    },\n    {\n      \"id\": \"isle_rel_02\",\n      \"name\": \"Relic East\",\n      \"center\": { \"x\": 8.0, \"z\": 0.0 },\n      \"radius\": 5.0\n    },\n    {\n      \"id\": \"isle_rel_03\",\n      \"name\": \"Relic South\",\n      \"center\": { \"x\": 0.0, \"z\": -8.0 },\n      \"radius\": 5.0\n    },\n    {\n      \"id\": \"isle_rel_04\",\n      \"name\": \"Relic West\",\n      \"center\": { \"x\": -8.0, \"z\": 0.0 },\n      \"radius\": 5.0\n    },\n    {\n      \"id\": \"isle_rel_05\",\n      \"name\": \"Relic North\",\n      \"center\": { \"x\": 0.0, \"z\": 8.0 },\n      \"radius\": 5.0\n    },\n    {\n      \"id\": \"isle_gate_06\",\n      \"name\": \"Gate Keep\",\n      \"center\": { \"x\": 4.0, \"z\": 4.0 },\n      \"radius\": 5.0\n    }\n  ],\n  \"bridges\": [\n    {\n      \"id\": \"bridge_s_e\",\n      \"from\": \"isle_spawn_01\",\n      \"to\": \"isle_rel_02\",\n      \"width\": 3.0\n    },\n    {\n      \"id\": \"bridge_e_n\",\n      \"from\": \"isle_rel_02\",\n      \"to\": \"isle_rel_05\",\n      \"width\": 3.0\n    },\n    {\n      \"id\": \"bridge_n_w\",\n      \"from\": \"isle_rel_05\",\n      \"to\": \"isle_rel_04\",\n      \"width\": 3.0\n    },\n    {\n      \"id\": \"bridge_w_s\",\n      \"from\": \"isle_rel_04\",\n      \"to\": \"isle_rel_03\",\n      \"width\": 3.0\n    },\n    {\n      \"id\": \"bridge_s_e_main\",\n      \"from\": \"isle_rel_03\",\n      \"to\": \"isle_spawn_01\",\n      \"width\": 4.0\n    },\n    {\n      \"id\": \"bridge_gate_risky\",\n      \"from\": \"isle_gate_06\",\n      \"to\": \"isle_rel_02\",\n      \"width\": 1.2\n    }\n  ],\n  \"spawns\": [\n    {\n      \"islandId\": \"isle_spawn_01\",\n      \"localPosition\": { \"x\": 3.5, \"z\": -3.5 }\n    },\n    {\n      \"islandId\": \"isle_spawn_01\",\n      \"localPosition\": { \"x\": -3.5, \"z\": 3.5 }\n    }\n  ],\n  \"relics\": [\n    {\n      \"id\": \"rel_vault_iron\",\n      \"name\": \"Iron Vault Key\",\n      \"islandId\": \"isle_rel_02\",\n      \"localPosition\": { \"x\": 4.0, \"z\": -4.0 }\n    },\n    {\n      \"id\": \"rel_cathedral_lens\",\n      \"name\": \"Cathedral Lens\",\n      \"islandId\": \"isle_rel_05\",\n      \"localPosition\": { \"x\": 1.0, \"z\": 4.0 }\n    },\n    {\n      \"id\": \"rel_fortress_core\",\n      \"name\": \"Fortress Core\",\n      \"islandId\": \"isle_rel_03\",\n      \"localPosition\": { \"x\": -1.0, \"z\": 4.0 }\n    }\n  ],\n  \"gate\": {\n    \"islandId\": \"isle_gate_06\",\n    \"localPosition\": { \"x\": 3.0, \"z\": -3.0 }\n  },\n  \"hazard\": \"lava\",\n  \"decorations\": [\n    { \"id\": \"dec_bush_01\", \"type\": \"bush\", \"islandId\": \"isle_spawn_01\", \"localPosition\": { \"x\": 2.0, \"z\": 2.0 } },\n    { \"id\": \"dec_bush_02\", \"type\": \"bush\", \"islandId\": \"isle_spawn_01\", \"localPosition\": { \"x\": -2.0, \"z\": 2.0 } },\n    { \"id\": \"dec_rock_01\", \"type\": \"rock\", \"islandId\": \"isle_spawn_01\", \"localPosition\": { \"x\": 1.5, \"z\": -1.5 } },\n    { \"id\": \"dec_bush_03\", \"type\": \"bush\", \"islandId\": \"isle_rel_02\", \"localPosition\": { \"x\": -1.0, \"z\": 1.0 } },\n    { \"id\": \"dec_rock_02\", \"type\": \"rock\", \"islandId\": \"isle_rel_02\", \"localPosition\": { \"x\": 3.5, \"z\": 3.5 } },\n    { \"id\": \"dec_bush_04\", \"type\": \"bush\", \"islandId\": \"isle_rel_05\", \"localPosition\": { \"x\": -2.0, \"z\": -1.0 } },\n    { \"id\": \"dec_lantern_01\", \"type\": \"lantern\", \"islandId\": \"isle_rel_05\", \"localPosition\": { \"x\": 0.5, \"z\": 3.0 } },\n    { \"id\": \"dec_bush_05\", \"type\": \"bush\", \"islandId\": \"isle_rel_04\", \"localPosition\": { \"x\": 1.0, \"z\": -2.0 } },\n    { \"id\": \"dec_rock_03\", \"type\": \"rock\", \"islandId\": \"isle_rel_04\", \"localPosition\": { \"x\": -3.5, \"z\": 3.5 } },\n    { \"id\": \"dec_bush_06\", \"type\": \"bush\", \"islandId\": \"isle_rel_03\", \"localPosition\": { \"x\": 2.0, \"z\": -1.0 } },\n    { \"id\": \"dec_pillar_01\", \"type\": \"pillar\", \"islandId\": \"isle_rel_03\", \"localPosition\": { \"x\": -2.0, \"z\": -2.0 } },\n    { \"id\": \"dec_bush_07\", \"type\": \"bush\", \"islandId\": \"isle_gate_06\", \"localPosition\": { \"x\": 2.0, \"z\": 3.0 } },\n    { \"id\": \"dec_shrine_01\", \"type\": \"shrine\", \"islandId\": \"isle_gate_06\", \"localPosition\": { \"x\": -2.0, \"z\": 2.0 } },\n    { \"id\": \"dec_bush_08\", \"type\": \"bush\", \"islandId\": \"isle_spawn_01\", \"localPosition\": { \"x\": 4.0, \"z\": 4.0 } },\n    { \"id\": \"dec_rock_04\", \"type\": \"rock\", \"islandId\": \"isle_rel_02\", \"localPosition\": { \"x\": -2.5, \"z\": -2.5 } },\n    { \"id\": \"dec_bush_09\", \"type\": \"bush\", \"islandId\": \"isle_rel_05\", \"localPosition\": { \"x\": 3.0, \"z\": -1.0 } },\n    { \"id\": \"dec_lantern_02\", \"type\": \"lantern\", \"islandId\": \"isle_rel_04\", \"localPosition\": { \"x\": 3.0, \"z\": 3.0 } },\n    { \"id\": \"dec_bush_10\", \"type\": \"bush\", \"islandId\": \"isle_rel_03\", \"localPosition\": { \"x\": 4.0, \"z\": -3.0 } },\n    { \"id\": \"dec_pillar_02\", \"",
+  "rawChars": 4486,
+  "parse": {
+    "ok": false,
+    "error": "Unterminated string in JSON at position 4486 (line 133 column 31)"
+  },
+  "zod": {
+    "ok": false,
+    "issues": []
+  },
+  "pipeline": {},
+  "outcome": "invalid_parse",
+  "failureModes": [
+    "truncated_output"
+  ]
+}

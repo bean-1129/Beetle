@@ -125,28 +125,40 @@ const ISLAND_MIN_GAP = 1.0;
 export function separateIslands(islands: IslandLike[], log: Normalization[]): void {
   const H = WORLD_LIMITS.bounds.halfExtent;
   const margin = 0.25;
-  for (let iter = 0; iter < 60; iter++) {
+  const start = new Map(islands.map((i) => [i.id, { ...i.center }]));
+  const lim = (i: IslandLike) => H - i.radius;
+  for (let iter = 0; iter < 200; iter++) {
     let worst: { a: IslandLike; b: IslandLike; depth: number } | null = null;
     for (let i = 0; i < islands.length; i++) {
       for (let j = i + 1; j < islands.length; j++) {
         const a = islands[i]; const b = islands[j];
         const d = Math.hypot(a.center.x - b.center.x, a.center.z - b.center.z);
         const depth = a.radius + b.radius + ISLAND_MIN_GAP + margin - d;
-        if (depth > 1e-6 && (!worst || depth > worst.depth)) worst = { a, b, depth };
+        if (depth > 1e-4 && (!worst || depth > worst.depth)) worst = { a, b, depth };
       }
     }
-    if (!worst) return;
+    if (!worst) break;
     const { a, b, depth } = worst;
     let dx = b.center.x - a.center.x; let dz = b.center.z - a.center.z;
     let d = Math.hypot(dx, dz);
     if (d < 1e-6) { dx = 1; dz = 0; d = 1; } // coincident centres: push along +X
     const ux = dx / d; const uz = dz / d;
-    const half = depth / 2;
-    const fromA = { ...a.center }; const fromB = { ...b.center };
-    a.center = { x: r3(clampTo(a.center.x - ux * half, -(H - a.radius), H - a.radius)), z: r3(clampTo(a.center.z - uz * half, -(H - a.radius), H - a.radius)) };
-    b.center = { x: r3(clampTo(b.center.x + ux * half, -(H - b.radius), H - b.radius)), z: r3(clampTo(b.center.z + uz * half, -(H - b.radius), H - b.radius)) };
-    log.push({ path: `islands[${a.id}]`, from: fromA, to: a.center, reason: `moved apart from ${b.id} (overlap ${r3(depth)} m)` });
-    log.push({ path: `islands[${b.id}]`, from: fromB, to: b.center, reason: `moved apart from ${a.id} (overlap ${r3(depth)} m)` });
+    // Move both by half; whatever the bounds clamp takes away from one disc is added to the other, so the pair
+    // always separates by the full depth unless both are pinned at opposite bounds.
+    const want = depth / 2 + 1e-3;
+    const ax = clampTo(a.center.x - ux * want, -lim(a), lim(a)); const az = clampTo(a.center.z - uz * want, -lim(a), lim(a));
+    const movedA = Math.hypot(ax - a.center.x, az - a.center.z);
+    const residualA = Math.max(0, want - movedA);
+    const bx = clampTo(b.center.x + ux * (want + residualA), -lim(b), lim(b)); const bz = clampTo(b.center.z + uz * (want + residualA), -lim(b), lim(b));
+    const movedB = Math.hypot(bx - b.center.x, bz - b.center.z);
+    const residualB = Math.max(0, want + residualA - movedB);
+    a.center = { x: r3(clampTo(ax - ux * residualB, -lim(a), lim(a))), z: r3(clampTo(az - uz * residualB, -lim(a), lim(a))) };
+    b.center = { x: r3(bx), z: r3(bz) };
+  }
+  for (const i of islands) {
+    const from = start.get(i.id)!;
+    const moved = Math.hypot(i.center.x - from.x, i.center.z - from.z);
+    if (moved > 1e-3) log.push({ path: `islands[${i.id}].center`, from, to: i.center, reason: `moved ${r3(moved)} m apart from overlapping islands` });
   }
 }
 

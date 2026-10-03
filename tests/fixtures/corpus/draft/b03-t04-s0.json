@@ -1,0 +1,47 @@
+{
+  "id": "b03-t04-s0",
+  "kind": "draft",
+  "promptId": "b03",
+  "promptNote": "hub and four compass islands",
+  "prompt": "Five islands: a big hearth island in the middle and four smaller islands at the compass points about 25 metres out. The temple with the gate is to the north. One relic on each of the east, west and south islands. Water below, a couple of trees and lanterns.",
+  "temperature": 0.4,
+  "sampleIndex": 0,
+  "phase": "main",
+  "model": "qwen3.5:4b",
+  "request": {
+    "numCtx": 8192,
+    "numPredict": 2048,
+    "format": "WORLD_DRAFT_JSON_SCHEMA",
+    "systemPromptChars": 1377
+  },
+  "timing": {
+    "status": 200,
+    "wallMs": 73403,
+    "totalDurationMs": 73398,
+    "loadMs": 4719,
+    "promptEvalMs": 152,
+    "evalMs": 39712,
+    "promptTokens": 433,
+    "outputTokens": 2048,
+    "doneReason": "length",
+    "queueWaitMs": 28815,
+    "inFlightAtStart": 2,
+    "startedAtMs": 38,
+    "retries": 0
+  },
+  "rawContent": "{\n  \"title\": \"Floating Hearth Temple\",\n  \"islands\": [\n    {\n      \"id\": \"hearth_central\",\n      \"name\": \"Central Hearth\",\n      \"center\": { \"x\": 0, \"z\": 0 },\n      \"radius\": 12.0\n    },\n    {\n      \"id\": \"north_temple\",\n      \"name\": \"Northern Sanctum\",\n      \"center\": { \"x\": 0, \"z\": 25 },\n      \"radius\": 8.0\n    },\n    {\n      \"id\": \"east_isle\",\n      \"name\": \"Eastern Outcrop\",\n      \"center\": { \"x\": 25, \"z\": 0 },\n      \"radius\": 7.0\n    },\n    {\n      \"id\": \"west_isle\",\n      \"name\": \"Western Cliffs\",\n      \"center\": { \"x\": -25, \"z\": 0 },\n      \"radius\": 7.0\n    },\n    {\n      \"id\": \"south_isle\",\n      \"name\": \"Southern Reef\",\n      \"center\": { \"x\": 0, \"z\": -25 },\n      \"radius\": 7.0\n    }\n  ],\n  \"bridges\": [\n    {\n      \"id\": \"bridge_north_main\",\n      \"from\": \"hearth_central\",\n      \"to\": \"north_temple\",\n      \"width\": 3.5\n    },\n    {\n      \"id\": \"bridge_east_main\",\n      \"from\": \"hearth_central\",\n      \"to\": \"east_isle\",\n      \"width\": 3.0\n    },\n    {\n      \"id\": \"bridge_west_main\",\n      \"from\": \"hearth_central\",\n      \"to\": \"west_isle\",\n      \"width\": 3.0\n    },\n    {\n      \"id\": \"bridge_south_main\",\n      \"from\": \"hearth_central\",\n      \"to\": \"south_isle\",\n      \"width\": 3.0\n    },\n    {\n      \"id\": \"bridge_north_risky\",\n      \"from\": \"hearth_central\",\n      \"to\": \"north_temple\",\n      \"width\": 1.6\n    }\n  ],\n  \"spawns\": [\n    {\n      \"islandId\": \"hearth_central\",\n      \"localPosition\": { \"x\": -3.0, \"z\": -3.0 }\n    },\n    {\n      \"islandId\": \"hearth_central\",\n      \"localPosition\": { \"x\": 3.0, \"z\": 3.0 }\n    }\n  ],\n  \"relics\": [\n    {\n      \"id\": \"relic_east\",\n      \"name\": \"Sunstone of the East\",\n      \"islandId\": \"east_isle\",\n      \"localPosition\": { \"x\": -4.0, \"z\": 0.0 }\n    },\n    {\n      \"id\": \"relic_west\",\n      \"name\": \"Moonglass of the West\",\n      \"islandId\": \"west_isle\",\n      \"localPosition\": { \"x\": 4.0, \"z\": 0.0 }\n    },\n    {\n      \"id\": \"relic_south\",\n      \"name\": \"Starlight of the South\",\n      \"islandId\": \"south_isle\",\n      \"localPosition\": { \"x\": 0.0, \"z\": -4.0 }\n    }\n  ],\n  \"gate\": {\n    \"islandId\": \"north_temple\",\n    \"localPosition\": { \"x\": 0.0, \"z\": 4.0 }\n  },\n  \"hazard\": \"water\",\n  \"decorations\": [\n    {\n      \"id\": \"dec_01\",\n      \"type\": \"tree\",\n      \"islandId\": \"hearth_central\",\n      \"localPosition\": { \"x\": -8.0, \"z\": -8.0 }\n    },\n    {\n      \"id\": \"dec_02\",\n      \"type\": \"lantern\",\n      \"islandId\": \"hearth_central\",\n      \"localPosition\": { \"x\": 8.0, \"z\": 8.0 }\n    },\n    {\n      \"id\": \"dec_03\",\n      \"type\": \"tree\",\n      \"islandId\": \"hearth_central\",\n      \"localPosition\": { \"x\": -5.0, \"z\": 5.0 }\n    },\n    {\n      \"id\": \"dec_04\",\n      \"type\": \"lantern\",\n      \"islandId\": \"north_temple\",\n      \"localPosition\": { \"x\": -3.0, \"z\": 2.0 }\n    },\n    {\n      \"id\": \"dec_05\",\n      \"type\": \"tree\",\n      \"islandId\": \"east_isle\",\n      \"localPosition\": { \"x\": 4.0, \"z\": -3.0 }\n    },\n    {\n      \"id\": \"dec_06\",\n      \"type\": \"rock\",\n      \"islandId\": \"west_isle\",\n      \"localPosition\": { \"x\": -4.0, \"z\": 2.0 }\n    },\n    {\n      \"id\": \"dec_07\",\n      \"type\": \"lantern\",\n      \"islandId\": \"south_isle\",\n      \"localPosition\": { \"x\": -3.0, \"z\": 1.0 }\n    },\n    {\n      \"id\": \"dec_08\",\n      \"type\": \"tree\",\n      \"islandId\": \"north_temple\",\n      \"localPosition\": { \"x\": 3.0, \"z\": -2.0 }\n    },\n    {\n      \"id\": \"dec_09\",\n      \"type\": \"pillar\",\n      \"islandId\": \"hearth_central\",\n      \"localPosition\": { \"x\": 5.0, \"z\": -5.0 }\n    },\n    {\n      \"id\": \"dec_10\",\n      \"type\": \"bush\",\n      \"islandId\": \"east_isle\",\n      \"localPosition\": { \"x\": -2.0, \"z\": 4.0 }\n    },\n    {\n      \"id\": \"dec_11\",\n      \"type\": \"lantern\",\n      \"islandId\": \"west_isle\",\n      \"localPosition\": { \"x\": 2.0, \"z\": -3.0 }\n    },\n    {\n      \"id\": \"dec_12\",\n      \"type\": \"tree\",\n      \"islandId\": \"south_isle\",\n      \"localPosition\": { \"x\": 4.0, \"z\": 2.0 }\n    },\n    {\n      \"id\": \"dec_13\",\n      \"type\": \"rock\",\n      \"islandId\": \"hearth_central\",\n      \"localPosition\": { \"x\": -6.0, \"z\": 6.0 }\n    },\n    {\n      \"id\": \"dec_14\",\n      \"type\": \"lantern\",\n      \"islandId\": \"north_temple\",\n      \"localPosition\": { \"x\": -2.0, \"z\": -3.0 }\n    },\n    {\n      \"id\": \"dec_15\",\n      \"type\": \"tree\",\n      \"islandId\": \"east_isle\",\n      \"localPosition\": { \"x\": 3.0, \"z\": 3.0 }\n    },\n    {\n      \"id\": \"dec_16\",\n      \"type\": \"bush\",\n      \"islandId\": \"west_isle\",\n      \"localPosition\": { \"x\": -3.0, \"z\": -4.0 }\n    },\n    {\n      \"id\": \"dec_17\",\n      \"type\": \"lantern\",\n      \"islandId\": \"south_isle\",\n      \"localPosition\": { \"x\": -4.0, \"z\": -3.0 }\n    },\n    {\n      \"id\": \"dec_18\",\n      \"type\": \"pillar\",\n      \"islandId\": \"hearth_central\",\n      \"localPosition\": { \"x\": 6.0, \"z\": -6.0 }\n    },\n    {\n      \"id\": \"dec_19\",\n      \"type\": \"tree\",\n      \"islandId\": \"north_temple\",\n      \"localPosition\": { \"x\": 4.0, \"z\": 3.0 }\n    },",
+  "rawChars": 4802,
+  "parse": {
+    "ok": false,
+    "error": "Unexpected end of JSON input"
+  },
+  "zod": {
+    "ok": false,
+    "issues": []
+  },
+  "pipeline": {},
+  "outcome": "invalid_parse",
+  "failureModes": [
+    "truncated_output"
+  ]
+}

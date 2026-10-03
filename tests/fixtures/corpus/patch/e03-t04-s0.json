@@ -1,0 +1,101 @@
+{
+  "id": "e03-t04-s0",
+  "kind": "patch",
+  "promptId": "e03",
+  "promptNote": "GATE_HIDES_RELIC expected",
+  "prompt": "Move the Sun Relic onto the Temple Island, right beside the shrine.",
+  "temperature": 0.4,
+  "sampleIndex": 0,
+  "phase": "main",
+  "model": "qwen3.5:4b",
+  "request": {
+    "numCtx": 8192,
+    "numPredict": 1536,
+    "format": "PATCH_DRAFT_JSON_SCHEMA",
+    "systemPromptChars": 2553
+  },
+  "timing": {
+    "status": 200,
+    "wallMs": 75492,
+    "totalDurationMs": 75487,
+    "loadMs": 4718,
+    "promptEvalMs": 267,
+    "evalMs": 1776,
+    "promptTokens": 747,
+    "outputTokens": 97,
+    "doneReason": "stop",
+    "queueWaitMs": 68726,
+    "inFlightAtStart": 1,
+    "startedAtMs": 38,
+    "retries": 0
+  },
+  "rawContent": "{\n  \"summary\": \"The Sun Relic has been moved from Orchard Island to Temple Island next to the shrine.\",\n  \"ops\": [\n    {\n      \"op\": \"move_relic\",\n      \"id\": \"relic-east\",\n      \"islandId\": \"temple\",\n      \"localPosition\": {\"x\": 0.5, \"z\": 28.5}\n    }\n  ]\n}",
+  "rawChars": 257,
+  "parse": {
+    "ok": true
+  },
+  "zod": {
+    "ok": false,
+    "issues": [
+      {
+        "path": "ops.0.localPosition.z",
+        "message": "Number must be less than or equal to 20",
+        "code": "too_big"
+      }
+    ]
+  },
+  "pipeline": {
+    "apply": {
+      "ok": true,
+      "issues": [],
+      "changedIds": [
+        "relic-east"
+      ],
+      "normalizations": [
+        {
+          "path": "ops[0].localPosition",
+          "from": {
+            "x": 0.5,
+            "z": 28.5
+          },
+          "to": {
+            "x": 0.5,
+            "z": 0.5
+          },
+          "reason": "world coordinate converted to island offset"
+        }
+      ],
+      "opNames": [
+        "move_relic"
+      ]
+    },
+    "validate": {
+      "ok": false,
+      "issues": [
+        {
+          "code": "GATE_HIDES_RELIC",
+          "message": "relic \"relic-east\" on \"temple\" is reachable only after the gate \"gate\" opens, from spawn-0, spawn-1",
+          "objectIds": [
+            "relic-east",
+            "gate",
+            "spawn-0",
+            "spawn-1"
+          ],
+          "evidence": {
+            "fromSpawnIds": [
+              "spawn-0",
+              "spawn-1"
+            ],
+            "islandId": "temple"
+          }
+        }
+      ]
+    }
+  },
+  "outcome": "invalid_validator",
+  "failureModes": [
+    "gate_hides_relic",
+    "local_position_misuse",
+    "local_position_normalized"
+  ]
+}
