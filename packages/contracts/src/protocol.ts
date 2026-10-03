@@ -46,6 +46,17 @@ export type PlayerView = {
   sprinting?: boolean; slow?: boolean;
   emote?: 'wave' | null; // set for EMOTE_DURATION_MS after a square press
 };
+/** Raw phone pad state relayed to display and director sockets (at most 30 per second per player), so pages
+ *  other than the 3D simulation (the 2D studio) can drive their own games with the same phones. */
+export type PadMessage = {
+  type: 'pad';
+  playerId: string;
+  slot: 0 | 1;
+  seq: number;
+  axes: { x: number; z: number };
+  interact: boolean;
+  buttons: { sprint: boolean; slow: boolean; ping: boolean; emote: boolean };
+};
 /** A team beacon placed by a player (triangle); shown on the shared screen for PING_LIFETIME_MS. */
 export type MarkerMessage = { type: 'marker'; playerId: string; color: string; x: number; z: number; until: number };
 export type TickMessage = {
@@ -83,7 +94,7 @@ export type ActivityMessage = { type: 'activity'; entries: AgentActivity[] };
 export type ErrorMessage = { type: 'error'; code: string; message: string };
 export type PongMessage = { type: 'pong'; t: number; serverMs: number };
 export type ControllerStatusMessage = { type: 'controllers'; players: { id: string; label: string; connected: boolean; lastInputAgeMs: number | null }[] };
-export type ServerMessage = TickMessage | WorldMessage | WelcomeMessage | ActivityMessage | ErrorMessage | PongMessage | ControllerStatusMessage | MarkerMessage;
+export type ServerMessage = TickMessage | WorldMessage | WelcomeMessage | ActivityMessage | ErrorMessage | PongMessage | ControllerStatusMessage | MarkerMessage | PadMessage;
 
 // ---------- Agent activity / requests / reports ----------
 export const AGENT_PHASES = ['queued', 'planning', 'validating', 'repairing', 'awaiting_safe_commit', 'committed', 'failed', 'cancelled'] as const;
