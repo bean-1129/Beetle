@@ -56,7 +56,8 @@ const worldDraftSchema = Type.Object({
   mode: Type.Optional(modeSchema),
   movementSpeed: Type.Optional(speedSchema),
   hazardRise: Type.Optional(hazardRiseSchema),
-}, { description: 'center is a world position (m); localPosition is an offset from the island centre. Always set biome and mode; hazardRise only for survival.' });
+  streaming: Type.Optional(Type.Boolean()),
+}, { description: 'center is a world position (m); localPosition is an offset from the island centre. Always set biome and mode; hazardRise only for survival. streaming true: start with 2 to 4 islands around the spawn; the world grows as players explore.' });
 
 const patchOpSchema = Type.Object({
   op: Enum(PATCH_OP_NAMES),
@@ -72,7 +73,11 @@ const patchOpSchema = Type.Object({
   mode: Type.Optional(modeSchema),
   biome: Type.Optional(biomeSchema),
   speed: Type.Optional(speedSchema),
-}, { description: 'Only the fields of the op: add_bridge id,from,to,width?; remove_bridge id; set_hazard kind; add_decoration id,type,islandId,localPosition; move_decoration|move_relic id,islandId,localPosition; remove_decoration id; set_title title; set_mode mode; set_biome biome; set_movement speed' });
+  name: Type.Optional(Type.String({ maxLength: L.name.maxLength })),
+  center: Type.Optional(Vec),
+  radius: Type.Optional(Num(L.island.minRadius, L.island.maxRadius)),
+  bridgeFrom: Type.Optional(Type.String()),
+}, { description: 'Only the fields of the op: add_bridge id,from,to,width?; remove_bridge id; set_hazard kind; add_decoration id,type,islandId,localPosition; move_decoration|move_relic id,islandId,localPosition; remove_decoration id; set_title title; set_mode mode; set_biome biome; set_movement speed; add_island id,name?,center {x,z} (world position, m),radius,bridgeFrom? (existing island id to bridge from); remove_island id' });
 
 // ---------- runtime state for one exec run ----------
 type RunState = {

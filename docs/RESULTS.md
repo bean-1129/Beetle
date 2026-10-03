@@ -398,3 +398,33 @@ Stack stopped at 14:43 (server, worker and proxy; ports 7786 and 11435 free; the
 ## Streaming generation, live (15:16 CDT, port 7781, fixture seed2, direct worker, quiet GPU)
 
 The starter world has two islands (haven with both spawns and a relic, grove with two relics and the gate). A scripted controller walked east on haven. When it came within 4 m of the rim on a side with no crossing, the server created the automatic request "Extend the world to the south-east beyond island haven"; the agent proposed two new islands (x2, x3) with crossings from haven and one decoration each; validation and connectivity checks passed; v2 committed 9.5 s after the trigger. The player stayed on haven, connected, with its state intact. Second and later extensions respect the 12 s cooldown and the 24-island cap (server tests, apps/server/src/expansion.test.ts).
+
+## Streaming extensions (15:19 to 15:23 CDT, port 7830, fixture seed2, direct worker, qwen3.5:4b, shared GPU)
+
+The agent-side expansion flow (packages/agent/src/expansion-prompts.ts and runExpansion in jobs.ts) was measured end to end
+against the server's automatic requests (apps/server/src/expansion.ts). Setup: server on 127.0.0.1:7830 started with
+BEETLE_START_WORLD=fixture:seed2 (two islands, streaming true), one direct worker, one scripted controller
+(a small ws client) that walked to an uncovered rim and stood there until the request settled. Timings are from the
+request's createdAt to the commit (server request record and build report). The GPU was shared with other owners' runs
+the whole time (nvidia-smi 72 to 91 % busy before our calls), so the model wait includes queueing behind other requests.
+
+| # | trigger | outcome | created to commit | first model answer | validation attempts | ops |
+|---|---|---|---|---|---|---|
+| 0 | haven, south | failed MODEL_TIMEOUT (90 s deadline) | (90.0 s to fail) | none | 0 | none |
+| 1 | haven, south-east | committed v2 | 79.7 s | 79.6 s | 1 (no repair) | 2 add_island + 2 add_decoration |
+| 2 | haven, south-west | committed v3 | 12.2 s | 12.1 s | 1 (no repair) | 2 add_island + 2 add_decoration |
+| 3 | x5 (a new island), south-west | committed v4 | 4.6 s | 4.56 s | 1 (no repair) | 2 add_island + 2 add_decoration |
+
+- 3 of 4 automatic requests committed, all on the first draft (0 repairs used of the budget of 1). The world grew from 2
+  to 8 islands; every new island is bridged from the island the player stood on; nothing was removed or moved.
+- Validate, playability and commit together took 30 to 70 ms each time; the remaining time is the model call. With the GPU
+  free (request 3) an extension commits in under 5 s; behind other owners' generations it took 12 s and 80 s, and one
+  request hit the 90 s deadline before the model answered (the server's 12 s cooldown then let the next rim trigger).
+- Expansion prompt size: about 335 tokens of system prompt for seed2 (483 prompt tokens counted by Ollama including the user
+  message and template); about 145 output tokens. The island table is capped at the 10 islands nearest the target so it
+  stays under 450 tokens at the 24-island cap.
+- Prompt fix found during the run: the first version listed add_decoration fields without a filled-in example and the
+  model wrote world positions as localPosition (INVALID_SCHEMA, -20 limit) twice in one request (failed after its one
+  repair). The prompt now carries one complete valid answer (suggested centres 18 m beyond the rim, checked for clearance)
+  and the agent converts a world-position localPosition on a new island to an offset before staging; no INVALID_SCHEMA
+  afterwards.

@@ -5,6 +5,7 @@ import { WorldSpecSchema, WorldDraftSchema, type WorldDraft, type PatchDraft } f
 import { startFakeBeetleServer, type FakeBeetleServer } from '../../packages/agent/test-support/fake-beetle-server.ts';
 import { startFakeOllama, chatReply, type FakeOllama } from '../../packages/agent/test-support/fake-ollama.ts';
 import { fixtureSpec } from '../../packages/agent/test-support/fixture-world.ts';
+import { fixExpansionDraft, briefWantsStreaming } from '../../packages/agent/src/expansion-prompts.ts';
 import { createOllamaClient, createBeetleClient, runJob, isLoopbackUrl, loadConfig, auditOpenClawConfig, buildOpenClawConfig, sanitizeText, type JobEnv, type AgentConfig } from '../../packages/agent/src/index.ts';
 
 const MODEL = 'qwen3.5:4b';
@@ -366,10 +367,11 @@ describe('game modes: draft fields pass through', () => {
 
     expect(result.outcome).toBe('committed');
     expect(result.modelCalls).toBe(1);
-    // The agent does not touch the draft: the server receives exactly what the model produced, new fields included.
+    // The agent does not touch the draft: the server receives exactly what the model produced, new fields included
+    // (plus streaming: true, the default for briefs that do not ask for the whole world up front).
     const proposed = beetle.calls('propose_world');
     expect(proposed).toHaveLength(1);
-    expect((proposed[0].body as { spec: unknown }).spec).toEqual(draft);
+    expect((proposed[0].body as { spec: unknown }).spec).toEqual({ ...draft, streaming: true });
     expect((proposed[0].body as { requestId: string }).requestId).toBe(request.id);
     // The system prompt carries the mode and biome vocabulary and the mapping rule; the draft schema sent as `format` allows the fields.
     const sys = (ollama.requests[0].body.messages as { role: string; content: string }[])[0].content;
@@ -407,5 +409,65 @@ describe('game modes: draft fields pass through', () => {
     const hint = validatorRepairPrompt([{ code: 'MODE_INVALID', message: 'mode relic_hunt requires 4 relics but the world has 3', objectIds: ['mode'], evidence: { relicsRequired: 4, relics: 3 } }], null);
     expect(hint).toContain('MODE_INVALID means relicsRequired exceeds the relics');
     expect(hint).toContain('survival has no hazardRise');
+  });
+});
+
+describe('streaming: automatic extension requests', () => {
+  let beetle: FakeBeetleServer;
+  let ollama: FakeOllama;
+  beforeEach(async () => {
+    beetle = await startFakeBeetleServer({ port: 0, claimLongPollMs: 50 });
+    ollama = await startFakeOllama();
+  });
+  afterEach(async () => {
+    await ollama.close();
+    await beetle.close();
+  });
+
+  it('an auto request uses the expansion prompt, drops non-additive ops, and stops after one repair', async () => {
+    const issue = { code: 'ISLAND_OVERLAP' as const, message: 'x5 overlaps isle-east', objectIds: ['x5', 'isle-east'] };
+    beetle.script.validate.push({ ok: false, issues: [issue] }, { ok: false, issues: [issue] }, { ok: false, issues: [issue] });
+    const patch = { summary: 'Two islands east', ops: [
+      { op: 'add_island', id: 'x5', center: { x: 44, z: 0 }, radius: 6, bridgeFrom: 'isle-east' },
+      { op: 'add_decoration', id: 'xd5', type: 'tree', islandId: 'x5', localPosition: { x: 0, z: 0 } },
+      { op: 'remove_bridge', id: 'bridge-east' },
+    ] };
+    ollama.fallback = () => chatReply(JSON.stringify(patch));
+    const request = beetle.enqueue({ kind: 'edit', prompt: 'Extend the world: add one or two new islands beyond island "isle-east" toward the east' });
+    request.auto = true;
+    request.autoReason = { islandId: 'isle-east', direction: 'east', playerId: 'p1' };
+    const client = createBeetleClient({ serverUrl: beetle.url, token: beetle.token });
+    const model = createOllamaClient({ baseUrl: ollama.url, model: MODEL });
+    const result = await runJob(request, { client, ollama: model, env: env({ maxRepairAttempts: 2 }) });
+
+    expect(result.outcome).toBe('failed');
+    expect(beetle.calls('propose_patch')).toHaveLength(2); // one repair, not two
+    const sys = (ollama.requests[0].body.messages as { role: string; content: string }[])[0].content;
+    expect(sys).toContain('Target: island isle-east');
+    expect(sys).toContain('bridgeFrom set to the target island');
+    expect(sys).toContain('isle-east | east | 24,0 | 6 | isle-centre');
+    expect(Math.ceil(sys.length / 4)).toBeLessThan(450);
+    for (const p of beetle.calls('propose_patch')) {
+      const ops = (p.body as { patch: PatchDraft }).patch.ops.map((o) => o.op);
+      expect(ops).toEqual(['add_island', 'add_decoration']);
+    }
+  });
+});
+
+describe('streaming: expansion draft fixes and brief default', () => {
+  it('converts a world-position localPosition on a new island to an offset and fills a missing bridgeFrom', () => {
+    const draft: Record<string, unknown> = { summary: 's', ops: [
+      { op: 'add_island', id: 'x2', center: { x: 0, z: -27 }, radius: 7 },
+      { op: 'add_decoration', id: 'xd2', type: 'tree', islandId: 'x2', localPosition: { x: 0, z: -26 } },
+    ] };
+    const changed = fixExpansionDraft(draft, 'haven');
+    expect(changed).toHaveLength(2);
+    const ops = draft.ops as Record<string, unknown>[];
+    expect(ops[0].bridgeFrom).toBe('haven');
+    expect(ops[1].localPosition).toEqual({ x: 0, z: 1 });
+  });
+  it('streaming is the default for briefs unless the whole world is asked for up front', () => {
+    expect(briefWantsStreaming('a snowy race over floating islands')).toBe(true);
+    expect(briefWantsStreaming('build the whole world up front, eight islands')).toBe(false);
   });
 });

@@ -13,6 +13,7 @@ import {
   type WorldSpec,
 } from '@beetle/contracts';
 import type { IssueList } from './tools.ts';
+import { STREAMING_BRIEF_RULE, briefWantsStreaming } from './expansion-prompts.ts';
 
 const L = WORLD_LIMITS;
 const M = MODE_LIMITS;
@@ -36,18 +37,23 @@ export const MODE_LINES = [
 
 export const BIOME_LINE = `"biome" is one of ${BIOMES.join(', ')} (snow is frost, dark is night, sand is desert). "movementSpeed" is player speed in m/s, ${M.movementSpeed.min} to ${M.movementSpeed.max}, default ${M.movementSpeed.default}. timeLimitSec ${M.timeLimitSec.min} to ${M.timeLimitSec.max}, holdSeconds ${M.holdSeconds.min} to ${M.holdSeconds.max}, relicsRequired 1 to ${L.relics}.`;
 
-export const MODE_RULE = 'Always set "biome" and "mode" explicitly as top-level fields, e.g. "biome":"frost","mode":{"kind":"time_trial","timeLimitSec":90},"movementSpeed":5. Set timeLimitSec, holdSeconds or relicsRequired only when the mode uses them. Add "hazardRise" only for survival, e.g. {"afterSec":30,"metersPerSec":0.05,"maxElevation":-1}. When the requested game is not an exact match, name the mapping in the title, e.g. "Tag Arena (king of the hill)".';
+export const MODE_RULE = 'Always set "biome" and "mode" explicitly as top-level fields, e.g. "biome":"frost","mode":{"kind":"time_trial","timeLimitSec":90},"movementSpeed":5. Use the biome the brief names (desert brief means "desert" even with lava below). Set timeLimitSec, holdSeconds or relicsRequired only when the mode uses them; relicsRequired defaults to all relics only when the brief gives no number, and "reach the gate with 1 relic" is relicsRequired 1. Add "hazardRise" only for survival, e.g. {"afterSec":30,"metersPerSec":0.05,"maxElevation":-1}. hazard is water unless the brief names lava, volcanoes or fire. When the requested game is not an exact match, name the mapping in the title, e.g. "Tag Arena (king of the hill)".';
 
-export function worldDraftSystemPrompt(): string {
+/** Keep the draft short: generation time is the build floor, so every token the model writes costs latency. */
+export const DRAFT_SHAPE_RULE = 'Keep it short. Island ids i0, i1, i2 and so on (i0 holds the spawns); bridge ids b1, b2; relic ids r1, r2, r3 (relics belong in the relics array, never in islands); decoration ids d1, d2. Names one or two words. Whole numbers for coordinates. Bridge width 3. Relics and the gate near their island centre. 0 to 4 decorations. The gate island is a dead end: its only bridge leads back toward i0 and nothing lies beyond it.';
+
+export function worldDraftSystemPrompt(opts: { streaming?: boolean } = {}): string {
   return [
     'You compose a small floating-island world for a two-player game, mapping any requested game onto the closest supported mode and biome.',
     CONVENTION,
-    `Exactly ${L.spawns} spawns, ${L.relics} relics and 1 gate. ${L.islands.min} to ${L.islands.max} islands, at most ${L.bridges.max} bridges, 4 to 8 decorations (types: ${DECORATION_TYPES.join(', ')}). Hazard: ${HAZARD_KINDS.join(' or ')}.`,
-    'Both spawns on the same central island. Every relic and the gate reachable from the spawns over bridges. The gate on its own island with exactly one bridge and no relic. One wide safe route plus one optional narrow risky bridge; bridged islands within 30 m rim to rim, bridges clear of other islands, one bridge per island pair, decorations away from bridge mouths.',
+    `Exactly ${L.spawns} spawns, ${L.relics} relics and 1 gate. ${L.islands.min} to ${L.islands.max} islands, at most ${L.bridges.max} bridges, decoration types ${DECORATION_TYPES.join(', ')}. Hazard: ${HAZARD_KINDS.join(' or ')}.`,
+    'Both spawns on the central island i0, a few metres apart. The gate on its own island (never i0) with exactly one bridge and no relic. Every relic island reachable from i0 over bridges without passing through the gate island. Bridged islands within 30 m rim to rim, one bridge per island pair, bridges clear of other islands. A ring layout: islands on a circle, bridges only between neighbours.',
     `Modes: ${MODE_LINES}`,
     BIOME_LINE,
     MODE_RULE,
-    'Output only compact one-line JSON matching the schema.',
+    DRAFT_SHAPE_RULE,
+    ...(opts.streaming ? [STREAMING_BRIEF_RULE] : []),
+    'Output only compact one-line JSON matching the schema, no line breaks or indentation.',
   ].join('\n');
 }
 
@@ -142,8 +148,11 @@ export function validatorRepairPrompt(issues: IssueList, world?: WorldSpec | nul
   const out = [
     'The world validator rejected the candidate. Nothing was changed. Fix every issue below and output the complete corrected JSON again.',
     ...lines,
-    'Hints: DISCONNECTED_GOAL or UNREACHABLE_RELIC means add a bridge from a reachable island to the named island. BRIDGE_ENDPOINT_GAP or BRIDGE_LENGTH means the islands are too far apart or too close; move an island or pick a closer pair. ISLAND_OVERLAP means move one island. BRIDGE_CROSSES_ISLAND means the straight bridge passes through a third island: connect a different pair or move the island aside. GATE_HIDES_RELIC means a relic sits on the gate island behind the locked gate: move that relic to another island. BRIDGE_DUPLICATE means a bridge between those two islands already exists on that line: connect the target island from a different island instead. OBJECT_NOT_ON_SURFACE means shrink the local offset (an offset from the island centre in metres, within radius minus 1.5). DUPLICATE_ID means rename the object. MODE_INVALID means relicsRequired exceeds the relics in the world (lower it, at most 3) or survival has no hazardRise (add hazardRise {afterSec, metersPerSec, maxElevation} in a brief; a patch cannot add it, so pick time_trial instead). INVALID_SCHEMA quotes the exact field path and limit to fix.',
+    'Hints: DISCONNECTED_GOAL or UNREACHABLE_RELIC means add a bridge from a reachable island to the named island; players cannot walk through the gate island while the gate is locked, so when the relic island hangs off the gate island, move the relic to an island reachable from the spawns without crossing the gate island instead of adding a bridge. For time_trial or king_of_the_hill set relicsRequired only if the brief asks for relics. BRIDGE_ENDPOINT_GAP or BRIDGE_LENGTH means the islands are too far apart or too close; move an island or pick a closer pair. ISLAND_OVERLAP means move one island. BRIDGE_CROSSES_ISLAND means the straight bridge passes through a third island: connect a different pair or move the island aside. GATE_HIDES_RELIC means a relic sits on the gate island behind the locked gate: move that relic to another island. BRIDGE_DUPLICATE means a bridge between those two islands already exists on that line: connect the target island from a different island instead. OBJECT_NOT_ON_SURFACE means shrink the local offset (an offset from the island centre in metres, within radius minus 1.5). DUPLICATE_ID means rename the object. MODE_INVALID means relicsRequired exceeds the relics in the world (lower it, at most 3) or survival has no hazardRise (add hazardRise {afterSec, metersPerSec, maxElevation} in a brief; a patch cannot add it, so pick time_trial instead). INVALID_SCHEMA quotes the exact field path and limit to fix.',
   ];
+  if (issues.some((i) => /^playability check|^route /.test(i.message))) {
+    out.push('A playability failure means a player walking the route fell or could not arrive: make every bridge on that route width 3 or more and shorter, keep each named object within radius minus 3 of its island centre, and keep objects away from the bridge mouths.');
+  }
   if (world && issues.some((i) => i.code === 'INVALID_REFERENCE' || i.code === 'INVALID_SCHEMA' || i.code === 'DUPLICATE_ID')) {
     const ids = validIds(world);
     out.push(`INVALID_REFERENCE means an id does not exist. Use ids exactly as listed. Valid island ids: ${ids.islandIds.join(', ')}. Valid relic ids: ${ids.relicIds.join(', ')}. Valid bridge ids: ${ids.bridgeIds.join(', ') || 'none'}. Valid decoration ids: ${ids.decorationIds.join(', ') || 'none'}.`);
@@ -184,9 +193,103 @@ export function openclawInstructionPrompt(args: { kind: 'brief' | 'edit'; reques
   return [
     ...common,
     'Procedure for a new world brief (two tool calls):',
-    `1. Call propose_world with { spec } where spec is a WorldDraft: title, islands (${L.islands.min} to ${L.islands.max}, id, name, center, radius), bridges (id, from, to, width), spawns (exactly ${L.spawns}, both on the central island), relics (exactly ${L.relics}), gate (on its own island with one bridge), hazard (${HAZARD_KINDS.join(' or ')}), decorations, biome (${BIOMES.join(', ')}), mode { kind: ${GAME_MODES.join(' | ')}; timeLimitSec, holdSeconds, relicsRequired when the brief implies them }, movementSpeed (${M.movementSpeed.min} to ${M.movementSpeed.max}), hazardRise {afterSec, metersPerSec, maxElevation} for survival. ${MODE_RULE} The tool stages and validates the world. If accepted is false, fix the issues and call propose_world again. At most 2 repairs.`,
+    `1. Call propose_world with { spec } where spec is a WorldDraft: title, islands (${L.islands.min} to ${L.islands.max}, id, name, center, radius), bridges (id, from, to, width), spawns (exactly ${L.spawns}, both on the central island), relics (exactly ${L.relics}), gate (on its own island with one bridge), hazard (${HAZARD_KINDS.join(' or ')}), decorations, biome (${BIOMES.join(', ')}), mode { kind: ${GAME_MODES.join(' | ')}; timeLimitSec, holdSeconds, relicsRequired when the brief implies them }, movementSpeed (${M.movementSpeed.min} to ${M.movementSpeed.max}), hazardRise {afterSec, metersPerSec, maxElevation} for survival. ${MODE_RULE}${briefWantsStreaming(args.prompt) ? ' ' + STREAMING_BRIEF_RULE : ''} The tool stages and validates the world. If accepted is false, fix the issues and call propose_world again. At most 2 repairs.`,
     '2. When accepted is true, call commit_candidate with the candidateId and proofId it returned. The commit publishes the build report.',
     '3. Reply with one sentence for the director.',
     `Director's brief: ${args.prompt}`,
   ].join('\n');
+}
+
+// ---------------- brief hints ----------------
+// The small local model sometimes ignores what the director wrote (a desert brief committed as volcanic, a one relic brief
+// needing all three). These deterministic hints read the director's own words and win over the model where the brief is explicit.
+
+const NUMBER_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, single: 1 };
+const BRIEF_BIOMES: { biome: (typeof BIOMES)[number]; words: string[] }[] = [
+  { biome: 'frost', words: ['frost', 'frosty', 'frozen', 'snow', 'snowy', 'ice', 'icy', 'winter', 'glacier', 'arctic', 'tundra'] },
+  { biome: 'desert', words: ['desert', 'sand', 'sandy', 'dune', 'dunes', 'arid', 'oasis', 'canyon'] },
+  { biome: 'night', words: ['night', 'dark', 'moon', 'moonlit', 'midnight', 'nocturnal', 'starry'] },
+  { biome: 'garden', words: ['garden', 'grassy', 'meadow', 'forest', 'orchard'] },
+  { biome: 'volcanic', words: ['volcanic', 'volcano', 'volcanoes', 'lava', 'magma', 'ember', 'inferno', 'fire', 'fiery'] },
+];
+const LAVA_WORDS = ['lava', 'magma', 'volcano', 'volcanoes', 'volcanic', 'fire', 'fiery', 'inferno', 'molten'];
+
+export type BriefHints = {
+  biome?: (typeof BIOMES)[number];
+  modeKind?: (typeof GAME_MODES)[number];
+  holdSeconds?: number;
+  timeLimitSec?: number;
+  relicsRequired?: number;
+  lava: boolean;
+};
+
+function briefWords(brief: string): string[] {
+  return brief.toLowerCase().replace(/[^a-z0-9.]+/g, ' ').split(' ').filter(Boolean);
+}
+
+function numberBefore(text: string, unit: RegExp): number | undefined {
+  // First number with that unit, skipping delays such as "rises after 30 seconds".
+  const re = new RegExp(`(\\w+\\s+)?\\b(\\d+(?:\\.\\d+)?|${Object.keys(NUMBER_WORDS).join('|')})[ -]*${unit.source}`, 'g');
+  for (const m of text.matchAll(re)) {
+    if (m[1] && /^(after|every|each)\s/.test(m[1])) continue;
+    const n = Number(m[2]);
+    return Number.isFinite(n) ? n : NUMBER_WORDS[m[2]];
+  }
+  return undefined;
+}
+
+/** Read the explicit biome, mode, numbers and hazard from the director's brief. Only explicit words count. */
+export function briefHints(brief: string): BriefHints {
+  const text = brief.toLowerCase();
+  const words = new Set(briefWords(brief));
+  const out: BriefHints = { lava: LAVA_WORDS.some((w) => words.has(w)) };
+  for (const entry of BRIEF_BIOMES) if (entry.words.some((w) => words.has(w))) { out.biome = entry.biome; break; }
+  const has = (re: RegExp) => re.test(text);
+  if (has(/king of the hill|\bkoth\b|\btag\b|capture the|hold the (hill|zone|centre|center)/)) out.modeKind = 'king_of_the_hill';
+  else if (has(/checkpoint/)) out.modeKind = 'checkpoint_race';
+  else if (has(/time trial|against the clock|speedrun/)) out.modeKind = 'time_trial';
+  else if (has(/\bsurviv|rising (water|lava|hazard)|\boutlast/)) out.modeKind = 'survival';
+  else if (has(/\b(race|racing|laps?)\b/) && !has(/\d+\s*(s|sec|second|seconds)\b|minute/)) out.modeKind = 'checkpoint_race';
+  else if (has(/relic hunt|treasure hunt/)) out.modeKind = 'relic_hunt';
+  const minutes = numberBefore(text, /minutes?\b/);
+  const seconds = numberBefore(text, /(s|sec|secs|second|seconds)\b/);
+  const secs = seconds ?? (minutes !== undefined ? minutes * 60 : undefined);
+  if (secs !== undefined) {
+    if (out.modeKind === 'king_of_the_hill') out.holdSeconds = secs;
+    else out.timeLimitSec = secs;
+  }
+  const relics = numberBefore(text, /relics?\b/);
+  if (relics !== undefined && relics >= 1 && relics <= WORLD_LIMITS.relics && /(with|collect|need|needs|grab|find|gather|holding|carrying)\s+(\w+\s+)?\w+\s+relics?\b/.test(text)) out.relicsRequired = relics;
+  return out;
+}
+
+const clampTo = (v: number, min: number, max: number) => Math.min(max, Math.max(min, Math.round(v)));
+
+/**
+ * Apply brief hints to a model draft in place. Returns a list of what changed (empty when the model already matched).
+ * Only fields the brief names explicitly are touched; numbers are clamped into MODE_LIMITS.
+ */
+export function applyBriefHints(draft: Record<string, unknown>, brief: string): string[] {
+  const h = briefHints(brief);
+  const changed: string[] = [];
+  if (h.biome && draft.biome !== h.biome) { changed.push(`biome ${String(draft.biome)} -> ${h.biome}`); draft.biome = h.biome; }
+  if (!h.lava && draft.hazard === 'lava') { changed.push('hazard lava -> water'); draft.hazard = 'water'; }
+  if (h.lava && draft.hazard !== 'lava' && /\blava\b|\bmagma\b|\bmolten\b/.test(brief.toLowerCase())) { changed.push(`hazard ${String(draft.hazard)} -> lava`); draft.hazard = 'lava'; }
+  const rawMode = draft.mode;
+  let mode: Record<string, unknown> | undefined = rawMode && typeof rawMode === 'object' ? (rawMode as Record<string, unknown>) : undefined;
+  if (typeof rawMode === 'string') mode = { kind: rawMode };
+  if (h.modeKind && (!mode || mode.kind !== h.modeKind)) {
+    changed.push(`mode ${String(mode?.kind)} -> ${h.modeKind}`);
+    mode = { kind: h.modeKind };
+  }
+  if (mode) {
+    const kind = mode.kind;
+    if (kind === 'king_of_the_hill' && h.holdSeconds !== undefined && mode.holdSeconds !== h.holdSeconds) { mode.holdSeconds = clampTo(h.holdSeconds, M.holdSeconds.min, M.holdSeconds.max); changed.push(`holdSeconds ${mode.holdSeconds}`); }
+    if ((kind === 'time_trial' || kind === 'survival') && h.timeLimitSec !== undefined && mode.timeLimitSec !== h.timeLimitSec) { mode.timeLimitSec = clampTo(h.timeLimitSec, M.timeLimitSec.min, M.timeLimitSec.max); changed.push(`timeLimitSec ${mode.timeLimitSec}`); }
+    if (h.relicsRequired !== undefined && mode.relicsRequired !== h.relicsRequired) { mode.relicsRequired = h.relicsRequired; changed.push(`relicsRequired ${h.relicsRequired}`); }
+    if (kind === 'king_of_the_hill' && mode.relicsRequired !== undefined && h.relicsRequired === undefined) { delete mode.relicsRequired; changed.push('relicsRequired dropped for king_of_the_hill'); }
+    draft.mode = mode;
+    if (kind === 'survival' && (draft.hazardRise === undefined || draft.hazardRise === null)) { draft.hazardRise = { afterSec: 30, metersPerSec: 0.05, maxElevation: -1 }; changed.push('hazardRise default for survival'); }
+  }
+  return changed;
 }

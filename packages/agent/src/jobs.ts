@@ -15,6 +15,7 @@ import type { AgentMode } from './config.ts';
 import { OllamaError, parseModelJson, type ChatMessage, type OllamaClient } from './ollama.ts';
 import { BeetleHttpError, sleep as defaultSleep, type BeetleClient, type IssueList, type ToolCallRecord, type StatusBody } from './tools.ts';
 import {
+  applyBriefHints,
   briefUserPrompt,
   editUserPrompt,
   patchDraftSystemPrompt,
@@ -23,6 +24,12 @@ import {
   validatorRepairPrompt,
   worldDraftSystemPrompt,
 } from './prompts.ts';
+import { briefWantsStreaming, expansionSystemPrompt, expansionUserPrompt, fixExpansionDraft } from './expansion-prompts.ts';
+
+/** Automatic extension requests (request.auto): one repair and a 90 s deadline; only additive ops are sent. */
+export const EXPANSION_DEADLINE_MS = 90_000;
+export const EXPANSION_MAX_REPAIRS = 1;
+const EXPANSION_OPS = new Set(['add_island', 'add_decoration', 'add_bridge']);
 
 export type JobEnv = {
   mode: AgentMode;
@@ -97,7 +104,7 @@ export async function runJob(request: DirectorRequest, deps: JobDeps): Promise<J
   const startedAt = Date.now();
   const ctx: Ctx = {
     request, deps, label: env.mode,
-    startedAt, deadlineAt: startedAt + env.deadlineMs,
+    startedAt, deadlineAt: startedAt + (request.auto ? Math.min(env.deadlineMs, EXPANSION_DEADLINE_MS) : env.deadlineMs),
     toolCallsUsed: 0, modelCalls: 0, validationAttempts: 0, failedCodes: new Set(),
     baseWorldVersion: request.worldVersionAtRequest ?? 0, cancelled: false, summary: '',
   };
@@ -108,7 +115,7 @@ export async function runJob(request: DirectorRequest, deps: JobDeps): Promise<J
   let worldVersion: number | undefined;
   let error: JobResult['error'];
   try {
-    const committed = request.kind === 'brief' ? await runBrief(ctx) : await runEdit(ctx);
+    const committed = request.kind === 'brief' ? await runBrief(ctx) : request.auto ? await runExpansion(ctx) : await runEdit(ctx);
     outcome = 'committed';
     worldVersion = committed.worldVersion;
   } catch (err) {
@@ -170,14 +177,31 @@ export async function runJob(request: DirectorRequest, deps: JobDeps): Promise<J
 
 // ---------------- flows ----------------
 
+/**
+ * Draft format for a new world: the contract schema with decorations capped at 4, so the model writes fewer tokens.
+ * A compact draft measured 685 output tokens with qwen3.5:4b; 1400 leaves room for a full draft plus margin.
+ */
+const BRIEF_DRAFT_FORMAT: Record<string, unknown> = (() => {
+  const f = JSON.parse(JSON.stringify(WORLD_DRAFT_JSON_SCHEMA)) as { properties: { decorations: { maxItems?: number } } };
+  f.properties.decorations.maxItems = 4;
+  return f as unknown as Record<string, unknown>;
+})();
+const BRIEF_DRAFT_NUM_PREDICT = 1400;
+
 async function runBrief(ctx: Ctx): Promise<{ worldVersion: number }> {
   const { request } = ctx;
   await status(ctx, { phase: 'planning', message: `drafting a new world with ${ctx.deps.env.model}` });
+  // Streaming is the default for briefs: start small around the spawn; the server extends the world as players explore.
+  const streaming = briefWantsStreaming(request.prompt);
   const messages: ChatMessage[] = [
-    { role: 'system', content: worldDraftSystemPrompt() },
+    { role: 'system', content: worldDraftSystemPrompt({ streaming }) },
     { role: 'user', content: briefUserPrompt(request.prompt) },
   ];
   const stage = async (draft: Record<string, unknown>) => {
+    if (streaming) draft.streaming = true;
+    // The director's explicit words (biome, mode, hold or time limit, relic count, lava) win over the model.
+    const hinted = applyBriefHints(draft, request.prompt);
+    if (hinted.length) log(ctx, `brief hints applied: ${hinted.join('; ')}`);
     const res = await tool(ctx, 'propose_world', () => ctx.deps.client.propose_world(request.id, draft));
     if (!res.ok) return { ok: false as const, issues: res.issues };
     ctx.baseWorldVersion = res.baseWorldVersion;
@@ -190,8 +214,8 @@ async function runBrief(ctx: Ctx): Promise<{ worldVersion: number }> {
     return { ok: true as const, candidateId: res.candidateId };
   };
   return runDraftValidateCommit(ctx, {
-    messages, format: WORLD_DRAFT_JSON_SCHEMA as unknown as Record<string, unknown>,
-    numPredict: 3072, temperature: 0.4, stage, world: null,
+    messages, format: BRIEF_DRAFT_FORMAT,
+    numPredict: BRIEF_DRAFT_NUM_PREDICT, temperature: 0.4, stage, world: null,
   });
 }
 
@@ -219,12 +243,50 @@ async function runEdit(ctx: Ctx): Promise<{ worldVersion: number }> {
   });
 }
 
+/** Automatic extension ahead of a player: compact expansion prompt, then the edit flow with one repair. */
+async function runExpansion(ctx: Ctx): Promise<{ worldVersion: number }> {
+  const { request } = ctx;
+  await status(ctx, { phase: 'planning', message: 'reading the current world for an extension', tool: 'read_world_state' });
+  const world = await tool(ctx, 'read_world_state', () => ctx.deps.client.read_world_state());
+  if (!world.hasWorld || !world.spec) throw new JobFailure('NO_WORLD', 'no world is loaded; an extension needs an existing world');
+  ctx.baseWorldVersion = world.version;
+  const islandId = request.autoReason?.islandId ?? world.spec.islands[0]?.id ?? '';
+  const direction = request.autoReason?.direction ?? 'north';
+  await status(ctx, { phase: 'planning', message: `extending the world ${direction} of ${islandId} (v${world.version}) with ${ctx.deps.env.model}` });
+  const messages: ChatMessage[] = [
+    { role: 'system', content: expansionSystemPrompt(world.spec, islandId, direction) },
+    { role: 'user', content: expansionUserPrompt(request) },
+  ];
+  const stage = async (draft: Record<string, unknown>) => {
+    // Beetle asked for this change itself: never remove or move anything, whatever the model wrote.
+    if (Array.isArray(draft.ops)) {
+      const kept = draft.ops.filter((o) => o && typeof o === 'object' && EXPANSION_OPS.has(String((o as { op?: unknown }).op)));
+      if (kept.length !== draft.ops.length) log(ctx, `extension: dropped ${draft.ops.length - kept.length} non-additive op(s)`);
+      draft.ops = kept;
+    }
+    const fixed = fixExpansionDraft(draft, islandId);
+    if (fixed.length) log(ctx, `extension fixes: ${fixed.join('; ')}`);
+    const res = await tool(ctx, 'propose_patch', () => ctx.deps.client.propose_patch(request.id, draft));
+    if (!res.ok) return { ok: false as const, issues: res.issues };
+    ctx.baseWorldVersion = res.baseWorldVersion;
+    ctx.summary = `extension: ${String(draft.summary ?? 'new islands')}`.slice(0, 240);
+    return { ok: true as const, candidateId: res.candidateId };
+  };
+  return runDraftValidateCommit(ctx, {
+    messages, format: PATCH_DRAFT_JSON_SCHEMA as unknown as Record<string, unknown>,
+    numPredict: 700, temperature: 0.2, stage, world: world.spec, maxRepairs: EXPANSION_MAX_REPAIRS,
+  });
+}
+
 type StageFn = (draft: Record<string, unknown>) => Promise<{ ok: true; candidateId: string } | { ok: false; issues: IssueList }>;
 
 async function runDraftValidateCommit(ctx: Ctx, args: {
   messages: ChatMessage[]; format: Record<string, unknown>; numPredict: number; temperature: number; stage: StageFn; world: WorldSpec | null;
+  /** Overrides env.maxRepairAttempts (automatic extensions use 1). */
+  maxRepairs?: number;
 }): Promise<{ worldVersion: number }> {
   const { env, client } = ctx.deps;
+  const maxRepairs = Math.min(args.maxRepairs ?? env.maxRepairAttempts, env.maxRepairAttempts);
   const messages = [...args.messages];
   let repairs = 0;
   let draft = await draftWithFormat(ctx, messages, args.format, args.numPredict, args.temperature);
@@ -256,12 +318,12 @@ async function runDraftValidateCommit(ctx: Ctx, args: {
       }
     }
     for (const i of issues) ctx.failedCodes.add(i.code);
-    if (repairs >= env.maxRepairAttempts) {
+    if (repairs >= maxRepairs) {
       throw new JobFailure('VALIDATION_FAILED', `rejected after ${repairs} repair${repairs === 1 ? '' : 's'}: ${summarizeIssues(issues)}`, issues.flatMap((i) => i.objectIds).slice(0, 16));
     }
     repairs++;
     await status(ctx, {
-      phase: 'repairing', message: `repair ${repairs} of ${env.maxRepairAttempts}: ${summarizeIssues(issues)}`.slice(0, 400),
+      phase: 'repairing', message: `repair ${repairs} of ${maxRepairs}: ${summarizeIssues(issues)}`.slice(0, 400),
       codes: issues.map((i) => i.code).slice(0, 16), objectIds: issues.flatMap((i) => i.objectIds).slice(0, 32),
     });
     messages.push({ role: 'assistant', content: JSON.stringify(draft) });
