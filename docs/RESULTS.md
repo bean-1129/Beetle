@@ -237,3 +237,25 @@ Stack: real server on port 7781 with the world produced by a fresh brief (4 isla
 | E6 | edit | committed | v5 -> v6 | - | 8.0 s |
 
 Committed: 5 of 6 (run 2 before normalization: 2 of 6). Elapsed min/p50/max: 2.0 / 8.0 / 14.0 s. Repairs still happen (INVALID_REFERENCE and BRIDGE_CROSSES_ISLAND were reported by the validator and repaired within the two-attempt budget in E6; E1 exhausted its budget and left the world untouched). No invalid world was ever committed. Note: this run used a model-generated world, not the garden5 fixture, so the "expected failure" annotations in PROMPTS.md (written for garden5) do not apply one to one.
+
+## Conflicting edit on the model-built world (13:32 CDT)
+
+Prompt: "Remove the only bridge to the temple. Keep the temple reachable." on world v6 (built by a fresh brief, then six edits). The temple island had two bridges at that point, so the model removed one and added `temple_alt_passage` in the same patch; the validator passed it on the first attempt and v7 committed in 6.4 s. This is the "agent submitted a valid alternative" case: no validator failure occurred in this run, and none is claimed. The validator refusing an edit is shown separately below on the fixture world, where the temple has exactly one bridge.
+
+## Conflicting edit on the fixture world, single temple bridge (13:32 CDT, port 7783, direct mode, quiet GPU)
+
+Prompt: "Remove the only bridge to the temple. Keep the temple reachable." on garden5 v1 (the temple has exactly one bridge, `bridge-north`).
+
+| Elapsed | Phase | Detail |
+|---|---|---|
+| 1.7 s | validating | first candidate: the model removed `bridge-north` only |
+| 1.7 s | repairing | validator refused: `DISCONNECTED_GOAL` [gate, temple, spawn-0, spawn-1]; repair 1 of 2 |
+| 2.9 s | validating | second candidate: removal plus `bridge-new-west` from centre to temple |
+| 2.9 s | validating | connectivity and supported-movement checks pass |
+| 3.0 s | committed | v2; summary "Added a bridge from Hearth Island to Temple Island to ensure the gate remains reachable." |
+
+This is the validator-refusal case the storyboard needs: the invalid patch never published, the agent received the real code and object ids, and only the passing patch committed. Measured once; raw trail in the server events of that run.
+
+## Undo on the live stack (13:32 CDT)
+
+`POST /api/director/undo` on v7 produced v8 with the v6 bridge set restored through the normal validated commit path (`patchId undo-c468fb97`, deferred 0 ms).
