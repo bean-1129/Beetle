@@ -557,7 +557,7 @@ function IdeaView(p: {
           <button className="secondary-button" disabled={!p.idea.trim() || p.building} onClick={p.onPlayNow} title="Skip the design doc and build straight from your idea">
             <Play size={15} /> Play now
           </button>
-          <span className="bb-muted">Everything is made on this Mac. Nothing is downloaded.</span>
+          <span className="bb-muted">Everything is made on this machine. Nothing is downloaded.</span>
         </div>
         <div className="bb-examples">
           {EXAMPLES.map((x) => (
