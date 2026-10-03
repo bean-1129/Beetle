@@ -1,6 +1,6 @@
 # BUILD_STATUS
 
-Last updated: 2026-10-03 14:10 CDT. Submission deadline set by the user: 15:32 CDT.
+Last updated: 2026-10-03 14:05 CDT. Submission deadline set by the user: 15:32 CDT. Integration and packaging reserve starts 14:45 CDT.
 
 Legend: implemented = code exists; tested = an automated or recorded manual test ran and passed; untested = exists, no test run; blocked = cannot proceed without something external; omitted = deliberately cut.
 
@@ -59,18 +59,10 @@ Legend: implemented = code exists; tested = an automated or recorded manual test
 | 17 | fresh request through real OpenClaw tools with genuine report | tested live twice: manual run (v2 in 20 s, docs/RESULTS.md) and the gated integration test tests/integration/live-agent.test.ts with BEETLE_LIVE_MODEL=1 BEETLE_LIVE_OPENCLAW=1 (committed v2 in 38.9 s, 7 tool calls, validation attempts 3 with INVALID_SCHEMA and DUPLICATE_ID rejected at the boundary, genuine build report); plus two recorded runs against a fake server (packages/agent/SMOKE.md) |
 | 18 | fresh edit under local-only runtime configuration | tested live: gated integration test (direct mode) committed lava plus a new northern bridge with preserved players in 14.3 s; 5 of 6 fresh edits committed in 2 to 14 s (docs/RESULTS.md run 3); validator refusal and repair demonstrated (DISCONNECTED_GOAL, 3.0 s); offline (egress-blocked) rehearsal not yet run |
 
-## Demo state at 14:10 CDT
-
-- Live stack on port 7781: fixture world at v4 (lava, west-to-temple bridge added by the agent), two scripted controllers connected, worker in OpenClaw mode (the submission path), Ollama daemon restarted at 13:43 with a single slot and 1 h keep-alive.
-- Both agent modes verified live: OpenClaw (v2 in 20 s manual, 38.9 s in the gated test) and direct (3 to 14 s). The runbook's recorded sequence uses OpenClaw mode; direct mode is the labelled fallback.
-- Visual pass complete and verified in the browser: serene and volcanic themes, cinematic camera, humanoid players walking, commit transitions, premium HUD. Frame rate was only observed in the software-rendered browser pane (3 to 11 fps high quality, 30 to 36 low); the demo GPU at 1920x1200 is expected to be far faster but was not measured; Q toggles quality, C toggles the debug camera.
-
 ## Blocked
 
-- Team chat channel: no credentials; report publishing stays local (UI, data/prompt-runs, data/acceptance).
-- qwen3.8:27b: never benchmarked; one pull failed with a digest mismatch, the second was stopped when the daemon had to be restarted (docs/MODEL_SELECTION.md).
-- Physical phone tests: need a person on site; the iPhone was reachable over the USB tether (172.20.10.12) and invites were issued, but no phone joined during the session, so the physical test is unrun.
-- Offline (egress-blocked) rehearsal: procedure in docs/OFFLINE_PROOF.md, not executed.
+- Team chat channel: no credentials; report publishing stays local.
+- Physical phone tests: need a person on site.
 
 ## Omitted (deliberately)
 

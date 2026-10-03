@@ -71,13 +71,6 @@ Ollama must be serving on 127.0.0.1:11434 with the configured model present (`ol
 - OpenClaw: the seven Beetle tools called by qwen3.5:4b through `openclaw agent exec` against a fake Beetle server, twice, ending in a committed v2 and a genuine build report (packages/agent/SMOKE.md).
 - Required test cases 1 to 16 tested, 17 partial, 18 tested live in direct mode (BUILD_STATUS.md).
 
-## Presentation (14:00 CDT pass)
-
-- Procedural terrain islands, plank suspension bridges, crystal relics, rune gate and humanoid players with PBR materials and runtime-generated textures.
-- Two environment themes driven by the world hazard (serene for water, volcanic for lava) with a procedural sky used for image-based lighting, fog, sun, particles and a 2 s blend on every committed hazard change; the theme change is an ordinary validated patch, so players, inventory, score, connections and version history survive it (docs/ACCEPTANCE.md, 15 of 15 checks).
-- Post pipeline: bloom, ACES tone mapping, FXAA, MSAA, SSAO, god rays, glow and PCF shadows; Q toggles a low-quality mode, C toggles the debug camera; a cinematic follow camera frames both players.
-- Minimal glass HUD with relic gems, objective and agent status; developer readouts behind the backquote key or ?debug=1; optional procedural ambient audio (off by default).
-
 ## Known limitations (2026-10-03)
 
 - The 10 s brief target is not met: 24 to 28 s warm on a quiet GPU when the first draft is valid, 2.4x to 2.8x over (docs/MODEL_SELECTION.md). Cold load adds 23.1 s. Under a contended GPU drafts took 58 to 214 s.
