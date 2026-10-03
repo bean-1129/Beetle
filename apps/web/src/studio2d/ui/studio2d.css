@@ -136,38 +136,51 @@
     transform: rotate(360deg);
   }
 }
+/* Header: the same box as the shared .bp-top (shared/platform.css) so 2D and 3D read as one platform. */
 .bb-top {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 14px 20px 12px 24px;
+  padding: 12px 20px;
   border-bottom: 1px solid var(--line);
+  background: rgba(var(--surface-rgb), 0.86);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   min-width: 0;
 }
 .bb-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
 }
+/* "3D worlds" as a .bp-switch segment; the ring stands in for the switch track (3px pad, 1px line),
+   and the margin reserves its space so the row is as tall as the shared switch. */
 .bb-home {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  margin-right: 6px;
-  padding: 4px 9px;
-  border-radius: 8px;
+  margin: 4px 10px 4px 4px;
+  padding: 6px 14px;
+  border-radius: 999px;
   color: var(--muted);
   text-decoration: none;
-  font-size: 12.5px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
   white-space: nowrap;
+  box-shadow: 0 0 0 3px rgba(var(--surface-rgb), 0.6), 0 0 0 4px var(--line);
+  transition: background 0.18s ease, color 0.18s ease;
 }
 .bb-home:hover {
-  background: var(--bb-hover);
   color: var(--ink);
 }
 .bb-brand strong {
   font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
   white-space: nowrap;
 }
 .bb-title {

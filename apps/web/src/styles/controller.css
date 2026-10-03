@@ -1,4 +1,5 @@
-/* Phone controller: a console pad. Matte dark body (flat faces, shallow bevel), calm glass panels, amber only on active states. */
+/* Phone controller: a console pad in the shared Beetle platform look (tokens from shared/platform.css, taken from
+   the 2D studio). Matte surface faces, calm panels, amber only on active states. Light by default, dark with the system. */
 html, body {
   height: 100%;
   overflow: hidden;
@@ -9,20 +10,83 @@ html, body {
 }
 #root { height: 100%; }
 
+html:has(body.controller) { background: #f3efe6; color-scheme: light; }
 body.controller {
-  --glass-bg: rgba(10, 32, 37, 0.52);
-  --glass-bg-strong: rgba(10, 32, 37, 0.74);
-  --glass-border: rgba(233, 227, 211, 0.16);
-  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
-  --glass-tint: rgba(58, 160, 216, 0.06);
-  --accent: var(--amber);
-  --accent-2: var(--amber-2);
-  --accent-soft: rgba(240, 180, 90, 0.22);
-  --player: var(--stone);
-  --pad-face: #15282e; /* flat, matte */
-  --pad-face-border: rgba(233, 227, 211, 0.14);
-  --pad-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -2px 3px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.35);
-  --pad-bevel-down: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+  /* platform tokens (same values as .bp) */
+  --ink: #23262b;
+  --muted: #6b7079;
+  --surface: #fbf8f2;
+  --surface-rgb: 251, 248, 242;
+  --line: rgba(35, 38, 43, 0.12);
+  --accent: #e0a347;
+  --accent-ink: #1f1a12;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Arial, "DM Sans", "Manrope", sans-serif;
+  --font-display: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Manrope", "DM Sans", sans-serif;
+  --font-mono: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --bp-bg: linear-gradient(180deg, #f3efe6 0%, #e9eee9 100%);
+  --bp-panel: rgba(var(--surface-rgb), 0.86);
+  --bp-radius: 14px;
+  --bp-radius-sm: 10px;
+  --bp-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.06);
+  /* pad-local roles derived from the tokens */
+  --accent-text: #8a5a12; /* amber that reads as text on the light surface */
+  --accent-soft: color-mix(in srgb, var(--accent) 30%, transparent);
+  --good: #2f8a4e;
+  --bad: #b3322c;
+  --sunken: color-mix(in srgb, var(--surface) 90%, var(--ink) 10%);
+  --hover: color-mix(in srgb, var(--surface) 86%, var(--ink) 14%);
+  --scrim: rgba(35, 38, 43, 0.32);
+  --glass-bg: var(--bp-panel);
+  --glass-bg-strong: rgba(var(--surface-rgb), 0.96);
+  --glass-border: var(--line);
+  --glass-shadow: var(--bp-shadow);
+  --glass-tint: transparent;
+  --accent-2: var(--accent-text);
+  --player: var(--muted);
+  --pad-face: var(--surface); /* flat, matte */
+  --pad-face-border: var(--line);
+  --pad-bevel: 0 1px 2px rgba(0, 0, 0, 0.08), 0 3px 8px rgba(0, 0, 0, 0.06), inset 0 -2px 0 rgba(35, 38, 43, 0.06);
+  --pad-bevel-down: inset 0 2px 5px rgba(0, 0, 0, 0.18);
+  /* map the page-wide primitives in base.css onto the platform tokens */
+  --bg: var(--surface);
+  --text: var(--ink);
+  --stone: var(--ink);
+  --stone-2: var(--muted);
+  --border: var(--line);
+  --well: var(--sunken);
+  --amber: var(--accent);
+  --amber-2: color-mix(in srgb, var(--accent) 88%, var(--ink) 12%);
+  --warn: var(--accent);
+  --ok: var(--good);
+  --lava: var(--bad);
+  --focus: var(--accent);
+  --font: var(--font-sans);
+  --mono: var(--font-mono);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  html:has(body.controller) { background: #12181c; color-scheme: dark; }
+  body.controller {
+    --ink: #e8e6e1;
+    --muted: #9aa3ad;
+    --surface: #1b2126;
+    --surface-rgb: 27, 33, 38;
+    --line: rgba(232, 230, 225, 0.12);
+    --accent: #f0b45a;
+    --accent-ink: #1f1a12;
+    --bp-bg: linear-gradient(180deg, #12181c 0%, #0f1a1c 100%);
+    --bp-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.3);
+    --accent-text: var(--accent);
+    --good: #7fd996;
+    --bad: #ff9b93;
+    --scrim: rgba(0, 0, 0, 0.5);
+    --pad-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.04), inset 0 -2px 3px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.35);
+    --pad-bevel-down: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
 }
 
 .controller-app {
@@ -34,27 +98,25 @@ body.controller {
   padding-right: env(safe-area-inset-right, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   padding-left: env(safe-area-inset-left, 0px);
-  background: var(--bg);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
   overflow: hidden;
 }
 .ctl-backdrop {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(70% 55% at 50% 0%, rgba(233, 227, 211, 0.05), transparent 70%),
-    radial-gradient(55% 60% at 100% 100%, rgba(58, 160, 216, 0.1), transparent 70%),
-    linear-gradient(180deg, #0f2328, #0c1d21 60%, #091a1e);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 -3px 10px rgba(0, 0, 0, 0.5);
+  background: var(--bp-bg);
 }
 
 .ctl-glass {
-  background: linear-gradient(var(--glass-tint), var(--glass-tint)), var(--glass-bg);
+  background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 14px;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  border-radius: var(--bp-radius);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--glass-shadow);
 }
 
 /* ---------- generic pad button ---------- */
@@ -65,7 +127,8 @@ body.controller {
   gap: 2px;
   padding: 0;
   min-width: 44px; min-height: 44px;
-  color: var(--stone);
+  font-family: var(--font-sans);
+  color: var(--ink);
   background: var(--pad-face);
   border: 1px solid var(--pad-face-border);
   box-shadow: var(--pad-bevel);
@@ -74,13 +137,13 @@ body.controller {
 }
 .pad-btn:hover { background: var(--pad-face); }
 .pad-btn.active {
-  color: #221a0c;
-  background: var(--amber); /* flat amber: the only amber on the pad is an active control */
+  color: var(--accent-ink);
+  background: var(--accent); /* flat amber: the only amber on the pad is an active control */
   border-color: transparent;
   box-shadow: var(--pad-bevel-down), 0 0 0 3px var(--accent-soft);
   transform: scale(0.96);
 }
-.pad-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.pad-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .pad-btn-label {
   font-size: 10px;
   font-weight: 700;
@@ -90,7 +153,7 @@ body.controller {
   line-height: 1;
   color: var(--muted);
 }
-.pad-btn.active .pad-btn-label { color: #221a0c; }
+.pad-btn.active .pad-btn-label { color: var(--accent-ink); }
 .pad-btn-label:empty { display: none; }
 
 /* ---------- top edge: triggers and the touchpad ---------- */
@@ -116,15 +179,15 @@ body.controller {
 }
 .trigger .pad-btn-label { font-size: 13px; letter-spacing: 0.08em; }
 .trigger-key {
-  font-family: var(--mono);
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.35);
-  color: var(--stone-2);
+  background: var(--sunken);
+  color: var(--muted);
 }
-.trigger.active .trigger-key { background: rgba(34, 26, 12, 0.25); color: #221a0c; }
+.trigger.active .trigger-key { background: rgba(31, 26, 18, 0.16); color: var(--accent-ink); }
 
 .touchpad {
   justify-self: center;
@@ -141,18 +204,19 @@ body.controller {
 }
 .ctl-player {
   display: inline-flex; align-items: center; gap: 8px;
-  font-weight: 800; font-size: 16px; letter-spacing: 0.01em;
-  color: var(--player);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 16px; letter-spacing: 0.02em;
+  color: var(--ink); /* the swatch carries the player colour so the name reads on light and dark */
 }
 .ctl-player .swatch {
   width: 14px; height: 14px; border-radius: 4px; flex: none;
   background: var(--player);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22), 0 0 8px rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 0 0 1px var(--line), 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 .ctl-status { display: inline-flex; align-items: center; gap: 2px; color: var(--muted); font-weight: 600; font-size: 13px; }
-.ctl-status.connected .ctl-status-text { color: var(--stone-2); }
-.ctl-status.reconnecting .ctl-status-text, .ctl-status.error .ctl-status-text { color: var(--amber-2); }
+.ctl-status.connected .ctl-status-text { color: var(--ink); }
+.ctl-status.reconnecting .ctl-status-text { color: var(--accent-text); }
+.ctl-status.error .ctl-status-text { color: var(--bad); }
 .ctl-net { margin-left: 6px; font-size: 11px; color: var(--muted); opacity: 0.85; }
 .options {
   display: inline-flex; align-items: center; gap: 6px;
@@ -160,11 +224,11 @@ body.controller {
   padding: 4px 10px;
   font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--muted);
-  background: rgba(0, 0, 0, 0.28);
-  border-color: var(--glass-border);
+  background: rgba(var(--surface-rgb), 0.6);
+  border: 1px solid var(--line);
   border-radius: 999px;
 }
-.options:hover { color: var(--stone); background: rgba(0, 0, 0, 0.36); }
+.options:hover { color: var(--ink); background: var(--hover); }
 
 /* objective block inside the touchpad */
 .ctl-objective {
@@ -173,8 +237,8 @@ body.controller {
   gap: 10px;
   padding: 3px 10px;
   border-radius: 999px;
-  border: 1px solid var(--glass-border);
-  background: rgba(0, 0, 0, 0.26);
+  border: 1px solid var(--line);
+  background: rgba(var(--surface-rgb), 0.6);
   min-height: 32px;
   transition: border-color 300ms ease, box-shadow 300ms ease;
 }
@@ -183,30 +247,30 @@ body.controller {
   font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
   color: var(--muted);
 }
-.ctl-obj-value { font-size: 16px; font-weight: 700; color: var(--stone); line-height: 1; }
+.ctl-obj-value { font-size: 16px; font-weight: 700; color: var(--ink); line-height: 1; }
 .ctl-obj-muted { color: var(--muted); font-size: 13px; }
-.ctl-obj-sep { width: 1px; height: 16px; background: var(--glass-border); flex: none; }
+.ctl-obj-sep { width: 1px; height: 16px; background: var(--line); flex: none; }
 .ctl-obj-tag {
   font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
   padding: 2px 7px; border-radius: 6px;
-  border: 1px solid var(--glass-border); color: var(--stone-2);
+  border: 1px solid var(--line); color: var(--muted);
 }
 .ctl-obj-clock {
   font-size: 20px; font-weight: 700; letter-spacing: 0.03em; line-height: 1;
-  color: var(--stone);
+  color: var(--ink);
   transition: color 300ms ease;
 }
-.ctl-objective.warn { border-color: rgba(240, 180, 90, 0.5); }
+.ctl-objective.warn { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
 .ctl-objective.warn .ctl-obj-clock { color: var(--accent-2); }
-.ctl-objective.danger { border-color: rgba(255, 90, 54, 0.6); box-shadow: 0 0 0 4px rgba(255, 90, 54, 0.12); }
-.ctl-objective.danger .ctl-obj-clock { color: var(--lava); animation: clock-tick 1s ease-in-out infinite; }
+.ctl-objective.danger { border-color: color-mix(in srgb, var(--bad) 60%, transparent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--bad) 14%, transparent); }
+.ctl-objective.danger .ctl-obj-clock { color: var(--bad); animation: clock-tick 1s ease-in-out infinite; }
 .ctl-objective.lost .ctl-obj-clock { color: var(--muted); font-size: 15px; letter-spacing: 0.01em; }
 @keyframes clock-tick {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.03); }
 }
 .ctl-ring { transform: rotate(-90deg); flex: none; }
-.ctl-ring-track { fill: none; stroke: rgba(233, 227, 211, 0.18); stroke-width: 3.5; }
+.ctl-ring-track { fill: none; stroke: var(--line); stroke-width: 3.5; }
 .ctl-ring-fill { fill: none; stroke: var(--accent); stroke-width: 3.5; stroke-linecap: round; transition: stroke-dashoffset 220ms linear; }
 
 /* ---------- body: stick and D-pad left, face diamond right ---------- */
@@ -247,16 +311,16 @@ body.controller {
 .dpad-down svg { transform: rotate(180deg); }
 .dpad-hub {
   grid-column: 2; grid-row: 2;
-  background: #0d1b1f;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+  background: var(--sunken);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.14);
 }
 
 .joystick {
   position: relative;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 50%, #0d1b1f, #122529 70%);
+  background: radial-gradient(circle at 50% 50%, var(--sunken), color-mix(in srgb, var(--surface) 94%, var(--ink) 6%) 70%);
   border: 2px solid var(--pad-face-border);
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.16), 0 1px 0 rgba(255, 255, 255, 0.06);
   touch-action: none;
   display: grid;
   place-items: center;
@@ -265,14 +329,14 @@ body.controller {
   position: absolute;
   inset: 22px;
   border-radius: 50%;
-  border: 1px dashed rgba(233, 227, 211, 0.22);
+  border: 1px dashed color-mix(in srgb, var(--ink) 22%, transparent);
 }
 .joystick-knob {
   width: 72px; height: 72px;
   border-radius: 50%;
-  background: #1b3038;
-  border: 1px solid rgba(233, 227, 211, 0.18);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -3px 6px rgba(0, 0, 0, 0.4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--pad-bevel), 0 4px 14px rgba(0, 0, 0, 0.12);
   will-change: transform;
 }
 
@@ -280,11 +344,11 @@ body.controller {
 .ctl-centre-pill {
   display: inline-block;
   padding: 7px 14px;
-  font-size: 15px; font-weight: 650;
-  color: var(--stone);
+  font-size: 15px; font-weight: 600;
+  color: var(--ink);
   max-width: 44vw;
 }
-.pad-centre.won .ctl-centre-pill { color: var(--ok); border-color: rgba(123, 211, 137, 0.4); }
+.pad-centre.won .ctl-centre-pill { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
 .pad-centre.lost .ctl-centre-pill { color: var(--muted); }
 
 .pad-right { justify-self: end; }
@@ -314,12 +378,12 @@ body.controller {
 }
 .face.holding .interact-fill { opacity: 1; }
 .face.holding { box-shadow: var(--pad-bevel), 0 0 0 3px var(--accent-soft); }
-.face.active .interact-fill { background: conic-gradient(rgba(255, 255, 255, 0.6) calc(var(--hold, 0) * 1turn), rgba(0, 0, 0, 0) 0); }
+.face.active .interact-fill { background: conic-gradient(rgba(31, 26, 18, 0.45) calc(var(--hold, 0) * 1turn), rgba(0, 0, 0, 0) 0); }
 
 /* ---------- options sheet ---------- */
 .sheet-scrim {
   position: absolute; inset: 0; z-index: 8;
-  background: rgba(4, 12, 14, 0.55);
+  background: var(--scrim);
   display: grid;
   align-items: end;
   justify-items: center;
@@ -330,30 +394,32 @@ body.controller {
   display: grid;
   gap: 10px;
   padding: 14px 16px 16px;
-  background: linear-gradient(var(--glass-tint), var(--glass-tint)), var(--glass-bg-strong);
+  background: var(--glass-bg-strong);
 }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; }
-.sheet-title { font-size: 11px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--stone-2); }
-.sheet-close { min-height: 36px; padding: 6px 14px; border-radius: 999px; font-size: 14px; font-weight: 700; }
+.sheet-title { font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+.sheet-close { min-height: 36px; padding: 6px 14px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--ink); border: 1px solid var(--line); background: transparent; }
+.sheet-close:hover { background: var(--hover); }
 .sheet-toggle {
   display: flex; align-items: center; justify-content: space-between; gap: 14px;
   width: 100%;
   min-height: 52px;
   padding: 8px 12px;
   text-align: left;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.26);
-  border-color: var(--glass-border);
+  border-radius: var(--bp-radius-sm);
+  background: rgba(var(--surface-rgb), 0.6);
+  border: 1px solid var(--line);
+  color: var(--ink);
 }
-.sheet-toggle:hover { background: rgba(0, 0, 0, 0.34); }
+.sheet-toggle:hover { background: var(--hover); }
 .sheet-toggle-text { display: grid; gap: 2px; min-width: 0; }
-.sheet-toggle-label { font-size: 15px; font-weight: 700; color: var(--stone); }
+.sheet-toggle-label { font-size: 15px; font-weight: 600; color: var(--ink); }
 .sheet-toggle-hint { font-size: 12px; color: var(--muted); }
 .sheet-toggle-knob {
   flex: none;
   width: 44px; height: 26px;
   border-radius: 999px;
-  background: rgba(233, 227, 211, 0.16);
+  background: color-mix(in srgb, var(--surface) 80%, var(--ink) 20%);
   position: relative;
   transition: background 180ms ease-out;
 }
@@ -363,11 +429,12 @@ body.controller {
   top: 3px; left: 3px;
   width: 20px; height: 20px;
   border-radius: 50%;
-  background: var(--stone);
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   transition: transform 180ms ease-out;
 }
 .sheet-toggle.on .sheet-toggle-knob { background: var(--accent); }
-.sheet-toggle.on .sheet-toggle-knob::after { transform: translateX(18px); background: #221a0c; }
+.sheet-toggle.on .sheet-toggle-knob::after { transform: translateX(18px); background: var(--accent-ink); }
 .sheet-note { margin: 0; font-size: 12px; line-height: 1.4; }
 
 /* ---------- states and cues ---------- */
@@ -387,8 +454,8 @@ body.controller {
 .controller-app.cue-relic .touchpad { border-color: var(--accent); box-shadow: 0 0 0 6px var(--accent-soft), var(--glass-shadow); }
 .controller-app.cue-relic .ctl-obj-relics .ctl-obj-value { animation: relic-pop 650ms ease-out; color: var(--accent-2); }
 @keyframes relic-wash {
-  0% { background-color: rgba(240, 180, 90, 0.35); }
-  100% { background-color: rgba(240, 180, 90, 0); }
+  0% { background-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+  100% { background-color: color-mix(in srgb, var(--accent) 0%, transparent); }
 }
 @keyframes relic-pop {
   0% { transform: scale(1.5); }
@@ -399,7 +466,7 @@ body.controller {
   position: absolute; inset: 0; z-index: 5;
   pointer-events: none;
   opacity: 0;
-  box-shadow: inset 0 0 0 4px var(--lava), inset 0 0 48px 10px rgba(255, 90, 54, 0.55);
+  box-shadow: inset 0 0 0 4px var(--bad), inset 0 0 48px 10px color-mix(in srgb, var(--bad) 55%, transparent);
 }
 .controller-app.cue-fall .ctl-edge { animation: edge-flash 560ms ease-out; }
 @keyframes edge-flash {
@@ -413,14 +480,15 @@ body.controller {
   display: grid; place-items: center;
   opacity: 0;
   visibility: hidden;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 210, 127, 0.75), rgba(240, 180, 90, 0.35) 55%, rgba(240, 180, 90, 0.15));
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent) 75%, transparent), color-mix(in srgb, var(--accent) 35%, transparent) 55%, color-mix(in srgb, var(--accent) 15%, transparent));
 }
 .ctl-win span {
   font-size: clamp(34px, 9vw, 56px);
-  font-weight: 900;
+  font-family: var(--font-display);
+  font-weight: 800;
   letter-spacing: 0.02em;
-  color: #221a0c;
-  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.35), 0 10px 30px rgba(0, 0, 0, 0.25);
+  color: var(--accent-ink);
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.3), 0 10px 30px rgba(0, 0, 0, 0.18);
   transform: scale(0.9);
 }
 .controller-app.cue-win .ctl-win { visibility: visible; animation: win-pulse 2800ms ease-out forwards; }
@@ -442,14 +510,14 @@ body.controller {
   position: absolute; inset: 0; z-index: 4;
   pointer-events: none;
   display: grid; place-content: center; justify-items: center; gap: 6px;
-  background: rgba(6, 18, 21, 0.55);
+  background: rgba(var(--surface-rgb), 0.62);
   backdrop-filter: grayscale(0.7) blur(2px);
   -webkit-backdrop-filter: grayscale(0.7) blur(2px);
   text-align: center;
   padding: 24px;
   animation: lost-in 600ms ease-out;
 }
-.ctl-lost-title { font-size: clamp(26px, 7vw, 40px); font-weight: 800; color: var(--stone-2); }
+.ctl-lost-title { font-family: var(--font-display); font-size: clamp(26px, 7vw, 40px); font-weight: 700; color: var(--ink); }
 .ctl-lost-sub { font-size: 14px; color: var(--muted); }
 @keyframes lost-in { from { opacity: 0; } to { opacity: 1; } }
 .controller-app.is-lost .pad-body { filter: saturate(0.5); }
