@@ -24,6 +24,7 @@ import { ParticleSystem } from '@babylonjs/core/Particles/particleSystem';
 import { Vector3, Quaternion } from '@babylonjs/core/Maths/math.vector';
 import { Color3, Color4 } from '@babylonjs/core/Maths/math.color';
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer';
+import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData';
 import type { Scene } from '@babylonjs/core/scene';
 import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh';
 import type { Material } from '@babylonjs/core/Materials/material';
@@ -32,7 +33,7 @@ import { GEOMETRY, DECORATION_RADIUS } from '@beetle/contracts';
 import type { Bridge, Decoration, Gate, Island, PlayerView, Relic } from '@beetle/contracts';
 import type { Materials } from './materials.ts';
 import { PALETTE, hash01 } from './palette.ts';
-import { buildIslandBody, displaceByNoise, hashString, rngFor } from './terrain.ts';
+import { buildIslandBody, displaceByNoise, hashString, mulberry32, rngFor } from './terrain.ts';
 import { geoMaterials, type GeoMaterials } from './geometry-materials.ts';
 
 export type Built = {
@@ -43,6 +44,34 @@ export type Built = {
 };
 
 const THICK = GEOMETRY.platformThickness;
+
+// ---------------------------------------------------------------- per-instance variation
+//
+// Assets are reused across games under the same ids ("island-1", "bridge-a"...), so every instance seeds its
+// look from a stable hash of its id, the world seed and its own placement: the same object in the same world always
+// rebuilds identically, but no two worlds produce copies. Variation comes only from parameters, instancing and a
+// bounded set of material variants (at most three of any material), never from per-object materials.
+let worldSeed = 0;
+/** Optional: the renderer may pass the world seed before building a world (decorations already receive it). */
+export function setWorldSeed(seed: number): void { worldSeed = (Number(seed) | 0) >>> 0; }
+
+function variantSeed(id: string, salt: number, ...placement: number[]): number {
+  let h = hashString(id, salt ^ worldSeed);
+  for (const f of placement) h = hashString(String(Math.round(f * 100)), h);
+  return h >>> 0;
+}
+
+/** Hue-rotate an RGB triple about the grey axis (Rodrigues), for small tint shifts. */
+function hueRotate(c: readonly [number, number, number], deg: number): [number, number, number] {
+  const a = (deg * Math.PI) / 180;
+  const cs = Math.cos(a); const sn = Math.sin(a);
+  const k = (1 - cs) / 3; const q = Math.sqrt(1 / 3) * sn;
+  return [
+    (cs + k) * c[0] + (k - q) * c[1] + (k + q) * c[2],
+    (k + q) * c[0] + (cs + k) * c[1] + (k - q) * c[2],
+    (k - q) * c[0] + (k + q) * c[1] + (cs + k) * c[2],
+  ];
+}
 
 function disposeRoot(root: TransformNode, extra: (() => void)[] = []) {
   return () => {
@@ -120,46 +149,50 @@ export function buildIsland(scene: Scene, _mats: Materials, island: Island): Isl
   const r = island.radius;
   const root = new TransformNode(`island:${id}`, scene);
   root.position.set(island.center.x, 0, island.center.z);
-  const rng = rngFor(id, 3);
-  const seed = hashString(id, 9) % 50000;
+  const vs = variantSeed(id, 3, island.center.x, island.center.z, r);
+  const rng = mulberry32(vs);
+  const seed = vs % 50000;
+  // per-instance island parameters
+  const skirtProfile = (vs % 3) as 0 | 1 | 2;       // 3 distinct skirt silhouettes
+  const pathWidth = 0.5 + rng() * 0.3;               // pale path ring 0.5..0.8 m
+  const hue = (rng() * 2 - 1) * 6;                   // grass hue +-6 degrees
+  const mossWidth = 0.1 + rng() * 0.2;               // moss band 10..30 % of the lawn radius
+  const mossStrength = 0.3 + rng() * 0.25;
+  const grassBase: [number, number, number] = [0.5, 0.75, 0.4]; // ~ the grass albedo: rotate the final colour, not the multiplier
+  const shiftTint = (t: [number, number, number]): [number, number, number] => {
+    const rot = hueRotate([grassBase[0] * t[0], grassBase[1] * t[1], grassBase[2] * t[2]], hue);
+    return [Math.max(0, rot[0] / grassBase[0]), Math.max(0, rot[1] / grassBase[1]), Math.max(0, rot[2] / grassBase[2])];
+  };
 
-  // one mesh: flat top (grass -> earth -> pale path -> rough stone) and the rocky skirt with striations
+  // one mesh: flat top (grass -> moss band -> pale path -> rough stone) and the rocky skirt with striations
   const body = buildIslandBody(scene, {
     id, radius: r, thickness: THICK, grass: gm.grass, stone: gm.stone,
+    seed: vs, skirtProfile, pathWidth,
+    moss: { width: mossWidth, strength: mossStrength, tint: [0.62, 0.74, 0.55] },
     tint: {
-      grass: [1.0, 1.04, 0.9], grassAlt: [0.66, 0.6, 0.42], path: [1, 1, 1],
+      grass: shiftTint([1.0, 1.04, 0.9]), grassAlt: shiftTint([0.66, 0.6, 0.42]), path: [1, 1, 1],
       rim: [0.78, 0.74, 0.68], skirt: [0.52, 0.5, 0.47], tip: [0.34, 0.33, 0.32],
     },
   });
   body.mesh.parent = root;
   freeze(body.mesh);
-  // moss darkening near the rim: multiply the grass vertex colours by a radial falloff (keeps the top flat)
-  {
-    const cols = body.mesh.getVerticesData(VertexBuffer.ColorKind);
-    const pos = body.mesh.getVerticesData(VertexBuffer.PositionKind);
-    if (cols && pos) {
-      for (let i = 0; i < pos.length / 3; i++) {
-        if (pos[i * 3 + 1] !== 0) continue;
-        const d = Math.hypot(pos[i * 3], pos[i * 3 + 2]) / r;
-        if (d > 0.72 && d < 0.94) {
-          const k = 1 - 0.28 * Math.sin(((d - 0.72) / 0.22) * Math.PI);
-          cols[i * 4] *= k * 0.92; cols[i * 4 + 1] *= k; cols[i * 4 + 2] *= k * 0.9;
-        }
-      }
-      body.mesh.updateVerticesData(VertexBuffer.ColorKind, cols, false, false);
-    }
-  }
 
-  // boulders on the stone overhang: noise-displaced icospheres, one base + instances
+  // boulders on the stone overhang: noise-displaced icospheres, one base + instances; count 3..9 and a
+  // per-island size bias, some of them clumped in pairs
   const boulder = CreateIcoSphere(n('boulder'), { radius: 0.34, subdivisions: 2, flat: true }, scene);
   displaceByNoise(boulder, 0.1, 3, seed + 1);
   boulder.material = gm.rock;
-  scatter(boulder, root, 4 + Math.floor(rng() * 4), (m) => {
-    const ang = rng() * Math.PI * 2;
+  const boulderCount = 3 + Math.floor(rng() * 7);
+  const boulderSize = 0.65 + rng() * 0.75;
+  let lastAng = rng() * Math.PI * 2;
+  scatter(boulder, root, boulderCount, (m) => {
+    const ang = rng() < 0.3 ? lastAng + (rng() - 0.5) * 0.25 : rng() * Math.PI * 2;
+    lastAng = ang;
     const rim = body.rimRadius(ang);
     const dist = r + 0.25 + rng() * Math.max(0.1, rim - r - 0.5);
     m.position.set(Math.cos(ang) * dist, 0.02, Math.sin(ang) * dist);
-    m.scaling.set(0.7 + rng() * 0.9, 0.5 + rng() * 0.5, 0.7 + rng() * 0.9);
+    const s = boulderSize * (0.6 + rng() * 0.9);
+    m.scaling.set(s * (0.8 + rng() * 0.4), s * (0.55 + rng() * 0.45), s * (0.8 + rng() * 0.4));
     m.rotation.set(rng() * 0.4, rng() * Math.PI * 2, rng() * 0.4);
   });
   // pebbles: tiny flat chips along the path edge and the overhang
@@ -202,6 +235,7 @@ export function buildIsland(scene: Scene, _mats: Materials, island: Island): Isl
   }
   setHazardY(GEOMETRY.hazardPlaneElevation);
 
+  root.metadata = { variant: { skirtProfile, pathWidth: +pathWidth.toFixed(2), hue: +hue.toFixed(1), mossWidth: +mossWidth.toFixed(2), boulders: boulderCount } };
   return { root, crust, setHazardY, casters: [body.mesh, boulder], receivers: [body.mesh], dispose: disposeRoot(root, [unTheme]) };
 }
 
@@ -224,26 +258,58 @@ export function buildBridge(scene: Scene, _mats: Materials, bridge: Bridge): Bri
   const root = new TransformNode(`bridge:${bridge.id}`, scene);
   root.position.set((a.point.x + b.point.x) / 2, 0, (a.point.z + b.point.z) / 2);
   root.rotation.y = yaw;
-  const rng = rngFor(bridge.id, 5);
+  const vs = variantSeed(bridge.id, 5, a.point.x, a.point.z, b.point.x, b.point.z, w);
+  const rng = mulberry32(vs);
+  // per-instance bridge parameters
+  const pitch = 0.42 + rng() * 0.2;                  // plank pitch 0.42..0.62 m -> plank count
+  const gap = 0.06 + rng() * 0.08;                   // gap between planks 0.06..0.14 m
+  const postSpacing = 2.4 + rng() * 1.4;             // rail posts every 2.4..3.8 m
+  const ropeSag = 0.15 + rng() * 0.2;                // rope sag 0.15..0.35 m
+  const toneCount = rng() < 0.5 ? 2 : 3;             // two or three wood tones
+  const chipRate = 0.1 + rng() * 0.2;                // worn edge chips on 10..30 % of planks
+  const toneMats = [gm.plankA, gm.plankB, gm.plankC];
+  for (let i = toneMats.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [toneMats[i], toneMats[j]] = [toneMats[j], toneMats[i]]; }
+  toneMats.length = toneCount;
 
-  // deck planks: flat at Y = 0 across the full logical rectangle, real gaps, slightly uneven widths (always >= w)
-  const gap = 0.09;
-  const count = Math.max(2, Math.round(length / 0.5));
+  // deck planks: flat at Y = 0 across the full logical rectangle, real gaps, slightly uneven widths (always >= w).
+  // Each plank is its own box (chips are baked into its outline), merged per wood tone: <= 3 draw calls.
+  const count = Math.max(2, Math.round(length / pitch));
   const step = length / count;
   const plankDepth = Math.max(0.1, step - gap);
-  const plankA = CreateBox(n('plankA'), { width: w + 0.12, height: 0.14, depth: plankDepth }, scene);
-  plankA.material = gm.plankA;
-  const plankB = CreateBox(n('plankB'), { width: w + 0.12, height: 0.14, depth: plankDepth }, scene);
-  plankB.material = gm.plankB;
-  plankA.parent = root; plankB.parent = root;
+  const toneParts: Mesh[][] = toneMats.map(() => []);
+  let chipped = 0;
   for (let i = 0; i < count; i++) {
-    const even = i % 2 === 0;
-    const m: AbstractMesh = i === 0 ? plankA : i === 1 ? plankB : (even ? plankA : plankB).createInstance(n(`p${i}`));
-    m.parent = root;
-    m.position.set((rng() - 0.5) * 0.04, -0.07, -length / 2 + step * (i + 0.5));
-    m.scaling.set(1 + rng() * 0.04, 1, 0.94 + rng() * 0.06);
-    freeze(m);
+    const pw = (w + 0.12) * (1 + rng() * 0.04);
+    const pd = plankDepth * (0.94 + rng() * 0.06);
+    const p = CreateBox(n(`p${i}`), { width: pw, height: 0.14, depth: pd }, scene);
+    if (rng() < chipRate) {
+      // worn edge: shave one or two corners inward (x/z only, the top stays at Y = 0 and still covers w)
+      chipped++;
+      const pos = p.getVerticesData(VertexBuffer.PositionKind)!;
+      const corners = 1 + (rng() < 0.35 ? 1 : 0);
+      for (let c = 0; c < corners; c++) {
+        const sx = rng() < 0.5 ? -1 : 1; const sz = rng() < 0.5 ? -1 : 1;
+        const cx = 0.025 + rng() * 0.03; const cz = 0.03 + rng() * Math.min(0.06, pd * 0.3);
+        for (let k = 0; k < pos.length; k += 3) {
+          if (pos[k] * sx > pw / 2 - 1e-4 && pos[k + 2] * sz > pd / 2 - 1e-4) {
+            pos[k] -= sx * cx; pos[k + 2] -= sz * cz;
+          }
+        }
+      }
+      p.updateVerticesData(VertexBuffer.PositionKind, pos, false, false);
+      const nor: number[] = [];
+      VertexData.ComputeNormals(pos, p.getIndices()!, nor);
+      p.updateVerticesData(VertexBuffer.NormalKind, nor, false, false);
+    }
+    p.position.set((rng() - 0.5) * 0.04, -0.07, -length / 2 + step * (i + 0.5));
+    p.rotation.y = (rng() - 0.5) * 0.02;
+    // tones: mostly alternating, with a seeded odd one out so the pattern never repeats exactly
+    const tone = rng() < 0.25 ? Math.floor(rng() * toneCount) : i % toneCount;
+    toneParts[tone].push(p);
   }
+  const planks: Mesh[] = [];
+  toneParts.forEach((parts, t) => { if (parts.length) planks.push(merge(n(`plank${t}`), parts, toneMats[t], root)); });
+  freeze(...planks);
 
   // two side beams with iron bands
   const beamParts: Mesh[] = [];
@@ -256,7 +322,7 @@ export function buildBridge(scene: Scene, _mats: Materials, bridge: Bridge): Bri
   freeze(beams);
   const band = CreateBox(n('band'), { width: 0.26, height: 0.12, depth: 0.1 }, scene);
   band.material = gm.iron;
-  const bandCount = Math.max(2, Math.floor(length / 1.4));
+  const bandCount = Math.max(2, Math.floor(length / (1.1 + rng() * 0.7)));
   scatter(band, root, bandCount * 2, (m, i) => {
     const sx = i % 2 === 0 ? -1 : 1;
     const k = Math.floor(i / 2);
@@ -264,7 +330,7 @@ export function buildBridge(scene: Scene, _mats: Materials, bridge: Bridge): Bri
   });
 
   // posts: at both ends and every ~3 m; ropes sag between them (deck never sags)
-  const spans = Math.max(1, Math.round(length / 3.2));
+  const spans = Math.max(1, Math.round(length / postSpacing));
   const postZ: number[] = [];
   for (let i = 0; i <= spans; i++) postZ.push(-length / 2 + 0.25 + (i / spans) * (length - 0.5));
   const railY = 0.95;
@@ -272,12 +338,12 @@ export function buildBridge(scene: Scene, _mats: Materials, bridge: Bridge): Bri
   const capParts: Mesh[] = [];
   const glassParts: Mesh[] = [];
   const ropeParts: Mesh[] = [];
-  const casters: Mesh[] = [plankA, plankB, beams];
+  const casters: Mesh[] = [...planks, beams];
   for (const sx of [-1, 1]) {
     const x = sx * (w / 2 - 0.1);
     for (let i = 0; i < postZ.length; i++) {
       const end = i === 0 || i === postZ.length - 1;
-      const h = end ? 1.25 : 1.05;
+      const h = (end ? 1.25 : 1.05) + (rng() - 0.5) * 0.08;
       const post = CreateCylinder(n(`post${sx}${i}`), { height: h, diameterBottom: 0.2, diameterTop: 0.15, tessellation: 8 }, scene);
       post.position.set(x, h / 2, postZ[i]);
       post.rotation.y = rng() * Math.PI;
@@ -296,7 +362,7 @@ export function buildBridge(scene: Scene, _mats: Materials, bridge: Bridge): Bri
     for (let i = 0; i < postZ.length - 1; i++) {
       const z0 = postZ[i]; const z1 = postZ[i + 1];
       const span = z1 - z0;
-      const sag = Math.min(0.22, span * 0.06);
+      const sag = Math.min(ropeSag * (0.9 + rng() * 0.2), span * 0.2);
       for (const [y, d] of [[railY, 0.07], [railY * 0.5, 0.05]] as const) {
         const segs = 6;
         for (let s = 0; s < segs; s++) {
@@ -317,7 +383,7 @@ export function buildBridge(scene: Scene, _mats: Materials, bridge: Bridge): Bri
   const glass = merge(n('glass'), glassParts, gm.lanternGlass, root);
   freeze(posts, ropes, caps, glass);
   casters.push(posts);
-  const overlayed = [plankA, plankB, beams, posts, ropes];
+  const overlayed = [...planks, beams, posts, ropes];
   const dark = new Color3(0.03, 0.08, 0.12);
   let submerged = 0;
   function setSubmerged(k: number) {
@@ -330,7 +396,8 @@ export function buildBridge(scene: Scene, _mats: Materials, bridge: Bridge): Bri
       m.overlayAlpha = v * 0.6;
     }
   }
-  return { root, casters, receivers: [plankA, plankB], setSubmerged, dispose: disposeRoot(root) };
+  root.metadata = { variant: { planks: count, tones: toneCount, chipped, postSpacing: +postSpacing.toFixed(2), ropeSag: +ropeSag.toFixed(2) } };
+  return { root, casters, receivers: planks, setSubmerged, dispose: disposeRoot(root) };
 }
 
 // ---------------------------------------------------------------- decorations
@@ -349,8 +416,15 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
   const n = (s: string) => `deco:${deco.id}:${s}`;
   switch (deco.type) {
     case 'tree': {
+      // per-instance: height 0.85..1.25, 3..5 canopy clusters with varied radii, lean 0..6 degrees
+      const hs = 0.85 + rng() * 0.4;
+      const leanRad = (rng() * 6 * Math.PI) / 180;
+      const leanDir = rng() * Math.PI * 2;
+      const lean = new TransformNode(n('lean'), scene);
+      lean.parent = root;
+      lean.rotation.set(Math.cos(leanDir) * leanRad, 0, Math.sin(leanDir) * leanRad);
       // trunk: tapered, bent a little, bark noise
-      const h = 1.6 + 0.5 * v;
+      const h = (1.6 + 0.5 * v) * hs;
       const trunk = CreateCylinder(n('trunk'), { height: h, diameterBottom: 0.5, diameterTop: 0.26, tessellation: 10, subdivisions: 6 }, scene);
       {
         const p = trunk.getVerticesData(VertexBuffer.PositionKind)!;
@@ -365,7 +439,7 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
       }
       trunk.material = gm.trunk;
       trunk.position.y = h / 2;
-      trunk.parent = root;
+      trunk.parent = lean;
       casters.push(trunk);
       freeze(trunk);
       // branches (visible once the canopy thins in the volcanic theme) with ember tips
@@ -380,13 +454,13 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
         const ang = (i / clusters) * Math.PI * 2 + rng() * 0.8;
         const spread = i === 0 ? 0 : 0.45 + rng() * 0.5;
         const cx = Math.cos(ang) * spread; const cz = Math.sin(ang) * spread;
-        const cy = topY + 0.5 + rng() * 0.7 + (i === 0 ? 0.35 : 0);
+        const cy = topY + (0.5 + rng() * 0.7 + (i === 0 ? 0.35 : 0)) * (0.8 + 0.2 * hs);
         const tip = new Vector3(cx, cy, cz);
         branchParts.push(segment(n(`br${i}`), new Vector3(0, topY - 0.3, 0), tip, 0.08, scene, 5));
         const ember = CreateSphere(n(`tip${i}`), { diameter: 0.12, segments: 5 }, scene);
         ember.position.copyFrom(tip);
         tipParts.push(ember);
-        const sphere = CreateSphere(n(`c${i}`), { diameter: 1.1 + rng() * 0.6, segments: 10 }, scene);
+        const sphere = CreateSphere(n(`c${i}`), { diameter: (0.85 + rng() * 1.0) * (i === 0 ? 1.15 : 1), segments: 10 }, scene);
         displaceByNoise(sphere, 0.2, 2.6, nseed + i);
         sphere.position.copyFrom(tip);
         sphere.scaling.y = 0.8 + rng() * 0.3;
@@ -400,11 +474,11 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
           cardParts.push(card);
         }
       }
-      const branches = merge(n('branches'), branchParts, gm.trunk, root);
-      const tips = merge(n('tips'), tipParts, gm.emberTip, root);
-      const light = merge(n('canopyA'), lightParts, gm.leaves, root);
-      const cards = merge(n('cards'), cardParts, gm.leafCard, root);
-      const dark = darkParts.length ? merge(n('canopyB'), darkParts, gm.leavesDark, root) : null;
+      const branches = merge(n('branches'), branchParts, gm.trunk, lean);
+      const tips = merge(n('tips'), tipParts, gm.emberTip, lean);
+      const light = merge(n('canopyA'), lightParts, gm.leaves, lean);
+      const cards = merge(n('cards'), cardParts, gm.leafCard, lean);
+      const dark = darkParts.length ? merge(n('canopyB'), darkParts, gm.leavesDark, lean) : null;
       const canopy = dark ? [light, dark, cards] : [light, cards];
       freeze(branches, tips, ...canopy);
       casters.push(light, branches);
@@ -418,13 +492,42 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
       break;
     }
     case 'rock': {
-      const rock = CreateIcoSphere(n('rock'), { radius: 0.8, subdivisions: 2, flat: true }, scene);
-      displaceByNoise(rock, 0.2, 1.6, nseed);
-      rock.material = gm.rock;
-      rock.scaling.set(1, 0.6, 0.85 + 0.2 * v);
-      rock.rotation.set(0.15 * v, v * Math.PI * 2, 0.1);
-      rock.position.y = 0.3;
-      rock.parent = root;
+      // three silhouettes: squat boulder, standing stone, stacked slabs (all one rock draw call + a chip)
+      const shape = Math.floor(rng() * 3);
+      let rock: Mesh;
+      if (shape === 1) {
+        rock = CreateIcoSphere(n('rock'), { radius: 0.62, subdivisions: 2, flat: true }, scene);
+        displaceByNoise(rock, 0.16, 1.9, nseed);
+        rock.scaling.set(0.75 + 0.15 * v, 1.65 + rng() * 0.35, 0.6);
+        rock.rotation.set((rng() - 0.5) * 0.18, v * Math.PI * 2, (rng() - 0.5) * 0.18);
+        rock.position.y = 0.75;
+        rock.material = gm.rock;
+        rock.parent = root;
+      } else if (shape === 2) {
+        const slabs: Mesh[] = [];
+        const layers = 2 + Math.floor(rng() * 2);
+        let y = 0;
+        for (let k = 0; k < layers; k++) {
+          const rad = 0.75 - k * 0.18 + rng() * 0.08;
+          const slab = CreateIcoSphere(n(`slab${k}`), { radius: rad, subdivisions: 1, flat: true }, scene);
+          displaceByNoise(slab, 0.08, 2.4, nseed + k);
+          const th = 0.32 + rng() * 0.1;
+          slab.scaling.set(1, th, 0.8 + rng() * 0.2);
+          slab.position.set((rng() - 0.5) * 0.25, y + rad * th * 0.8, (rng() - 0.5) * 0.25);
+          slab.rotation.set((rng() - 0.5) * 0.15, rng() * Math.PI, (rng() - 0.5) * 0.15);
+          y += rad * th * 1.5;
+          slabs.push(slab);
+        }
+        rock = merge(n('rock'), slabs, gm.rock, root);
+      } else {
+        rock = CreateIcoSphere(n('rock'), { radius: 0.8, subdivisions: 2, flat: true }, scene);
+        displaceByNoise(rock, 0.2, 1.6, nseed);
+        rock.scaling.set(1, 0.5 + rng() * 0.2, 0.85 + 0.2 * v);
+        rock.rotation.set(0.15 * v, v * Math.PI * 2, 0.1);
+        rock.position.y = 0.3;
+        rock.material = gm.rock;
+        rock.parent = root;
+      }
       const chip = CreateIcoSphere(n('chip'), { radius: 0.3, subdivisions: 1, flat: true }, scene);
       displaceByNoise(chip, 0.08, 3, nseed + 2);
       chip.material = gm.pebble;
@@ -436,20 +539,23 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
       break;
     }
     case 'lantern': {
-      const post = CreateCylinder(n('post'), { height: 1.5, diameterBottom: 0.14, diameterTop: 0.1, tessellation: 8 }, scene);
-      post.position.y = 0.75;
+      // per-instance: post height 1.2..1.8 m, glow tint one of three glass variants
+      const ph = 1.2 + rng() * 0.6;
+      const glassMat = [gm.lanternGlass, gm.lanternGlassB, gm.lanternGlassC][Math.floor(rng() * 3)];
+      const post = CreateCylinder(n('post'), { height: ph, diameterBottom: 0.14, diameterTop: 0.1, tessellation: 8 }, scene);
+      post.position.y = ph / 2;
       const arm = CreateBox(n('arm'), { width: 0.08, height: 0.06, depth: 0.5 }, scene);
-      arm.position.set(0, 1.5, 0.2);
+      arm.position.set(0, ph, 0.2);
       const foot = CreateCylinder(n('foot'), { height: 0.08, diameter: 0.36, tessellation: 10 }, scene);
       foot.position.y = 0.04;
       const frame = merge(n('frame'), [post, arm, foot], gm.lanternPost, root);
       const glass = CreateBox(n('glass'), { width: 0.26, height: 0.34, depth: 0.26 }, scene);
-      glass.material = gm.lanternGlass;
-      glass.position.set(0, 1.28, 0.4);
+      glass.material = glassMat;
+      glass.position.set(0, ph - 0.22, 0.4);
       glass.parent = root;
       const halo = CreateSphere(n('halo'), { diameter: 1.0, segments: 8 }, scene);
       halo.material = gm.halo;
-      halo.position.set(0, 1.28, 0.4);
+      halo.position.set(0, ph - 0.22, 0.4);
       halo.parent = root;
       casters.push(frame);
       freeze(frame, glass, halo);
@@ -524,10 +630,16 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
       const R = DECORATION_RADIUS.tower;
       const drums: Mesh[] = [];
       let y = 0;
-      const heights = [1.3, 1.2, 1.1];
+      // per-instance: 2..4 drums of varied height
+      const drumCount = 2 + Math.floor(rng() * 3);
+      const heights: number[] = [];
+      for (let i = 0; i < drumCount; i++) heights.push((1.35 - i * 0.08) * (0.85 + rng() * 0.3));
+      const stepIn = drumCount === 4 ? 0.24 : 0.3;
+      let lastDb = R * 2;
       for (let i = 0; i < heights.length; i++) {
         const h = heights[i];
-        const db = (R * 2 - i * 0.3) * (i === 0 ? 1 : 0.92);
+        const db = (R * 2 - i * stepIn) * (i === 0 ? 1 : 0.92);
+        lastDb = db;
         const drum = CreateCylinder(n(`drum${i}`), { height: h, diameterBottom: db, diameterTop: db - 0.22, tessellation: 18, subdivisions: 3 }, scene);
         displaceByNoise(drum, 0.025, 3, nseed + i);
         drum.position.y = y + h / 2;
@@ -538,7 +650,7 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
         drums.push(ledge);
         y += h;
       }
-      const topD = R * 2 - 0.9;
+      const topD = lastDb - 0.14;
       const merlons = 8;
       for (let i = 0; i < merlons; i++) {
         const a = (i / merlons) * Math.PI * 2;
@@ -548,13 +660,14 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
         drums.push(m);
       }
       const tower = merge(n('tower'), drums, gm.towerStone, root);
-      const slits = CreateCylinder(n('slits'), { height: 0.5, diameter: R * 2 - 0.3 + 0.02, tessellation: 18 }, scene);
+      const slitY = heights[0] + heights[1] * 0.5;
+      const slits = CreateCylinder(n('slits'), { height: 0.5, diameter: R * 2 - stepIn + 0.02, tessellation: 18 }, scene);
       slits.material = gm.towerWindow;
-      slits.position.y = 1.3 + 0.6;
+      slits.position.y = slitY;
       slits.parent = root;
       const halo = CreateSphere(n('halo'), { diameter: 2.2, segments: 8 }, scene);
       halo.material = gm.halo;
-      halo.position.y = 1.9;
+      halo.position.y = slitY;
       halo.scaling.y = 0.35;
       halo.parent = root;
       casters.push(tower);
@@ -565,19 +678,30 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
       // broken columns of different heights, a fallen lintel and moss creeping over the bases
       const parts: Mesh[] = [];
       const mossParts: Mesh[] = [];
-      const cols = [[-0.6, -0.4, 1.9], [0.65, -0.45, 1.1], [0.1, 0.6, 0.5]] as const;
-      for (let i = 0; i < cols.length; i++) {
-        const [cx, cz, h] = cols[i];
+      // per-instance: 3 or 4 columns, each either intact (with a capital) or broken at a seeded height
+      const slots = [[-0.6, -0.4], [0.65, -0.45], [0.1, 0.6], [-0.55, 0.5]] as const;
+      const colCount = 3 + (rng() < 0.4 ? 1 : 0);
+      const broken: boolean[] = [];
+      for (let i = 0; i < colCount; i++) broken.push(rng() < 0.65);
+      if (broken.every((b) => !b)) broken[Math.floor(rng() * colCount)] = true;
+      for (let i = 0; i < colCount; i++) {
+        const cx = slots[i][0] + (rng() - 0.5) * 0.15; const cz = slots[i][1] + (rng() - 0.5) * 0.15;
+        const h = broken[i] ? 0.4 + rng() * 1.5 : 1.95 + rng() * 0.35;
         const base = CreateBox(n(`rb${i}`), { width: 0.7, height: 0.16, depth: 0.7 }, scene);
         base.position.set(cx, 0.08, cz);
         parts.push(base);
         const shaft = CreateCylinder(n(`rs${i}`), { height: h, diameterBottom: 0.5, diameterTop: 0.44, tessellation: 12, subdivisions: 4 }, scene);
         displaceByNoise(shaft, 0.03, 4, nseed + i);
-        // jagged break: push the top ring vertices up and down
-        {
+        if (broken[i]) {
+          // jagged break: push the top ring vertices up and down
           const pp = shaft.getVerticesData(VertexBuffer.PositionKind)!;
           for (let k = 0; k < pp.length; k += 3) if (pp[k + 1] > h / 2 - 0.01) pp[k + 1] += (rng() - 0.5) * 0.3;
           shaft.updateVerticesData(VertexBuffer.PositionKind, pp, false, false);
+        } else {
+          const capital = CreateBox(n(`rc${i}`), { width: 0.66, height: 0.16, depth: 0.66 }, scene);
+          capital.position.set(cx, 0.16 + h + 0.08, cz);
+          capital.rotation.y = rng() * 0.3;
+          parts.push(capital);
         }
         shaft.position.set(cx, 0.16 + h / 2, cz);
         shaft.rotation.set((rng() - 0.5) * 0.06, rng() * Math.PI, (rng() - 0.5) * 0.06);
@@ -607,7 +731,9 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
     case 'crystal': {
       // a cluster of emissive shards growing out of a rock base, tinted per biome by the crystal material
       const shards: Mesh[] = [];
-      const count = 5 + Math.floor(rng() * 3);
+      // per-instance: 4..8 shards, hue from one of three crystal variants
+      const count = 4 + Math.floor(rng() * 5);
+      const crystalMat = [gm.crystal, gm.crystalB, gm.crystalC][Math.floor(rng() * 3)];
       for (let i = 0; i < count; i++) {
         const h = 0.7 + rng() * 1.1 * (i === 0 ? 1.3 : 1);
         const d = 0.18 + rng() * 0.16;
@@ -618,7 +744,7 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
         shard.rotation.set(Math.cos(a) * (i === 0 ? 0.05 : 0.25 + rng() * 0.3), rng() * Math.PI, Math.sin(a) * (i === 0 ? 0.05 : 0.25 + rng() * 0.3));
         shards.push(shard);
       }
-      const cluster = merge(n('cluster'), shards, gm.crystal, root);
+      const cluster = merge(n('cluster'), shards, crystalMat, root);
       const base = CreateIcoSphere(n('base'), { radius: 0.5, subdivisions: 2, flat: true }, scene);
       displaceByNoise(base, 0.1, 3, nseed);
       base.material = gm.rock;
@@ -638,7 +764,15 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
       const stems: Mesh[] = [];
       const caps: Mesh[] = [];
       const gills: Mesh[] = [];
-      const specs = [[0, 0, 1], [0.42, 0.2, 0.5], [-0.3, 0.35, 0.4]] as const;
+      // per-instance: 2..4 caps around the tall one
+      const capCount = 2 + Math.floor(rng() * 3);
+      const specs: [number, number, number][] = [[0, 0, 0.9 + rng() * 0.2]];
+      const a0 = rng() * Math.PI * 2;
+      for (let i = 1; i < capCount; i++) {
+        const a = a0 + (i / (capCount - 1)) * Math.PI * 1.6 + (rng() - 0.5) * 0.5;
+        const d = 0.36 + rng() * 0.16;
+        specs.push([Math.cos(a) * d, Math.sin(a) * d, 0.32 + rng() * 0.28]);
+      }
       for (let i = 0; i < specs.length; i++) {
         const [sx, sz, k] = specs[i];
         const h = 0.9 * k + 0.1;
@@ -685,14 +819,29 @@ export function buildDecoration(scene: Scene, _mats: Materials, deco: Decoration
       shoulders.position.y = 2.02;
       shoulders.scaling.set(1.1, 0.6, 0.9);
       parts.push(shoulders);
+      // per-instance: hooded (head bowed) or crowned (head raised, a ring of points)
+      const crowned = rng() < 0.5;
       const head = CreateSphere(n('head'), { diameter: 0.3, segments: 10 }, scene);
-      head.position.set(0, 2.24, 0.06);
+      head.position.set(0, crowned ? 2.3 : 2.24, crowned ? 0.02 : 0.06);
       parts.push(head);
-      const hood = CreateCylinder(n('hood'), { height: 0.5, diameterBottom: 0.5, diameterTop: 0.08, tessellation: 12 }, scene);
-      displaceByNoise(hood, 0.015, 5, nseed + 3);
-      hood.position.set(0, 2.42, -0.04);
-      hood.rotation.x = -0.35;
-      parts.push(hood);
+      if (crowned) {
+        const band = CreateTorus(n('crownBand'), { diameter: 0.29, thickness: 0.05, tessellation: 16 }, scene);
+        band.position.set(0, 2.42, 0.02);
+        parts.push(band);
+        const points = 5 + Math.floor(rng() * 3);
+        for (let k = 0; k < points; k++) {
+          const a = (k / points) * Math.PI * 2;
+          const pt = CreateCylinder(n(`crownPt${k}`), { height: 0.12, diameterBottom: 0.05, diameterTop: 0, tessellation: 4 }, scene);
+          pt.position.set(Math.cos(a) * 0.145, 2.49, 0.02 + Math.sin(a) * 0.145);
+          parts.push(pt);
+        }
+      } else {
+        const hood = CreateCylinder(n('hood'), { height: 0.5, diameterBottom: 0.5, diameterTop: 0.08, tessellation: 12 }, scene);
+        displaceByNoise(hood, 0.015, 5, nseed + 3);
+        hood.position.set(0, 2.42, -0.04);
+        hood.rotation.x = -0.35;
+        parts.push(hood);
+      }
       for (const sx of [-1, 1]) {
         const arm = segment(n(`arm${sx}`), new Vector3(sx * 0.3, 1.95, 0.05), new Vector3(sx * 0.08, 1.45, 0.26), 0.13, scene, 8);
         parts.push(arm);
@@ -726,12 +875,17 @@ export function buildRelic(scene: Scene, _mats: Materials, relic: Relic, pos: { 
   const index = Math.floor(hash01(relic.id, 77) * 5);
   const rm = gm.relicMaterials(index);
   const baseY = 1.2;
+  // per-instance: gem cut (octahedron, 8 facets, or dodecahedron, 12) and pedestal style (round, square, octagonal)
+  const vrng = mulberry32(variantSeed(relic.id, 71, pos.x, pos.z));
+  const gemType = vrng() < 0.5 ? 1 : 2;
+  const pedestalStyle = Math.floor(vrng() * 3);
   // crystal: a translucent outer shell with a bright emissive core inside, plus a faint halo
-  const gem = CreatePolyhedron(n('gem'), { type: 1, size: 0.55 }, scene);
+  const gem = CreatePolyhedron(n('gem'), { type: gemType, size: gemType === 1 ? 0.55 : 0.42 }, scene);
+  if (gemType === 1) gem.scaling.y = 1.12 + vrng() * 0.25;
   gem.material = rm.shell;
   gem.position.y = baseY;
   gem.parent = root;
-  const core = CreatePolyhedron(n('core'), { type: 1, size: 0.3 }, scene);
+  const core = CreatePolyhedron(n('core'), { type: gemType, size: gemType === 1 ? 0.3 : 0.24 }, scene);
   core.material = rm.core;
   core.parent = gem;
   core.isPickable = false;
@@ -750,12 +904,31 @@ export function buildRelic(scene: Scene, _mats: Materials, relic: Relic, pos: { 
   beam.isPickable = false;
   beam.setEnabled(false);
   // stone pedestal with a carved rim and a soft light pool on top
-  const pedestal = CreateCylinder(n('pedestal'), { height: 0.26, diameterBottom: 1.1, diameterTop: 0.9, tessellation: 18 }, scene);
-  displaceByNoise(pedestal, 0.012, 5, 311);
-  pedestal.material = gm.stoneDark;
-  pedestal.position.y = 0.13;
-  pedestal.parent = root;
-  const ring = CreateTorus(n('ring'), { diameter: 1.0, thickness: 0.08, tessellation: 24 }, scene);
+  let pedestal: Mesh;
+  if (pedestalStyle === 1) {
+    // square, two steps
+    const s1 = CreateBox(n('ped1'), { width: 1.15, height: 0.14, depth: 1.15 }, scene);
+    s1.position.y = 0.07;
+    const s2 = CreateBox(n('ped2'), { width: 0.92, height: 0.12, depth: 0.92 }, scene);
+    s2.position.y = 0.2;
+    s2.rotation.y = vrng() < 0.5 ? 0 : Math.PI / 4;
+    pedestal = merge(n('pedestal'), [s1, s2], gm.stoneDark, root);
+  } else if (pedestalStyle === 2) {
+    // octagonal drum with a flared foot
+    const foot = CreateCylinder(n('pedFoot'), { height: 0.08, diameter: 1.2, tessellation: 8 }, scene);
+    foot.position.y = 0.04;
+    const drum = CreateCylinder(n('pedDrum'), { height: 0.18, diameterBottom: 1.0, diameterTop: 0.92, tessellation: 8 }, scene);
+    drum.position.y = 0.17;
+    pedestal = merge(n('pedestal'), [foot, drum], gm.stoneDark, root);
+    pedestal.rotation.y = vrng() * Math.PI;
+  } else {
+    pedestal = CreateCylinder(n('pedestal'), { height: 0.26, diameterBottom: 1.1, diameterTop: 0.9, tessellation: 18 }, scene);
+    displaceByNoise(pedestal, 0.012, 5, 311);
+    pedestal.material = gm.stoneDark;
+    pedestal.position.y = 0.13;
+    pedestal.parent = root;
+  }
+  const ring = CreateTorus(n('ring'), { diameter: pedestalStyle === 1 ? 0.86 : 1.0, thickness: pedestalStyle === 2 ? 0.05 : 0.08, tessellation: pedestalStyle === 2 ? 8 : 24 }, scene);
   ring.material = gm.stone;
   ring.position.y = 0.26;
   ring.parent = root;

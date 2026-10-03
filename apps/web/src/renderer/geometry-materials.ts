@@ -431,6 +431,17 @@ function createGeoMaterials(scene: Scene) {
   const sand = c('#d9b981');
   const ochre = c('#b0763c');
 
+  /** Rotate the hue of every colour in a material's option looks (bounded material variants, not per object). */
+  const hueShift = (col: Color3, deg: number): Color3 => {
+    const hsv = col.toHSV();
+    const out = new Color3();
+    Color3.HSVtoRGBToRef((hsv.r + deg + 360) % 360, hsv.g, hsv.b, out);
+    return out;
+  };
+  const shiftLook = (l: Look | undefined, deg: number): Look | undefined => l && ({ ...l, albedo: hueShift(l.albedo, deg), emissive: l.emissive ? hueShift(l.emissive, deg) : undefined });
+  const shiftOpts = (o: Opts, deg: number): Opts => ({ ...o, volcanic: shiftLook(o.volcanic, deg * 0.4), frost: shiftLook(o.frost, deg), desert: shiftLook(o.desert, deg * 0.5), night: shiftLook(o.night, deg) });
+  const crystalOpts: Opts = { roughness: 0.15, metallic: 0.1, alpha: 0.9, clearCoat: true, volcanic: { albedo: c('#ff9a5a'), emissive: c('#ff6a2a'), emissiveIntensity: 1.2, alpha: 0.92 }, frost: { albedo: c('#bfe6ff'), emissive: c('#7fc4ff'), emissiveIntensity: 1.1, alpha: 0.9 }, desert: { albedo: c('#ffd27a'), emissive: c('#ffb040'), emissiveIntensity: 0.9, alpha: 0.9 }, night: { albedo: c('#c89aff'), emissive: c('#9a5cff'), emissiveIntensity: 1.8, alpha: 0.92 } };
+
   const mats = {
     // island
     grass: pbr('grass', c('#7fbf66'), {
@@ -462,11 +473,14 @@ function createGeoMaterials(scene: Scene) {
     // bridge
     wood: pbr('wood', c('#8a5a30'), { roughness: 0.8, albedoTex: tex.woodAlbedo, albedoScale: 1, bump: tex.barkNormal, bumpScale: 0.5, volcanic: { albedo: c('#3a2a1e'), emissive: ember.scale(0.25), emissiveIntensity: 0.8 }, frost: { albedo: c('#8a8c86'), roughness: 0.9 }, desert: { albedo: c('#a8824a'), roughness: 0.85 }, night: { albedo: c('#4a3c32') } }),
     plankA: pbr('plankA', c('#a26a35'), { roughness: 0.8, albedoTex: tex.woodAlbedo, albedoScale: 2, bump: tex.barkNormal, bumpScale: 0.6, emissiveTex: tex.cracks, emissiveScale: 1, volcanic: { albedo: c('#3b2b1f'), emissive: ember, emissiveIntensity: 0.9 }, frost: { albedo: c('#b9bfc0'), roughness: 0.92 }, desert: { albedo: c('#c09a5c') }, night: { albedo: c('#55473c') } }),
+    plankC: pbr('plankC', c('#b8834a'), { roughness: 0.78, albedoTex: tex.woodAlbedo, albedoScale: 2, bump: tex.barkNormal, bumpScale: 0.6, emissiveTex: tex.cracks, emissiveScale: 1, volcanic: { albedo: c('#42301f'), emissive: ember, emissiveIntensity: 0.85 }, frost: { albedo: c('#c4c8c6'), roughness: 0.92 }, desert: { albedo: c('#cfa868') }, night: { albedo: c('#5e4f42') } }),
     plankB: pbr('plankB', c('#8c5729'), { roughness: 0.82, albedoTex: tex.woodAlbedo, albedoScale: 2, bump: tex.barkNormal, bumpScale: 0.6, emissiveTex: tex.cracks, emissiveScale: 1, volcanic: { albedo: c('#33251b'), emissive: ember, emissiveIntensity: 0.8 }, frost: { albedo: c('#a4acae'), roughness: 0.92 }, desert: { albedo: c('#aa864c') }, night: { albedo: c('#493d33') } }),
     woodLight: pbr('woodLight', c('#b57a3e'), { roughness: 0.78, albedoTex: tex.woodAlbedo, albedoScale: 1, volcanic: { albedo: c('#4a3524') }, frost: { albedo: c('#9c9e98') }, desert: { albedo: c('#c89c5a') }, night: { albedo: c('#5a4a3c') } }),
     rope: pbr('rope', c('#dcc9a3'), { roughness: 0.95, albedoTex: tex.ropeAlbedo, albedoScale: 1, volcanic: { albedo: c('#8a7458') } }),
     iron: pbr('iron', c('#3a3b3f'), { metallic: 0.85, roughness: 0.5, volcanic: { albedo: c('#2a2425') } }),
     lanternGlass: pbr('lanternGlass', c('#ffd27f'), { roughness: 0.3, volcanic: { albedo: c('#ff8a4a'), emissive: c('#ff6a30'), emissiveIntensity: 1.6 } }),
+    lanternGlassB: pbr('lanternGlassB', c('#fff0b8'), { roughness: 0.3, volcanic: { albedo: c('#ffa05a'), emissive: c('#ff7a3a'), emissiveIntensity: 1.6 } }),
+    lanternGlassC: pbr('lanternGlassC', c('#d0ecff'), { roughness: 0.3, volcanic: { albedo: c('#ff9a6a'), emissive: c('#ff6a40'), emissiveIntensity: 1.5 } }),
     // decorations
     trunk: pbr('trunk', c('#6b4625'), { roughness: 0.9, bump: tex.barkNormal, bumpScale: 1, albedoTex: tex.woodAlbedo, albedoScale: 1, volcanic: { albedo: c('#2b211b') }, frost: { albedo: c('#5a5450') }, desert: { albedo: c('#8a6238') }, night: { albedo: c('#3a3230') } }),
     leaves: pbr('leaves', c('#4aa255'), { roughness: 0.85, bump: tex.soilNormal, bumpScale: 2, volcanic: { albedo: c('#3a2f26'), roughness: 0.95 }, frost: { albedo: c('#b8c9cc'), roughness: 0.95 }, desert: { albedo: c('#9a9448'), roughness: 0.9 }, night: { albedo: c('#2a4a42') } }),
@@ -480,7 +494,10 @@ function createGeoMaterials(scene: Scene) {
     moss: pbr('moss', c('#5c8a3e'), { roughness: 0.95, bump: tex.soilNormal, bumpScale: 3, volcanic: { albedo: c('#3a3326') }, frost: { albedo: c('#cfdcdc') }, desert: { albedo: c('#9a8a4a') }, night: { albedo: c('#2e4a36') } }),
     towerStone: pbr('towerStone', c('#9a948a'), { roughness: 0.88, bump: tex.stoneNormal, bumpScale: 2, albedoTex: tex.stoneAlbedo, albedoScale: 2, volcanic: { albedo: c('#4a423c') }, frost: { albedo: c('#8494a4') }, desert: { albedo: c('#a67a44') }, night: { albedo: c('#5a6070') } }),
     towerWindow: pbr('towerWindow', c('#2a2420'), { roughness: 0.6, emissiveTex: tex.slits, volcanic: { albedo: c('#2a2420') } }),
-    crystal: pbr('crystal', c('#7fe3d8'), { roughness: 0.15, metallic: 0.1, alpha: 0.9, clearCoat: true, volcanic: { albedo: c('#ff9a5a'), emissive: c('#ff6a2a'), emissiveIntensity: 1.2, alpha: 0.92 }, frost: { albedo: c('#bfe6ff'), emissive: c('#7fc4ff'), emissiveIntensity: 1.1, alpha: 0.9 }, desert: { albedo: c('#ffd27a'), emissive: c('#ffb040'), emissiveIntensity: 0.9, alpha: 0.9 }, night: { albedo: c('#c89aff'), emissive: c('#9a5cff'), emissiveIntensity: 1.8, alpha: 0.92 } }),
+    crystal: pbr('crystal', c('#7fe3d8'), crystalOpts),
+    // hue-shifted crystal variants (the cluster picks one of three per instance)
+    crystalB: pbr('crystalB', hueShift(c('#7fe3d8'), 28), shiftOpts(crystalOpts, 28)),
+    crystalC: pbr('crystalC', hueShift(c('#7fe3d8'), -30), shiftOpts(crystalOpts, -30)),
     mushroomStem: pbr('mushroomStem', c('#e8dcc4'), { roughness: 0.85, volcanic: { albedo: c('#5a4a3e') }, frost: { albedo: c('#dfe4e8') }, night: { albedo: c('#b4b8c8'), emissive: c('#3a5a70'), emissiveIntensity: 0.6 } }),
     mushroomCap: pbr('mushroomCap', c('#c0442e'), { roughness: 0.6, albedoTex: tex.capSpots, albedoScale: 1, volcanic: { albedo: c('#4a2a22') }, frost: { albedo: c('#8aa0b0') }, desert: { albedo: c('#b8803a') }, night: { albedo: c('#4a5a9a'), emissive: c('#4a8ad0'), emissiveIntensity: 1.2 } }),
     statueStone: pbr('statueStone', c('#b4ada0'), { roughness: 0.75, bump: tex.stoneNormal, bumpScale: 1.5, volcanic: { albedo: c('#524a44') }, frost: { albedo: c('#a2b2c0') }, desert: { albedo: c('#c09a66') }, night: { albedo: c('#6a7080') } }),
@@ -509,6 +526,10 @@ function createGeoMaterials(scene: Scene) {
   rederive(mats.tuft);
   themed.find((t) => t.mat === mats.lanternGlass)!.serene.emissive = c('#ffb850');
   rederive(mats.lanternGlass, { emissive: c('#ffc060'), emissiveIntensity: 2.4 });
+  themed.find((t) => t.mat === mats.lanternGlassB)!.serene.emissive = c('#ffe08a');
+  rederive(mats.lanternGlassB, { emissive: c('#ffe8a0'), emissiveIntensity: 2.4 });
+  themed.find((t) => t.mat === mats.lanternGlassC)!.serene.emissive = c('#9ad4ff');
+  rederive(mats.lanternGlassC, { emissive: c('#a8dcff'), emissiveIntensity: 2.4 });
   themed.find((t) => t.mat === mats.towerWindow)!.serene.emissive = c('#ffb850');
   themed.find((t) => t.mat === mats.towerWindow)!.volcanic.emissive = c('#ff7a3a');
   rederive(mats.towerWindow, { emissive: c('#ffc060'), emissiveIntensity: 2.2 });

@@ -122,6 +122,14 @@ export type IslandBodyOptions = {
   stone: Material;
   /** RGB multipliers for the three top zones and the skirt (vertex colours, multiplied into the albedo). */
   tint: { grass: [number, number, number]; grassAlt: [number, number, number]; path: [number, number, number]; rim: [number, number, number]; skirt: [number, number, number]; tip: [number, number, number] };
+  /** Per-instance variation seed (hash of the id and the world); 0 or absent keeps the id-only look. */
+  seed?: number;
+  /** Skirt silhouette: 0 tapered bulge, 1 terraced ledges, 2 deep spire. Defaults to a seeded pick. */
+  skirtProfile?: 0 | 1 | 2;
+  /** Width of the pale path ring inside the logical radius (0.5 to 0.8 m; default 0.6). */
+  pathWidth?: number;
+  /** Moss band on the outer lawn: width as a fraction of the lawn radius (0.1 to 0.3) and darkening strength. */
+  moss?: { width: number; strength: number; tint: [number, number, number] };
 };
 
 export type IslandBody = {
@@ -140,8 +148,10 @@ export type IslandBody = {
  */
 export function buildIslandBody(scene: Scene, o: IslandBodyOptions): IslandBody {
   const r = o.radius;
-  const rng = rngFor(o.id, 101);
-  const seed = hashString(o.id, 7) % 100000;
+  const vseed = (o.seed ?? 0) >>> 0;
+  const rng = mulberry32(hashString(o.id, 101 ^ vseed));
+  const seed = hashString(o.id, 7 ^ vseed) % 100000;
+  const skirtProfile = o.skirtProfile ?? (Math.floor(rng() * 3) as 0 | 1 | 2);
   const profile = makeAngularProfile(rng, 5);
   const segments = Math.max(48, Math.min(96, Math.round(r * 7)));
   const rimRadius = (angle: number) => r + 0.5 + 1.5 * profile(angle);
@@ -153,7 +163,8 @@ export function buildIslandBody(scene: Scene, o: IslandBodyOptions): IslandBody 
   const uvs: number[] = [];
   const indices: number[] = [];
 
-  const pathInner = Math.max(1, r - 0.6);
+  const pathInner = Math.max(1, r - Math.max(0.5, Math.min(0.8, o.pathWidth ?? 0.6)));
+  const mossW = Math.max(0.1, Math.min(0.3, o.moss?.width ?? 0.18));
   const uvScale = 0.35; // repeats of the detail textures per metre
 
   const pushVertex = (x: number, y: number, z: number, c: [number, number, number], u?: number, v?: number) => {
@@ -185,13 +196,21 @@ export function buildIslandBody(scene: Scene, o: IslandBodyOptions): IslandBody 
   const grassNoise = (x: number, z: number) => fbm3(x * 0.25 + 3, 0.5, z * 0.25 + 9, seed);
 
   const centre = pushVertex(0, 0, 0, o.tint.grass);
-  const ringCount = 3;
+  // lawn rings: two inner rings, one at the inner edge of the moss band, one at the path edge (moss tinted)
+  const ringFracs = [0.32, 0.62, 1 - mossW, 1];
+  const ringCount = ringFracs.length;
   const grassRings: number[] = [];
-  for (let k = 1; k <= ringCount; k++) {
-    const rad = (pathInner * k) / ringCount;
+  for (let k = 0; k < ringCount; k++) {
+    const rad = pathInner * ringFracs[k];
+    const outer = k === ringCount - 1;
     grassRings.push(ring(
       () => rad, () => 0,
-      (ang) => mix(o.tint.grass, o.tint.grassAlt, grassNoise(Math.cos(ang) * rad, Math.sin(ang) * rad)),
+      (ang) => {
+        const g = mix(o.tint.grass, o.tint.grassAlt, grassNoise(Math.cos(ang) * rad, Math.sin(ang) * rad));
+        if (!outer || !o.moss) return g;
+        const m = o.moss.strength * (0.75 + 0.25 * profile(ang * 5 + 3));
+        return mix(g, [g[0] * o.moss.tint[0], g[1] * o.moss.tint[1], g[2] * o.moss.tint[2]], m);
+      },
     ));
   }
   // grass fan + strips (sub-mesh 0)
@@ -217,7 +236,7 @@ export function buildIslandBody(scene: Scene, o: IslandBodyOptions): IslandBody 
   quadStrip(pathOuterRing, rimRing);
 
   // ---- skirt: flat shaded (unique vertices per triangle) tapered multi-ring with noisy radii and a jagged bottom ----
-  const depth = o.thickness * 2.2;
+  const depth = o.thickness * (skirtProfile === 2 ? 2.7 : skirtProfile === 1 ? 2.0 : 2.2);
   type P = { x: number; y: number; z: number; c: [number, number, number]; u: number; v: number };
   const skirtRing = (k: number, levels: number): P[] => {
     const t = k / levels; // 0 at the rim, 1 at the bottom
@@ -230,14 +249,28 @@ export function buildIslandBody(scene: Scene, o: IslandBodyOptions): IslandBody 
       if (k === 0) {
         rad = rimR; y = -0.06 - 0.08 * profile(ang * 2 + 1);
       } else {
-        // taper: slight bulge just under the rim, then draw in toward ~0.35 r at the bottom
-        const taper = t < 0.2 ? 1 + 0.06 * (t / 0.2) : 1.06 - 0.71 * ((t - 0.2) / 0.8);
+        // profile 0: slight bulge just under the rim, then draw in toward ~0.35 r at the bottom
+        // profile 1: terraced ledges (three shelves, each a short overhang then a steep drop)
+        // profile 2: quick pinch into a deep, narrow spire
+        let taper: number;
+        if (skirtProfile === 1) {
+          const steps = 3;
+          const f = t * steps;
+          const st = Math.floor(Math.min(steps - 1e-6, f));
+          const local = f - st;
+          taper = 1.02 - 0.22 * st - 0.22 * smooth(Math.min(1, local * 1.6));
+        } else if (skirtProfile === 2) {
+          taper = 1 - 0.82 * Math.pow(t, 0.62);
+        } else {
+          taper = t < 0.2 ? 1 + 0.06 * (t / 0.2) : 1.06 - 0.71 * ((t - 0.2) / 0.8);
+        }
         const n = fbm3(Math.cos(ang) * 2.2 + 50, t * 5, Math.sin(ang) * 2.2 + 50, seed + 3);
         rad = Math.max(0.8, rimR * taper + (n - 0.5) * (0.9 + 1.6 * t) + (rng() - 0.5) * 0.3 * (1 + t));
         y = -t * depth * (0.8 + 0.4 * n) + (rng() - 0.5) * 0.25 * t;
         if (k === levels) {
           // jagged bottom: every few vertices drop into a stalactite tip
-          const tip = (i % 3 === 0 ? 1 : 0.15) * (0.6 + 1.4 * rng());
+          const every = skirtProfile === 1 ? 4 : skirtProfile === 2 ? 2 : 3;
+          const tip = (i % every === 0 ? 1 : 0.15) * (0.6 + 1.4 * rng()) * (skirtProfile === 2 ? 1.3 : 1);
           y -= tip;
         }
       }
@@ -250,7 +283,7 @@ export function buildIslandBody(scene: Scene, o: IslandBodyOptions): IslandBody 
     }
     return pts;
   };
-  const levels = 6;
+  const levels = skirtProfile === 1 ? 7 : 6;
   const rings: P[][] = [];
   for (let k = 0; k <= levels; k++) rings.push(skirtRing(k, levels));
   const tri = (a: P, b: P, c: P) => {
