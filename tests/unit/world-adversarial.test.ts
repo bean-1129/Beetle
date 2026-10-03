@@ -214,7 +214,9 @@ describe('hostile patches', () => {
     east.center = { x: 52, z: 0 };
     east.radius = 8; // rim at x = 60 exactly: inside; bridge from the centre island is 35 m, within limits
     spec.bridges = spec.bridges.filter((b) => b.id !== 'bridge-east');
+    // A full WorldPatch (with patchId) bypasses draft normalization, which would otherwise clamp the rock inside the island.
     const r = applyPatch(spec, {
+      schemaVersion: 1, patchId: 'edge-patch', requestId: 'req-edge', baseWorldVersion: spec.worldVersion,
       summary: 'edge',
       ops: [
         { op: 'add_bridge', id: 'bridge-east', from: 'centre', to: 'east' },

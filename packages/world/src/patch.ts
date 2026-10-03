@@ -5,6 +5,7 @@ import {
 } from '@beetle/contracts';
 import { rimPointToward, round3 } from './geom.ts';
 import { issue, zodIssuesToValidation } from './validate.ts';
+import { normalizePatchDraft, type Normalization } from './normalize.ts';
 
 export const DEFAULT_BRIDGE_WIDTH = 2.4;
 
@@ -27,12 +28,18 @@ export function applyPatch(
   spec: WorldSpec,
   patch: PatchDraft | WorldPatch,
   ctx: { collectedRelicIds?: string[] } = {},
-): { ok: true; spec: WorldSpec; changedIds: string[] } | { ok: false; issues: ValidationIssue[] } {
+): { ok: true; spec: WorldSpec; changedIds: string[]; normalizations: Normalization[] } | { ok: false; issues: ValidationIssue[] } {
   // Validate the patch shape at the boundary; unknown ops are called out explicitly. A non-object patch (null,
   // undefined, a number) is INVALID_SCHEMA rather than a TypeError.
   if (patch === null || typeof patch !== 'object') {
     return { ok: false, issues: [issue('INVALID_SCHEMA', `(root): expected a patch object, got ${patch === null ? 'null' : typeof patch}`, [], { path: [] })] };
   }
+  // Model drafts get deterministic reference and range normalization first (see normalize.ts); full WorldPatches do not.
+  const normalizedInput = typeof (patch as WorldPatch).patchId === 'string'
+    ? { patch, normalizations: [] as Normalization[] }
+    : normalizePatchDraft(spec, patch);
+  patch = normalizedInput.patch as PatchDraft | WorldPatch;
+  const normalizations = normalizedInput.normalizations;
   const raw = patch as unknown as { ops?: unknown };
   const unknownOps: ValidationIssue[] = [];
   if (Array.isArray(raw?.ops)) {
@@ -146,7 +153,7 @@ export function applyPatch(
   });
 
   if (issues.length > 0) return { ok: false, issues };
-  return { ok: true, spec: out, changedIds: changed };
+  return { ok: true, spec: out, changedIds: changed, normalizations };
 }
 
 /** Length of the bridge an add_bridge op would create, for callers that want to pre-check limits. */

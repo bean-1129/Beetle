@@ -1,0 +1,234 @@
+// Deterministic normalization of model output before schema validation.
+// The local model often (a) refers to islands by display name or compass direction instead of id,
+// (b) writes world coordinates or over-radius offsets into localPosition, (c) exceeds numeric limits the
+// JSON-schema grammar does not enforce. These are mechanical, unambiguous corrections; anything ambiguous is
+// left untouched so the validator reports it. Every change is recorded so the agent and the UI can show it.
+import { WORLD_LIMITS, compassName, type Vec2 } from '@beetle/contracts';
+
+export type Normalization = { path: string; from: unknown; to: unknown; reason: string };
+
+type IslandLike = { id: string; name?: string; center: Vec2; radius: number };
+
+export function slugify(s: string): string {
+  return s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+const DIRECTION_WORDS: Record<string, string> = {
+  north: 'north', northern: 'north', n: 'north',
+  south: 'south', southern: 'south', s: 'south',
+  east: 'east', eastern: 'east', e: 'east',
+  west: 'west', western: 'west', w: 'west',
+  'north-east': 'north-east', northeast: 'north-east', northeastern: 'north-east', ne: 'north-east',
+  'north-west': 'north-west', northwest: 'north-west', northwestern: 'north-west', nw: 'north-west',
+  'south-east': 'south-east', southeast: 'south-east', southeastern: 'south-east', se: 'south-east',
+  'south-west': 'south-west', southwest: 'south-west', southwestern: 'south-west', sw: 'south-west',
+  centre: 'centre', center: 'centre', central: 'centre', middle: 'centre', hub: 'centre',
+};
+
+/** Resolve a model-provided island reference to a real island id. Returns undefined when ambiguous or unknown. */
+export function resolveIslandRef(islands: IslandLike[], ref: unknown): string | undefined {
+  if (typeof ref !== 'string' || ref.length === 0) return undefined;
+  if (islands.some((i) => i.id === ref)) return ref;
+  const want = slugify(ref);
+  if (!want) return undefined;
+  const stripped = want.replace(/-?(island|isle|islet)$/g, '').replace(/^(the|island|isle)-?/g, '');
+  // 1. exact slug of display name
+  const byName = islands.filter((i) => i.name && (slugify(i.name) === want || slugify(i.name) === stripped));
+  if (byName.length === 1) return byName[0].id;
+  // 2. id equals the stripped form (e.g. "temple-island" -> "temple")
+  const byId = islands.filter((i) => i.id === stripped || slugify(i.id) === stripped);
+  if (byId.length === 1) return byId[0].id;
+  // 3. compass word ("northern island", "north", "the north isle")
+  const dir = DIRECTION_WORDS[stripped] ?? DIRECTION_WORDS[want];
+  if (dir) {
+    const byCompass = islands.filter((i) => compassName(i.center) === dir);
+    if (byCompass.length === 1) return byCompass[0].id;
+    if (byCompass.length > 1) {
+      // several islands in that octant: pick the farthest from the centre only if it is clearly dominant (20 percent)
+      const sorted = byCompass.map((i) => ({ i, d: Math.hypot(i.center.x, i.center.z) })).sort((a, b) => b.d - a.d);
+      if (sorted[0].d > sorted[1].d * 1.2) return sorted[0].i.id;
+    }
+    return undefined;
+  }
+  // 4. unique substring match on name or id
+  const bySub = islands.filter((i) => (i.name && slugify(i.name).includes(stripped)) || i.id.includes(stripped) || (stripped.length >= 4 && (i.name ? slugify(i.name) : i.id).startsWith(stripped)));
+  if (bySub.length === 1) return bySub[0].id;
+  return undefined;
+}
+
+/** Resolve a reference to an object with id and optional name (relics, decorations). */
+export function resolveNamedRef(items: { id: string; name?: string }[], ref: unknown): string | undefined {
+  if (typeof ref !== 'string' || !ref) return undefined;
+  if (items.some((i) => i.id === ref)) return ref;
+  const want = slugify(ref);
+  const byName = items.filter((i) => i.name && slugify(i.name) === want);
+  if (byName.length === 1) return byName[0].id;
+  const bySub = items.filter((i) => i.id.includes(want) || (i.name && slugify(i.name).includes(want)));
+  if (bySub.length === 1) return bySub[0].id;
+  return undefined;
+}
+
+function num(v: unknown): number | undefined {
+  return typeof v === 'number' && Number.isFinite(v) ? v : undefined;
+}
+
+/**
+ * Bring a localPosition inside its island. If the value looks like a world coordinate that lies on the island
+ * (distance from centre <= radius) it is converted to an offset; otherwise an over-long offset is scaled back
+ * to radius - clearance along the same direction.
+ */
+export function normalizeLocalPosition(island: IslandLike, local: unknown, clearance: number, log: Normalization[], path: string): { x: number; z: number } | undefined {
+  if (!local || typeof local !== 'object') return undefined;
+  const x = num((local as { x?: unknown }).x);
+  const z = num((local as { z?: unknown }).z);
+  if (x === undefined || z === undefined) return undefined;
+  const maxR = Math.max(0.5, island.radius - clearance);
+  const asLocal = Math.hypot(x, z);
+  if (asLocal <= maxR) return { x, z };
+  // world coordinate on the island?
+  const dxw = x - island.center.x;
+  const dzw = z - island.center.z;
+  if (Math.hypot(dxw, dzw) <= maxR) {
+    const to = { x: r3(dxw), z: r3(dzw) };
+    log.push({ path, from: { x, z }, to, reason: 'world coordinate converted to island offset' });
+    return to;
+  }
+  const k = maxR / asLocal;
+  const to = { x: r3(x * k), z: r3(z * k) };
+  log.push({ path, from: { x, z }, to, reason: `offset exceeded island radius ${island.radius}; scaled to ${r3(maxR)}` });
+  return to;
+}
+
+function r3(v: number): number {
+  return Math.round(v * 1000) / 1000;
+}
+
+function clampNum(v: unknown, min: number, max: number, log: Normalization[], path: string): unknown {
+  const n = num(v);
+  if (n === undefined) return v;
+  if (n < min || n > max) {
+    const to = Math.min(max, Math.max(min, n));
+    log.push({ path, from: n, to, reason: `clamped to [${min}, ${max}]` });
+    return to;
+  }
+  return n;
+}
+
+const OBJECT_CLEARANCE = 1.2;
+
+/** Normalize a raw model WorldDraft. Returns a new object; never throws on odd shapes. */
+export function normalizeDraft(draft: unknown): { draft: unknown; normalizations: Normalization[] } {
+  const log: Normalization[] = [];
+  if (!draft || typeof draft !== 'object') return { draft, normalizations: log };
+  const d = structuredClone(draft) as Record<string, unknown>;
+  const H = WORLD_LIMITS.bounds.halfExtent;
+  const islands: IslandLike[] = [];
+  if (Array.isArray(d.islands)) {
+    d.islands.forEach((raw, i) => {
+      if (!raw || typeof raw !== 'object') return;
+      const is = raw as Record<string, unknown>;
+      is.radius = clampNum(is.radius, WORLD_LIMITS.island.minRadius, WORLD_LIMITS.island.maxRadius, log, `islands[${i}].radius`);
+      const r = num(is.radius) ?? WORLD_LIMITS.island.minRadius;
+      if (is.center && typeof is.center === 'object') {
+        const c = is.center as Record<string, unknown>;
+        c.x = clampNum(c.x, -(H - r), H - r, log, `islands[${i}].center.x`);
+        c.z = clampNum(c.z, -(H - r), H - r, log, `islands[${i}].center.z`);
+        const cx = num(c.x); const cz = num(c.z);
+        if (typeof is.id === 'string' && cx !== undefined && cz !== undefined) {
+          islands.push({ id: is.id, name: typeof is.name === 'string' ? is.name : undefined, center: { x: cx, z: cz }, radius: r });
+        }
+      }
+    });
+  }
+  const fixRef = (obj: Record<string, unknown>, key: string, path: string) => {
+    const ref = obj[key];
+    if (typeof ref !== 'string') return;
+    if (islands.some((i) => i.id === ref)) return;
+    const resolved = resolveIslandRef(islands, ref);
+    if (resolved) { log.push({ path, from: ref, to: resolved, reason: 'island reference resolved by name or direction' }); obj[key] = resolved; }
+  };
+  const fixPlaced = (obj: Record<string, unknown>, path: string) => {
+    fixRef(obj, 'islandId', `${path}.islandId`);
+    const island = islands.find((i) => i.id === obj.islandId);
+    if (island) {
+      const lp = normalizeLocalPosition(island, obj.localPosition, OBJECT_CLEARANCE, log, `${path}.localPosition`);
+      if (lp) obj.localPosition = lp;
+    }
+  };
+  if (Array.isArray(d.bridges)) {
+    d.bridges.forEach((raw, i) => {
+      if (!raw || typeof raw !== 'object') return;
+      const b = raw as Record<string, unknown>;
+      fixRef(b, 'from', `bridges[${i}].from`);
+      fixRef(b, 'to', `bridges[${i}].to`);
+      if (b.width !== undefined) b.width = clampNum(b.width, WORLD_LIMITS.bridge.minWidth, WORLD_LIMITS.bridge.maxWidth, log, `bridges[${i}].width`);
+    });
+  }
+  for (const key of ['spawns', 'relics', 'decorations'] as const) {
+    if (Array.isArray(d[key])) (d[key] as unknown[]).forEach((raw, i) => { if (raw && typeof raw === 'object') fixPlaced(raw as Record<string, unknown>, `${key}[${i}]`); });
+  }
+  if (d.gate && typeof d.gate === 'object') fixPlaced(d.gate as Record<string, unknown>, 'gate');
+  if (Array.isArray(d.decorations) && d.decorations.length > WORLD_LIMITS.decorations.max) {
+    log.push({ path: 'decorations', from: d.decorations.length, to: WORLD_LIMITS.decorations.max, reason: 'truncated to the decoration limit' });
+    d.decorations = d.decorations.slice(0, WORLD_LIMITS.decorations.max);
+  }
+  return { draft: d, normalizations: log };
+}
+
+/** Normalize a raw model PatchDraft against the current spec: resolve references, clamp positions and widths. */
+export function normalizePatchDraft(
+  spec: { islands: IslandLike[]; relics: { id: string; name?: string }[]; decorations: { id: string }[]; bridges: { id: string }[] },
+  patch: unknown,
+): { patch: unknown; normalizations: Normalization[] } {
+  const log: Normalization[] = [];
+  if (!patch || typeof patch !== 'object' || !Array.isArray((patch as { ops?: unknown }).ops)) return { patch, normalizations: log };
+  const p = structuredClone(patch) as { ops: unknown[] };
+  const fixIsland = (op: Record<string, unknown>, key: string, path: string) => {
+    const ref = op[key];
+    if (typeof ref !== 'string' || spec.islands.some((i) => i.id === ref)) return;
+    const resolved = resolveIslandRef(spec.islands, ref);
+    if (resolved) { log.push({ path, from: ref, to: resolved, reason: 'island reference resolved by name or direction' }); op[key] = resolved; }
+  };
+  p.ops.forEach((raw, i) => {
+    if (!raw || typeof raw !== 'object') return;
+    const op = raw as Record<string, unknown>;
+    const path = `ops[${i}]`;
+    switch (op.op) {
+      case 'add_bridge':
+        fixIsland(op, 'from', `${path}.from`);
+        fixIsland(op, 'to', `${path}.to`);
+        if (op.width !== undefined) op.width = clampNum(op.width, WORLD_LIMITS.bridge.minWidth, WORLD_LIMITS.bridge.maxWidth, log, `${path}.width`);
+        if (typeof op.id !== 'string' || !/^[a-z][a-z0-9_-]{0,31}$/.test(op.id)) {
+          const to = `bridge-${slugify(String(op.from ?? 'a'))}-${slugify(String(op.to ?? 'b'))}`.slice(0, 32);
+          log.push({ path: `${path}.id`, from: op.id, to, reason: 'bridge id generated' });
+          op.id = to;
+        }
+        break;
+      case 'remove_bridge': {
+        if (typeof op.id === 'string' && !spec.bridges.some((b) => b.id === op.id)) {
+          const resolved = resolveNamedRef(spec.bridges, op.id);
+          if (resolved) { log.push({ path: `${path}.id`, from: op.id, to: resolved, reason: 'bridge reference resolved' }); op.id = resolved; }
+        }
+        break;
+      }
+      case 'add_decoration':
+      case 'move_decoration':
+      case 'move_relic': {
+        fixIsland(op, 'islandId', `${path}.islandId`);
+        if (op.op === 'move_relic' && typeof op.id === 'string' && !spec.relics.some((r) => r.id === op.id)) {
+          const resolved = resolveNamedRef(spec.relics, op.id);
+          if (resolved) { log.push({ path: `${path}.id`, from: op.id, to: resolved, reason: 'relic reference resolved by name' }); op.id = resolved; }
+        }
+        const island = spec.islands.find((is) => is.id === op.islandId);
+        if (island) {
+          const lp = normalizeLocalPosition(island, op.localPosition, OBJECT_CLEARANCE, log, `${path}.localPosition`);
+          if (lp) op.localPosition = lp;
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  });
+  return { patch: p, normalizations: log };
+}

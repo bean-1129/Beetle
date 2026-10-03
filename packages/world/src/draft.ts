@@ -7,12 +7,15 @@ import { rimPointToward, round3 } from './geom.ts';
 import { seededRandom } from './prng.ts';
 import { hazardPolicyFor, DEFAULT_BRIDGE_WIDTH } from './patch.ts';
 import { issue, zodIssuesToValidation } from './validate.ts';
+import { normalizeDraft, type Normalization } from './normalize.ts';
 
 export function expandDraft(
   draft: unknown,
   opts: { seed: number; worldId: string; worldVersion?: number },
-): { ok: true; spec: WorldSpec } | { ok: false; issues: ValidationIssue[] } {
-  const parsed = WorldDraftSchema.safeParse(draft);
+): { ok: true; spec: WorldSpec; normalizations: Normalization[] } | { ok: false; issues: ValidationIssue[] } {
+  // Deterministic normalization of model output (references by name, over-radius offsets, clamped numbers) before the schema.
+  const { draft: normalizedDraft, normalizations } = normalizeDraft(draft);
+  const parsed = WorldDraftSchema.safeParse(normalizedDraft);
   if (!parsed.success) return { ok: false, issues: zodIssuesToValidation(parsed.error) };
   const d = parsed.data;
   const issues: ValidationIssue[] = [];
@@ -104,5 +107,5 @@ export function expandDraft(
 
   const check = WorldSpecSchema.safeParse(spec);
   if (!check.success) return { ok: false, issues: zodIssuesToValidation(check.error) };
-  return { ok: true, spec: check.data };
+  return { ok: true, spec: check.data, normalizations };
 }
