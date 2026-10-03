@@ -50,7 +50,7 @@ Quantization and exact digest are recorded by `scripts/benchmark-local.mjs` outp
 
 | Item | Observed |
 |---|---|
-| LAN interface | wlP9s9 (Wi-Fi), 172.20.65.84/20 |
+| LAN interface | wlP9s9 (Wi-Fi). Observed 172.20.65.84/20 at 11:43 CDT, then 192.168.204.116/20 from about 12:40 CDT (network changed); the server auto-detects the current address at startup |
 | docker0 | 172.17.0.1/16 (unrelated, untouched) |
 | Download bandwidth | about 5 to 7 MB/s, with stalls; the first workspace npm install died with read ETIMEDOUT |
 
