@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BIOMES, DECORATION_TYPES, GAME_MODES, HAZARD_KINDS, MODE_LIMITS, SCHEMA_VERSION, TERRAINS, WORLD_LIMITS } from './limits.ts';
+import { AVATARS, BIOMES, DECORATION_TYPES, GAME_MODES, HAZARD_KINDS, MODE_LIMITS, SCHEMA_VERSION, TERRAINS, WORLD_LIMITS } from './limits.ts';
 import { IdSchema, Finite, LocalVec2Schema, ModeSchema, SafeText, Vec2Schema } from './world.ts';
 
 const L = WORLD_LIMITS.localOffset;
@@ -18,12 +18,13 @@ export const PatchOpSchema = z.discriminatedUnion('op', [
   z.object({ op: z.literal('add_island'), id: IdSchema, name: SafeText(WORLD_LIMITS.name.maxLength).optional(), center: Vec2Schema, radius: Finite.min(WORLD_LIMITS.island.minRadius).max(WORLD_LIMITS.island.maxRadius), bridgeFrom: IdSchema.optional() }).strict(),
   z.object({ op: z.literal('remove_island'), id: IdSchema }).strict(),
   z.object({ op: z.literal('set_terrain'), terrain: z.enum(TERRAINS) }).strict(),
+  z.object({ op: z.literal('set_avatar'), avatar: z.enum(AVATARS), slot: z.union([z.literal(0), z.literal(1)]).optional() }).strict(),
   z.object({ op: z.literal('set_mode'), mode: ModeSchema }).strict(),
   z.object({ op: z.literal('set_biome'), biome: z.enum(BIOMES) }).strict(),
   z.object({ op: z.literal('set_movement'), speed: Finite.min(MODE_LIMITS.movementSpeed.min).max(MODE_LIMITS.movementSpeed.max) }).strict(),
 ]);
 export type PatchOp = z.infer<typeof PatchOpSchema>;
-export const PATCH_OP_NAMES = ['add_bridge', 'remove_bridge', 'set_hazard', 'add_decoration', 'move_decoration', 'remove_decoration', 'move_relic', 'set_title', 'set_mode', 'set_biome', 'set_movement', 'add_island', 'remove_island', 'set_terrain'] as const;
+export const PATCH_OP_NAMES = ['add_bridge', 'remove_bridge', 'set_hazard', 'add_decoration', 'move_decoration', 'remove_decoration', 'move_relic', 'set_title', 'set_mode', 'set_biome', 'set_movement', 'add_island', 'remove_island', 'set_terrain', 'set_avatar'] as const;
 
 // Model-facing: what the model produces for an edit request.
 export const PatchDraftSchema = z.object({
@@ -66,6 +67,7 @@ export const PATCH_DRAFT_JSON_SCHEMA = {
           { type: 'object', additionalProperties: false, required: ['op', 'id', 'center', 'radius'], properties: { op: { const: 'add_island' }, id, name: { type: 'string', maxLength: WORLD_LIMITS.name.maxLength }, center: { type: 'object', additionalProperties: false, required: ['x', 'z'], properties: { x: { type: 'number', minimum: -60, maximum: 60 }, z: { type: 'number', minimum: -60, maximum: 60 } } }, radius: { type: 'number', minimum: WORLD_LIMITS.island.minRadius, maximum: WORLD_LIMITS.island.maxRadius }, bridgeFrom: { type: 'string' } } },
           { type: 'object', additionalProperties: false, required: ['op', 'id'], properties: { op: { const: 'remove_island' }, id: { type: 'string' } } },
           { type: 'object', additionalProperties: false, required: ['op', 'terrain'], properties: { op: { const: 'set_terrain' }, terrain: { type: 'string', enum: [...TERRAINS] } } },
+          { type: 'object', additionalProperties: false, required: ['op', 'avatar'], properties: { op: { const: 'set_avatar' }, avatar: { type: 'string', enum: [...AVATARS] }, slot: { type: 'integer', minimum: 0, maximum: 1 } } },
           { type: 'object', additionalProperties: false, required: ['op', 'mode'], properties: { op: { const: 'set_mode' }, mode: { type: 'object', additionalProperties: false, required: ['kind'], properties: { kind: { type: 'string', enum: [...GAME_MODES] }, timeLimitSec: { type: 'integer', minimum: 20, maximum: 600 }, holdSeconds: { type: 'integer', minimum: 3, maximum: 60 }, relicsRequired: { type: 'integer', minimum: 1, maximum: 3 }, orderedCheckpoints: { type: 'boolean' } } } } },
           { type: 'object', additionalProperties: false, required: ['op', 'biome'], properties: { op: { const: 'set_biome' }, biome: { type: 'string', enum: [...BIOMES] } } },
           { type: 'object', additionalProperties: false, required: ['op', 'speed'], properties: { op: { const: 'set_movement' }, speed: { type: 'number', minimum: 3, maximum: 7 } } },

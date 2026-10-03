@@ -111,6 +111,7 @@ export function expandDraft(
     ...(d.movementSpeed !== undefined ? { movement: { speed: d.movementSpeed } } : {}),
     ...(d.streaming !== undefined ? { streaming: d.streaming } : {}),
     ...(d.terrain !== undefined ? { terrain: d.terrain } : {}),
+    ...(d.avatar !== undefined ? { avatar: d.avatar } : {}),
   };
 
   const check = WorldSpecSchema.safeParse(spec);

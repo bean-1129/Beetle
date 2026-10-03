@@ -192,6 +192,17 @@ export function applyPatch(
         note('mode');
         break;
       }
+      case 'set_avatar': {
+        if (op.slot === undefined) out.avatar = op.avatar;
+        else {
+          const cur = out.avatar;
+          const pair: [typeof op.avatar, typeof op.avatar] = Array.isArray(cur) ? [cur[0], cur[1]] : [cur ?? 'explorer', cur ?? 'explorer'];
+          pair[op.slot] = op.avatar;
+          out.avatar = pair;
+        }
+        note('avatar');
+        break;
+      }
       case 'set_terrain': {
         out.terrain = op.terrain;
         note('terrain');

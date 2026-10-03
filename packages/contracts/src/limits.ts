@@ -82,6 +82,9 @@ export const DECORATION_RADIUS: Record<DecorationType, number> = {
 export const BIOMES = ['garden', 'volcanic', 'frost', 'desert', 'night'] as const;
 /** World terrain type: floating islands over a hazard, or one continuous landmass (plateaus and paths, no void). */
 export const TERRAINS = ['islands', 'ground'] as const;
+/** Player characters, built procedurally by the renderer. The model picks one from the request ("a fox who..." -> fox). */
+export const AVATARS = ['explorer', 'fox', 'cat', 'bear', 'rabbit', 'robot', 'knight'] as const;
+export type Avatar = (typeof AVATARS)[number];
 export type Terrain = (typeof TERRAINS)[number];
 export type Biome = (typeof BIOMES)[number];
 /** Game modes the engine implements. The model maps any requested game onto the closest mode and says which. */

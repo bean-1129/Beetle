@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import {
-  BIOMES, DECORATION_TYPES, GAME_MODES, HAZARD_KINDS, MODE_LIMITS, OBJECTIVE_RULES, SCHEMA_VERSION, MOVEMENT_RULES_VERSION, TERRAINS, WORLD_LIMITS,
+  AVATARS, BIOMES, DECORATION_TYPES, GAME_MODES, HAZARD_KINDS, MODE_LIMITS, OBJECTIVE_RULES, SCHEMA_VERSION, MOVEMENT_RULES_VERSION, TERRAINS, WORLD_LIMITS,
 } from './limits.ts';
 
 const H = WORLD_LIMITS.bounds.halfExtent;
@@ -112,7 +112,15 @@ export const WorldSpecSchema = z.object({
   streaming: z.boolean().optional(),
   /** islands (default): platforms over a hazard; ground: one continuous landmass, zones are plateaus, crossings are paths, nothing to fall into. */
   terrain: z.enum(TERRAINS).optional(),
+  /** Player characters: one for both players, or one per slot [slot0, slot1]. Default explorer. */
+  avatar: z.union([z.enum(AVATARS), z.tuple([z.enum(AVATARS), z.enum(AVATARS)])]).optional(),
 }).strict();
+
+export function avatarFor(spec: { avatar?: string | [string, string] }, slot: 0 | 1): string {
+  const a = spec.avatar;
+  if (!a) return 'explorer';
+  return Array.isArray(a) ? a[slot] : a;
+}
 
 export function effectiveTerrain(spec: { terrain?: 'islands' | 'ground' }): 'islands' | 'ground' {
   return spec.terrain ?? 'islands';
@@ -170,6 +178,7 @@ export const WorldDraftSchema = z.object({
   hazardRise: HazardRiseSchema.optional(),
   streaming: z.boolean().optional(),
   terrain: z.enum(TERRAINS).optional(),
+  avatar: z.union([z.enum(AVATARS), z.tuple([z.enum(AVATARS), z.enum(AVATARS)])]).optional(),
 }).strict();
 export type WorldDraft = z.infer<typeof WorldDraftSchema>;
 
@@ -218,6 +227,7 @@ export const WORLD_DRAFT_JSON_SCHEMA = {
     movementSpeed: { type: 'number', minimum: MODE_LIMITS.movementSpeed.min, maximum: MODE_LIMITS.movementSpeed.max },
     streaming: { type: 'boolean' },
     terrain: { type: 'string', enum: [...TERRAINS] },
+    avatar: { type: 'string', enum: [...AVATARS] },
     hazardRise: { type: 'object', additionalProperties: false, required: ['afterSec', 'metersPerSec', 'maxElevation'], properties: { afterSec: { type: 'integer', minimum: 5, maximum: 300 }, metersPerSec: { type: 'number', minimum: 0.01, maximum: 0.5 }, maxElevation: { type: 'number', minimum: -2, maximum: -0.6 } } },
     decorations: {
       type: 'array', maxItems: WORLD_LIMITS.decorations.max,
