@@ -480,7 +480,7 @@ const SEC = { sectionTitle: "Beetle pitch" };
   );
 
   s.addNotes(
-    "Walk the five steps: any request, mapped to the closest mode and biome and named; the world starts where the players are (the brief builds the zone around the spawn); it grows as they move, every extension a small patch validated before it lands; then keep changing it while they play. Read two rows of the mode table, not all five. Say plainly: the library is bounded and growing; the model never writes rules, it picks from the engine. Streaming was measured once: an automatic extension (two islands) committed 9.5 s after the frontier trigger with the player preserved (docs/RESULTS.md 15:16 CDT, direct, quiet GPU). Say 'measured once'; the spawn-zone brief time is not measured. Mode briefs measured 14:25 to 14:42 CDT, 18 of 18 sensible modes (slide 5)."
+    "Walk the five steps: any request, mapped to the closest mode and biome and named; the world starts where the players are (the brief builds the zone around the spawn); it grows as they move, every extension a small patch validated before it lands; then keep changing it while they play. Read two rows of the mode table, not all five. Say plainly: the library is bounded and growing; the model never writes rules, it picks from the engine. Streaming is measured: in the acceptance runs (contended GPU) 4 of 6 automatic extensions committed in 10.6 to 65.9 s, and one quiet-GPU run committed in 9.5 s (slide 5). The spawn-zone brief time is not measured. Mode briefs measured 14:25 to 14:42 CDT, 18 of 18 sensible modes (slide 5)."
   );
 }
 
@@ -577,7 +577,7 @@ const SEC = { sectionTitle: "Beetle pitch" };
   });
   s.addText(runs, { x: cx, y: 1.6, w: cw, h: 3.4, valign: "top", margin: 0, isTextBox: true, objectName: "caption list" });
 
-  s.addNotes("Play the recording here. Captions follow docs/STORYBOARD.md; the mode caption is set to whichever agent mode was green at recording time. Rehearsal timings: brief 14 s on a quiet GPU, edits 2 to 14 s, DISCONNECTED_GOAL refused and repaired in 3.0 s. Shots that cannot be produced honestly are cut, not faked. Optional shot 'the world grows' (docs/STORYBOARD.md 6c): a player walks toward an edge, 'Beetle is building ahead' appears and the new island assembles; one live run committed an extension 9.5 s after the trigger (docs/RESULTS.md 15:16 CDT), not yet rehearsed on camera, so it is shown only from a real take, never compressed without a label.");
+  s.addNotes("Play the recording here. Captions follow docs/STORYBOARD.md; the mode caption is set to whichever agent mode was green at recording time. Rehearsal timings: brief 14 s on a quiet GPU, edits 2 to 14 s, DISCONNECTED_GOAL refused and repaired in 3.0 s. Shots that cannot be produced honestly are cut, not faked. Optional shot 'the world grows' (docs/STORYBOARD.md 6c): a player walks toward an edge, 'Beetle is building ahead' appears and the new island assembles; measured 10.6 to 65.9 s request to commit on a contended GPU (docs/ACCEPTANCE.md) and 9.5 s once on a quiet GPU (docs/RESULTS.md), not yet rehearsed on camera, so it is shown only from a real take, never compressed without a label.");
 }
 
 // ====================== Slide 4: agent architecture and validation ======================
@@ -733,10 +733,10 @@ const SEC = { sectionTitle: "Beetle pitch" };
 
   // Rebuilt 2026-10-03 14:50 CDT, streaming line and latency card updated 15:15 CDT. Every value is copied from the
   // file named in the card; see docs/pitch/FILL_IN.md.
-  const LATENCY_BIG = "0.56 ms RTT, 0.80 ms tick";
-  const LATENCY_SUB = "p50 idle, scripted controllers (p95 1.01 and 1.10 ms; under 2 x 30 inputs/s tick p95 50.2 ms; LATENCY.md 20:10Z). Not input to photon.";
-  // Streaming: one live run in docs/RESULTS.md (15:16 CDT); docs/ACCEPTANCE.md has no streaming section yet.
-  const STREAMING_LINE = "Streaming generation: implemented. One live run: extension committed 9.5 s after the frontier trigger, player preserved (RESULTS.md 15:16 CDT, direct, quiet GPU). Acceptance numbers to follow.";
+  const LATENCY_BIG = "0.46 ms RTT, 0.78 ms tick";
+  const LATENCY_SUB = "p50 idle, scripted controllers (p95 0.74 and 1.15 ms; under 2 x 30 inputs/s tick p95 12.3 ms; LATENCY.md 20:26Z). Not input to photon.";
+  // Streaming: docs/ACCEPTANCE.md streaming section (3 runs, contended GPU) plus one quiet-GPU run in docs/RESULTS.md (15:16 CDT).
+  const STREAMING_LINE = "Streaming, extension request to commit: 10.6 to 65.9 s, 4 of 6 committed, GPU contended (ACCEPTANCE.md, run 3 PASS 21 of 21: 56.0 s and 10.6 s); 9.5 s once on a quiet GPU (RESULTS.md). Trigger to request under 0.3 s; player, relic and score kept.";
   const cells = [
     ["MODEL", "qwen3.5:4b, Q4_K_M", "4.7B, 3.4 GB, Ollama 0.35.1 on loopback. qwen3.8:27b not benchmarked: pull failed once, second pull stopped. docs/MODEL_SELECTION.md"],
     ["BRIEF, WARM, QUIET GPU", "26.2 / 26.5 / 27.7 s", "min / p50 / max, 3 runs, first draft valid (bench-...1791049348895.json). 10 s target not met. 14 s once after normalization (RESULTS.md run 3); 33.4 s via OpenClaw."],
@@ -818,7 +818,7 @@ const SEC = { sectionTitle: "Beetle pitch" };
   );
 
   s.addNotes(
-    "Read the cards. Say out loud: the 10 s brief target is not met; a valid brief takes 24 to 28 s warm on a quiet GPU, 14 s was seen once after normalization, 33.4 s through OpenClaw. Edits commit in 2 to 14 s, and 8.0 s with two players moving and nothing reset. Game modes from one prompt: the mode was sensible on 18 of 18 briefs and the exact mode was missed twice; committed mode briefs took 13 to 44 s and the failures were geometry, never the mode rule; mode and biome edits on a running world took 3.0 s. Phones and the offline proof are covered by tests or procedure but not yet measured live. Streaming generation is implemented and was measured once live: extension committed 9.5 s after the frontier trigger, player preserved (docs/RESULTS.md 15:16 CDT); say 'one run, acceptance numbers to follow'. No spawn-zone build time is quoted. The 27b was never benchmarked."
+    "Read the cards. Say out loud: the 10 s brief target is not met; a valid brief takes 24 to 28 s warm on a quiet GPU, 14 s was seen once after normalization, 33.4 s through OpenClaw. Edits commit in 2 to 14 s, and 8.0 s with two players moving and nothing reset. Game modes from one prompt: the mode was sensible on 18 of 18 briefs and the exact mode was missed twice; committed mode briefs took 13 to 44 s and the failures were geometry, never the mode rule; mode and biome edits on a running world took 3.0 s. Phones and the offline proof are covered by tests or procedure but not yet measured live. Streaming: the frontier trigger opens the request within 0.3 s; the model is the slow part. Acceptance runs on a contended GPU: 4 of 6 extensions committed in 10.6 to 65.9 s, one failed schema validation, one hit the 80 s model timeout, and each failure left the world untouched; run 3 passed 21 of 21 with player, relic and score kept and the player walking onto both new islands. Quiet GPU, once: 9.5 s. No spawn-zone build time is quoted. The 27b was never benchmarked."
   );
 }
 
