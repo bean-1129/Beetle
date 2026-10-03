@@ -160,6 +160,15 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
   glow.onAfterRenderMeshToEffect.add((m) => { if (m === hazardPlane) mats.setGlowPass(false); });
 
   let quality: Quality = 'high';
+  // Q toggles render quality (high/low) for weak GPUs; ignored while typing. C is the camera toggle (camera.ts).
+  const onQualityKey = (e: KeyboardEvent) => {
+    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+    if (e.key !== 'q' && e.key !== 'Q') return;
+    const t = e.target as HTMLElement | null;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    setQuality(quality === 'high' ? 'low' : 'high');
+  };
+  window.addEventListener('keydown', onQualityKey);
   function setQuality(q: Quality) {
     if (q === quality) return;
     quality = q;
@@ -496,6 +505,7 @@ export function createRenderer(canvas: HTMLCanvasElement): BeetleRenderer {
   }
 
   function dispose() {
+    window.removeEventListener('keydown', onQualityKey);
     window.removeEventListener('resize', onResize);
     ro?.disconnect();
     engine.stopRenderLoop();
