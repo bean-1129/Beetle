@@ -12,6 +12,7 @@ import { bearerToken, isLoopback, safeEqual } from './auth.ts';
 import { shortId } from './clock.ts';
 import type { ServerContext } from './context.ts';
 import { directoryExists } from './persistence.ts';
+import { registerStudio2d } from './studio2d.ts';
 
 const JOIN_RATE_LIMIT = 10;
 const JOIN_RATE_WINDOW_MS = 60_000;
@@ -431,6 +432,9 @@ export async function registerRoutes(app: FastifyInstance, ctx: ServerContext): 
     return { reportId: report.reportId };
   });
 
+  // ---- 2D studio (local model bridge) ----
+  registerStudio2d(app, ctx, { requireDirector });
+
   // ---- static web client ----
   await registerStatic(app, ctx);
 }
@@ -443,6 +447,7 @@ async function registerStatic(app: FastifyInstance, ctx: ServerContext): Promise
     for (const page of ['director', 'play', 'controller'] as const) {
       app.get(`/${page}`, (_req, reply) => reply.sendFile(`${page}.html`));
     }
+    app.get('/2d', (_req, reply) => reply.sendFile('studio2d.html'));
     return;
   }
   app.get('/', async (_req, reply) => {
