@@ -394,3 +394,7 @@ Arena", committed v5 in 15.1 s with no biome (default garden); Mario with lava -
 - Time: committed briefs 13.0 to 44.1 s (first model answer 13 to 22 s, one repair adds about 15 s); both edits 3.0 s.
 
 Stack stopped at 14:43 (server, worker and proxy; ports 7786 and 11435 free; the 7781 rehearsal was never touched).
+
+## Streaming generation, live (15:16 CDT, port 7781, fixture seed2, direct worker, quiet GPU)
+
+The starter world has two islands (haven with both spawns and a relic, grove with two relics and the gate). A scripted controller walked east on haven. When it came within 4 m of the rim on a side with no crossing, the server created the automatic request "Extend the world to the south-east beyond island haven"; the agent proposed two new islands (x2, x3) with crossings from haven and one decoration each; validation and connectivity checks passed; v2 committed 9.5 s after the trigger. The player stayed on haven, connected, with its state intact. Second and later extensions respect the 12 s cooldown and the 24-island cap (server tests, apps/server/src/expansion.test.ts).

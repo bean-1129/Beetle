@@ -52,6 +52,17 @@ Beetle now maps any requested game onto a mode library and a biome, then builds 
 | Agent: prompts map any game onto a mode and biome; out-of-library requests measured | implemented (16 agent tests); live measurement in progress | packages/agent, docs/RESULTS.md |
 | Movement acceleration | deliberately omitted: an exponential acceleration model broke the validator's headless traversal timing and three tests; instant velocity kept (best measured input latency), weight comes from client interpolation and character animation | |
 
+## Streaming generation (15:05 to 15:16 CDT)
+
+| Area | Status | Evidence |
+|---|---|---|
+| Contract: add_island and remove_island ops, worlds of 2 to 24 islands and 48 bridges, WorldSpec.streaming, automatic requests with autoReason, director settings route | implemented, typechecked | packages/contracts |
+| World: island placement with anchor selection, pull-in and overlap push-away; seed2 and grown12 fixtures; 24-island worlds validate in about 10 ms | implemented, tested (18 streaming tests) | packages/world, tests/unit/streaming.test.ts |
+| Server: frontier trigger (4 m from a rim with no crossing within 45 degrees), 12 s cooldown, one in-flight request, autoExpand setting, snapshot persistence | implemented, tested (10 expansion tests; 75 server tests total) | apps/server/src/expansion.ts |
+| Agent: expansion prompt for automatic requests; briefs start small when streaming is on | implemented (measurement in progress) | packages/agent |
+| Director toggle, HUD "building ahead" line, docs | implemented | apps/web, docs/ARCHITECTURE.md |
+| Live run | verified once: extension committed 9.5 s after the trigger with the player preserved (docs/RESULTS.md) | |
+
 ## Required test cases (section 14)
 
 | # | Case | Status |
